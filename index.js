@@ -176,7 +176,7 @@ app.get('/pinch', function (req, res) {
 });
 
 app.get('/n', function (req, res) {
-  addBoxToImage("b");
+  addBoxToImage("get-n");
   res.sendFile('cameraN.html', { root: __dirname + '/public' });
 });
 
