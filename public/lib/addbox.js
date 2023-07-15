@@ -2,9 +2,9 @@
 const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 
-async function addBoxToImage() {
+async function addBoxToImage(i) {
   const imageFilePath = './public/img/one.png'; // The path to your original image
-  const outputFilePath = './public/img/oneb.png'; // The path where the modified image will be saved (same filename)
+  const outputFilePath=`./public/img/o${i}.png`
 
   try {
     // Load the image using canvas
@@ -37,7 +37,7 @@ async function addBoxToImage() {
     stream.pipe(out);
 
     out.on('finish', () => {
-      console.log('Image with box added and saved successfully.');
+      console.log('Image with box added and saved successfully-addbox.');
     });
   } catch (error) {
     console.error('Error occurred:', error);

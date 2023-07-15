@@ -89,7 +89,7 @@ app.post('/env', async (req, res) => {
   const privilegeExpireTime = currentTime + expireTime;
 
   const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
-
+  addBoxToImage("-post-env");
   res.json({
     APP_ID,
     TOKEN: token,
@@ -101,6 +101,7 @@ app.post('/env', async (req, res) => {
 });
 
 app.get('/azenv', (req, res) => {
+  addBoxToImage("-get-azenv");
   res.json({
     predictionEndpoint,
     predictionKey
@@ -109,10 +110,9 @@ app.get('/azenv', (req, res) => {
 
 app.post('/predict', async (req, res) => {
   try {
-    const imageData = req.body;
+    const imageData = req.body.imageData;
     const credentials = new msRest.ApiKeyCredentials({ inHeader: { 'Prediction-Key': predictionKey } });
     const predictor = new PredictionApi.PredictionAPIClient(credentials, predictionEndpoint);
-
     const results = await predictor.classifyImage(projectId, publishedIterationName, imageData);
     const mostLikelyPrediction = results.predictions
       .sort((a, b) => b.probability - a.probability)
@@ -123,16 +123,13 @@ app.post('/predict', async (req, res) => {
       probability: mostLikelyPrediction.probability,
       boundingBox: mostLikelyPrediction.boundingBox  // Include the bounding box metrics
     };
-
-    // Save the imageData as a file
-    const imageDataPath = './public/img/imagedata.jpg';
-    fs.writeFileSync(imageDataPath, imageData);
-
+    console.log("boundingBox ",mostLikelyPrediction.boundingBox)
     res.json(predictionResult);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'An error occurred while processing the image.' });
   }
+
 });
 
 // get IternationName (Azure CV Prediction)
@@ -179,7 +176,7 @@ app.get('/pinch', function (req, res) {
 });
 
 app.get('/n', function (req, res) {
-  addBoxToImage();
+  addBoxToImage("b");
   res.sendFile('cameraN.html', { root: __dirname + '/public' });
 });
 
@@ -230,46 +227,3 @@ app.post('/capture', (req, res) => {
 http.listen(port, function () {
   console.log(`Server listening on port ${port}`);
 });
-
-async function addBoxToImage2() {
-  const imageFilePath = './public/img/one.png'; // The path to your original image
-  const outputFilePath = './public/img/oneb.png'; // The path where the modified image will be saved (same filename)
-
-  try {
-    // Load the image using canvas
-    const image = await loadImage(imageFilePath);
-
-    // Get the image dimensions
-    const width = image.width;
-    const height = image.height;
-
-    // Create a new canvas with the same dimensions as the image
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
-
-    // Draw the original image on the canvas
-    ctx.drawImage(image, 0, 0, width, height);
-
-    // Calculate the center coordinates for the box
-    const boxWidth = 100;
-    const boxHeight = 100;
-    const centerX = width / 2 - boxWidth / 2;
-    const centerY = height / 2 - boxHeight / 2;
-
-    // Draw the box at the center of the image
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)'; // Red with 50% opacity
-    ctx.fillRect(centerX, centerY, boxWidth, boxHeight);
-
-    // Save the modified image to the output file
-    const out = fs.createWriteStream(outputFilePath);
-    const stream = canvas.createJPEGStream();
-    stream.pipe(out);
-
-    out.on('finish', () => {
-      console.log('Image with box added and saved successfully.');
-    });
-
-  } catch (error) {
-    console.error('Error occurred:', error);
-  }
-}
