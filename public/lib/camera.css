@@ -1,0 +1,406 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700');
+
+*{
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+  --font-size-1: 0.8rem;
+  --font-size-2: 1.2rem;
+  --font-size-3: 1.6rem;
+  --font-size-4: 1.8rem;
+  --font-size-5: 2.2rem;
+  --batonBlue: #5065A8;
+  --batonGrey: #F2EEE4;
+  --white: #ffffff;
+  --black: #00000000;
+}
+
+body {
+  height: 100vh;
+  background-color: var(--batonBlue);
+}
+
+canvas {
+    z-index: -3;
+    display: none;
+  } 
+  
+  video {
+    z-index: -2;
+    margin-top:2.5vh;
+    height: 95vh;
+    margin-left: 20vw;
+    border-radius: 45px;
+    display: block;
+    object-fit: contain;
+  }
+
+.overlay{
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background:  transparent;
+    position: absolute;
+}
+nav{
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--batonBlue);
+    width: 120px;
+    padding: 10px 0;
+
+}
+nav .logo{
+    width: 56px;
+    display: block;
+    margin: auto;
+    cursor: pointer;
+}
+nav ul{
+    margin-top: 160px;
+}
+nav ul li{
+    list-style: none;
+
+}
+nav ul li img{
+    width: 50px;
+    display: block;
+    margin: 10px auto;
+    padding: 10px;
+    cursor: pointer;
+    opacity: 0.5;
+    border-radius: 10px;
+    transition: opacity 0.5s, background 0.5s;
+}
+nav ul li img:hover{
+    opacity: 1;
+    background: #4d6181;
+
+}
+.active{
+    opacity: 1;
+    background: #4d6181;
+}
+.container{
+    padding: 0 2.5%;
+}
+
+.container.slide{
+    top:0;
+    left:0;
+    height:100vh;
+    width:80vw;
+    position: absolute;
+    background: var(--batonBlue);
+    object-fit: contain;
+    margin:auto;
+}
+
+.container.viewer{
+    top:0;
+    left:0;
+    height:100vh;
+    width:80vw;
+    position: absolute;
+    background: var(--batonBlue);
+    object-fit: contain;
+    margin:auto;
+}
+
+.container.animation{
+    align-items: center;
+    margin:auto;
+}
+
+.top-icons{
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 25px 0;
+
+}
+
+.top-row{
+    margin-top: 5vh;
+    display: flex;
+    justify-content: space-between;
+
+}
+.col-1{
+    flex-basis: 100%;
+
+}
+.col-2{
+    flex-basis: 30%;
+}
+.host-img{
+    width: 60%;
+    border-radius: 15px;
+}
+
+.host-img2{
+    width: 40%;
+    border-radius: 3px;
+}
+.contarols{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.contarols img{
+    width: 40px;
+    margin: 20px 10px;
+    cursor: pointer;
+    transition: transform 0.5s;
+}
+.contarols .call-icon{
+    width: 70px;
+
+}
+.contarols img:hover{
+    transform: translateY(-10px);
+}
+
+.joined{
+    alignment: left;
+    margin-top:100px;
+    margin-right:40px;
+    background: #182842;
+    border-radius: 25px;
+    padding: 30px 40px 50px;
+    color: #fff;
+}
+.joined div{
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    grid-gap: 10px;
+}
+.joined img{
+    width: 100%;
+    border-radius: 10px;
+    cursor: pointer;
+
+}
+
+
+.text-head {
+    color: var(--white);
+    font-size: var(--font-size-5);
+    font-weight: normal;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  .text-head2 {
+    color: var(--white);
+    font-size: var(--font-size-4);
+    font-weight: normal;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* below are related to displayFinding() */
+
+  /*
+PURE RESPONSIVE CSS3 SLIDESHOW GALLERY by Roko C. buljan
+http://stackoverflow.com/a/34696029/383904
+*/
+
+.CSSgal {
+	position: relative;
+	overflow: hidden;
+	height: 100%; /* Or set a fixed height */
+}
+
+/* SLIDER */
+
+
+.CSSgal .slider {
+	height: 100%;
+	white-space: nowrap;
+	font-size: 0;
+	transition: 0.8s;
+	position: relative;
+}
+
+/* SLIDES */
+
+.CSSgal .slider > * {
+	font-size: 1rem;
+	display: inline-block;
+	white-space: normal;
+	vertical-align: top;
+	height: 100%;
+	width: 100%;
+	background: none 50% no-repeat;
+	background-size: cover;
+}
+
+/* PREV/NEXT, CONTAINERS & ANCHORS */
+
+.CSSgal .prevNext {
+	position: absolute;
+	z-index: 1;
+	top: 50%;
+	width: 100%;
+	height: 0;
+}
+
+.CSSgal .prevNext > div+div {
+	visibility: hidden; /* Hide all but first P/N container */
+}
+
+.CSSgal .prevNext a {
+	background: #fff;
+	position: absolute;
+	width:       120px;
+	height:     120px;
+	line-height: 120px; /* If you want to place numbers */
+	text-align: center;
+	opacity: 0.7;
+	-webkit-transition: 0.3s;
+					transition: 0.3s;
+	-webkit-transform: translateY(-50%);
+					transform: translateY(-50%);
+	left: 0;
+}
+.CSSgal .prevNext a:hover {
+	opacity: 1;
+}
+.CSSgal .prevNext a+a {
+	left: auto;
+	right: 0;
+}
+
+/* NAVIGATION */
+
+.CSSgal .bullets {
+	position: absolute;
+	z-index: 2;
+	bottom: 0;
+	padding: 10px 0;
+	width: 100%;
+	text-align: center;
+}
+.CSSgal .bullets > a {
+	display: inline-block;
+	width:       90px;
+	height:      90px;
+	line-height: 90px;
+	text-decoration: none;
+	text-align: center;
+	background: rgba(255, 255, 255, 1);
+	-webkit-transition: 0.3s;
+					transition: 0.3s;
+}
+.CSSgal .bullets > a+a {
+	background: rgba(255, 255, 255, 0.5); /* Dim all but first */
+}
+.CSSgal .bullets > a:hover {
+	background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* NAVIGATION BUTTONS */
+/* ALL: */
+.CSSgal >s:target ~ .bullets >* {      background: rgba(255, 255, 255, 0.5);}
+/* ACTIVE */
+#s1:target ~ .bullets >*:nth-child(1) {background: rgba(255, 255, 255,   1);}
+#s2:target ~ .bullets >*:nth-child(2) {background: rgba(255, 255, 255,   1);}
+#s3:target ~ .bullets >*:nth-child(3) {background: rgba(255, 255, 255,   1);}
+#s4:target ~ .bullets >*:nth-child(4) {background: rgba(255, 255, 255,   1);}
+/* More slides? Add here more rules */
+
+/* PREV/NEXT CONTAINERS VISIBILITY */
+/* ALL: */
+.CSSgal >s:target ~ .prevNext >* {      visibility: hidden;}
+/* ACTIVE: */
+#s1:target ~ .prevNext >*:nth-child(1) {visibility: visible;}
+#s2:target ~ .prevNext >*:nth-child(2) {visibility: visible;}
+#s3:target ~ .prevNext >*:nth-child(3) {visibility: visible;}
+#s4:target ~ .prevNext >*:nth-child(4) {visibility: visible;}
+/* More slides? Add here more rules */
+
+/* SLIDER ANIMATION POSITIONS */
+
+#s1:target ~ .slider {transform: translateX(   0%); -webkit-transform: translateX(   0%);}
+#s2:target ~ .slider {transform: translateX(-100%); -webkit-transform: translateX(-100%);}
+#s3:target ~ .slider {transform: translateX(-200%); -webkit-transform: translateX(-200%);}
+#s4:target ~ .slider {transform: translateX(-300%); -webkit-transform: translateX(-300%);}
+/* More slides? Add here more rules */
+
+
+/* YOU'RE THE DESIGNER! 
+   ____________________
+   All above was mainly to get it working :)
+   CSSgal CUSTOM STYLES / OVERRIDES HERE: */
+
+.CSSgal{
+	color: #fff;	
+	text-align: center;
+}
+.CSSgal .slider h2 {
+	margin-top: 10vh;
+	font-weight: 200;
+	letter-spacing: -0.06em;
+	word-spacing: 0.2em;
+	font-size: 3em;
+	line-height: 1.5; /* Adjust the value as per your preference */
+	text-align: left;
+	padding-left: 5vw;
+}
+
+.CSSgal .slider p {
+	font-weight: 100;
+	word-spacing: 0.1em;
+	font-size: 2.2em;
+	text-align: left;
+	padding-left: 10vw;
+	padding-right: 10vw;
+	max-width: 80%;
+	word-wrap: break-word;
+}
+
+.CSSgal a {
+	border-radius: 50%;
+	margin: 0 3px;
+	color: rgba(0,0,0,0.8);
+	text-decoration: none;
+	font-size: 1.2em;
+}
+
+.CSSgal .slider img {
+	max-height: 60%;
+	width: auto;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: auto;
+}
+
+
+.inactive-btn {
+    cursor: not-allowed; /* No pointer reaction */
+    opacity: 0.5; /* Lower visibility */
+    pointer-events: none; /* Ignore pointer events */
+    position: relative; /* Required for pseudo-element positioning */
+  }
+  
+  .inactive-btn:hover::before {
+    content: "Inactive"; /* Prompt message on hover */
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  
+

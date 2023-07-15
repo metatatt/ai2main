@@ -1,0 +1,91 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Video UI Design</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./lib/camera.css">
+</head>
+<body>
+  <div class="CSSgal">
+    <div id="s1" class="play-sequence"></div>
+    <div id="s2" class="play-sequence"></div>
+    <div id="s3" class="play-sequence"></div>
+    <div id="s4" class="play-sequence"></div>
+
+    <div class="slider">
+      <div style="background:#5b8;">
+        <h2>PURE <b>CSS</b> SLIDESHOW</h2>
+        <p>Responsive Slideshow Gallery created using CSS only<br>by Roko</p>
+      </div>
+      <div style="background:#85b;">
+        <h2>Slide 2</h2>
+      </div>
+      <div style="background:#e95;">
+        <h2>Slide 3</h2>
+      </div>
+      <div style="background:#e59;">
+        <h2>Slide 4</h2>
+      </div>
+    </div>
+
+    <div class="prevNext">
+      <div><a href="#s4"></a><a href="#s2"></a></div>
+      <div><a href="#s1"></a><a href="#s3"></a></div>
+      <div><a href="#s2"></a><a href="#s4"></a></div>
+      <div><a href="#s3"></a><a href="#s1"></a></div>
+    </div>
+
+    <div class="bullets">
+      <a href="#s1">1</a>
+      <a href="#s2">2</a>
+      <a href="#s3">3</a>
+      <a href="#s4">4</a>
+    </div>
+  </div>
+
+  <script>
+    // Function to autoplay the slides
+    function autoplaySlides() {
+      // Get the slide elements
+      var slides = document.getElementsByClassName("play-sequence");
+
+      // Initialize the slide index
+      var currentSlide = 0;
+
+      // Loop through the slides and show them in order
+      function showSlide() {
+        // Hide all slides
+        for (var i = 0; i < slides.length; i++) {
+          slides[i].style.display = "none";
+        }
+
+        // Show the current slide
+        slides[currentSlide].style.display = "block";
+
+        // Increment the slide index
+        currentSlide++;
+
+        // Reset the slide index if it exceeds the total number of slides
+        if (currentSlide >= slides.length) {
+          currentSlide = 0;
+        }
+
+        // Update the URL hash to navigate to the next slide
+        window.location.hash = "#" + slides[currentSlide].id;
+
+        // Call the showSlide function again after 2 seconds
+        setTimeout(showSlide, 2000);
+      }
+
+      // Start the slideshow
+      showSlide();
+    }
+
+    // Call the autoplaySlides function when the page finishes loading
+    document.addEventListener("DOMContentLoaded", autoplaySlides);
+
+  </script>
+</body>
+</html>

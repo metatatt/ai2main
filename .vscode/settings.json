@@ -1,0 +1,8 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/3e6d532b-34e9-47a5-a7f7-e11bc8869fb8/resourceGroups/2gollmuseast042023/providers/Microsoft.Web/sites/operator2g",
+    "appService.deploySubpath": ".",
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ]
+}

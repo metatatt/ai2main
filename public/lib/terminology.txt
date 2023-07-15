@@ -1,0 +1,7 @@
+Terminology:
+
+-Visual or Visuals: Refers to the segmented image block captured when the Probing Tee is placed, and the image block is within a specific pixel dimension around the Probing Tee head's location.
+
+-WIP Compliant: Indicates that the work or product aligns with the WIP documentation.
+
+-Confidence Level: Represents the level of certainty or accuracy in the inspection results.

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Camera</title>
+  <link rel="stylesheet" href="./lib/login-camera.css" />
+  <link rel="icon" href="data:;base64,="> <!-- Suppress favicon error -->
+
+</head>
+
+<body>
+  <div>
+    <div class="background" role="presentation">
+      <div class="backgroundImage"
+        style="background-image: url('https://practiz2023public.blob.core.windows.net/lcam/ojoly-screen-blackWhite.png');"></div>
+      <div class="background-overlay"></div>
+    </div>
+  </div>
+  <div class="outer">
+    <div class="middle">
+      <div class="inner">
+        <div role="banner">
+          <img class="banner-logo" role="presentation"
+            src="https://practiz2023public.blob.core.windows.net/lcam/ojoly-logo-whiteBlue.png">
+        </div>
+        <div role="main">
+          <div id="loginHeader" class="row text-title" role="heading">Sign in</div>
+          <div class="row">
+           
+                <main id="main-container" role="main" class="container">
+                  <div id="content" style="display: none;">
+                    <h4>Welcome <span id="userName"></span></h4>    
+                  </div>
+                  <a id="signin" onclick="displayUI(); return false;" href="#">
+                    <img src="./images/ms-symbollockup_signin_light.png" alt="Sign in with Microsoft" />
+                  </a>
+                </main>
+              <p></p>
+          </div>
+          <div>
+            <div class="row">
+              <div class="col-md-24">
+                <div class="text-13 action-links">
+                  <div class="form-group">
+                    <a id="cantAccessAccount" href="#">Can’t access your account?</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="idBoilerPlateText" class="wrap-content boilerplate-text">Sign in to access Ojo-ly applications
+            including OjoCamera, OjoConsole and Zoom extension.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+<script src="https://alcdn.msauth.net/browser/2.1.0/js/msal-browser.min.js" integrity="sha384-EmYPwkfj+VVmL1brMS1h6jUztl4QMS8Qq8xlZNgIT/luzg7MAzDVrRa2JxbNmk/e" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@microsoft/microsoft-graph-client/lib/graph-js-sdk.js" defer></script>
+<script src="./lib/login-auth.js" defer></script>
+<script src="./lib/login-graph.js" defer></script>
+<script src="./lib/login-ui.js" defer></script>
+</body>
+
+</html>

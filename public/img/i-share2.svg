@@ -1,0 +1,8 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+	<title>i-share-svg</title>
+	<style>
+		tspan { white-space:pre } 
+		.s0 { fill: #000000 } 
+	</style>
+	<path id="Layer" fill-rule="evenodd" class="s0" d="m6 149.3v-127.6c0-6.7 0-6.7 6.7-6.7h174.6c6.7 0 6.7 0 6.7 6.7v127.6c0 6.7 0 6.7-6.7 6.7h-174.6c-6.7 0-6.7 0-6.7-6.7zm147.7-67.2l-53.7-40.2v24.5c-31.3 0-53.7 22.5-53.7 51.6 9-15.7 35.8-20.1 53.7-20.1v24.5zm-67.1 80.6h26.8c0 13.4 20.2 20.1 20.2 26.9h-67.2c0-6.8 20.2-13.5 20.2-26.9z"/>
+</svg>

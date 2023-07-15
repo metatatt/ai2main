@@ -1,0 +1,25 @@
+{
+  "name": "group-github",
+  "version": "1.0.0",
+  "description": "Simple group video chat app built using plain HTML, CSS, JavaScript and the Agora SDK",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/cognitiveservices-customvision-prediction": "^5.1.2",
+    "@azure/ms-rest-js": "^2.6.6",
+    "@azure/storage-blob": "^12.14.0",
+    "agora-access-token": "^2.0.4",
+    "agora-rtc-sdk-ng": "^4.17.2",
+    "canvas": "^2.11.2",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "socket.io": "^4.6.2",
+    "socket.io-client": "^4.6.2"
+  }
+}

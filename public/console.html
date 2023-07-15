@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>B&P Console</title>
+  <link rel="icon" type="image/png" href="./img/ojo-ly-b.png">
+  <link rel="stylesheet" href="./lib/console.css">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/3.3.3/adapter.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.10/vue.min.js"></script>
+  <script type="text/javascript" src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+  <script type="text/javascript" src="./lib/AgoraRTC_N-4.7.3.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <div class="banner">
+    <div class="logo">
+      <img src="./img/Baton-Icon-Blue.svg" alt="Baton &amp; Podium Logo">
+    </div>
+    <div class="banner-text">
+      <h1>Baton &amp; Podium: </h1>
+      <h2>Where Line Operators Orchestrate the AI Workflow</h2>
+    </div>
+  </div>
+
+    <a href="https://www.linkedin.com/in/hsienchen/" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0; z-index: 1" src="./img/contact_me.png"></a>
+    <div id="app">
+      <div id="grid-zone" class="grid grid--4">
+        <div :id="entry.gridId" class="video-wrapper grid-open" v-for="entry in videoGridTable" :key="entry.gridId">
+          <!-- Your video content here -->
+        </div>
+      </div>
+    </div>
+    
+    <script type="module" src="console.js"></script>
+  </body>

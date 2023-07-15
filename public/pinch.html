@@ -1,0 +1,73 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+
+<body>
+  <div id="banner">
+    banner
+  </div>
+  <div id="myElement">
+    <img src="pinchTest.png" alt="Contact Me">contact me
+  </div>
+</body>
+
+<style>
+  #banner {
+    background: rgb(220, 248, 198);
+    height: 80px;
+    text-align: center;
+    font: 30px/100px Helvetica, Arial, sans-serif;
+  }
+  #myElement {
+    background: silver;
+    height: 300px;
+    text-align: center;
+    font: 30px/300px Helvetica, Arial, sans-serif;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Pinch gesture handler
+    function pinchImg() {
+      // Assuming you have an HTML image element with id "myElement"
+      const myImage = document.getElementById('myElement');
+
+      // Create a Hammer instance for the image element
+      const hammer = new Hammer(myImage);
+
+      // Initialize the initial scale factor and position variables
+      let scale = 0.1;
+      let posX = 0;
+      let posY = 0;
+
+      // Add pinch gesture recognizer
+      hammer.get('pinch').set({ enable: true });
+
+      // Pinch gesture handler
+      hammer.on('pinch', (event) => {
+        if (event.scale > 1) {
+
+          // Calculate the new scale based on the pinch gesture scale
+          const newScale = scale * event.scale;
+
+          // Calculate the offset from the center of the pinch gesture
+          const centerX = event.center.x - posX;
+          const centerY = event.center.y - posY;
+
+          // Calculate the new position based on the scale and offset
+          const newX = posX - (centerX * (newScale - scale));
+          const newY = posY - (centerY * (newScale - scale));
+
+          // Update the image scale and position
+          myImage.style.transform = `scale(${newScale}) translate(${newX}px, ${newY}px)`;
+
+          // Update the current scale and position variables
+          scale = newScale;
+          posX = newX;
+          posY = newY;
+        }
+      });
+    }
+
+    pinchImg(); // Call the pinchImg function to activate the pinch gesture functionality
+  });
+</script>

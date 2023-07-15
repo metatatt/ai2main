@@ -1,0 +1,32 @@
+{
+	"grid-1": {
+		"userId": "12345",
+		"agoraUid": "",
+		"userAlias":"",
+		"deviceId":"",
+		"deviceName":"",
+		"deviceStatus": "idle",
+		"deviceLocation":"",
+		"recentWIP" : "WIP-20"
+	},
+	"grid-2": {
+		"userId": "2XXX9-SIXDI%20Chen",
+		"agoraUid": "",
+		"userAlias":"",
+		"deviceId":"",
+		"deviceName":"",
+		"deviceStatus": "idle",
+		"deviceLocation":"",
+		"recentWIP" : "WIP-320"
+	},
+	"grid-3": {
+		"userId": "xxx",
+		"agoraUid": "",
+		"userAlias":"",
+		"deviceId":"",
+		"deviceName":"",
+		"deviceStatus": "idle",
+		"deviceLocation":"",
+		"recentWIP" : "WIP-320"
+	}
+}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #display {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    button {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="display"></div>
+  <button id="prevBtn">Previous</button>
+  <button id="nextBtn">Next</button>
+
+  <script>
+
+    const objects = [
+        { id: 1, name: "Object 1", description: "Description of Object 1" },
+        { id: 2, name: "Object 2", description: "Description of Object 2" },
+        { id: 3, name: "Object 3", description: "Description of Object 3" },
+        { id: 4, name: "Object 4", description: "Description of Object 4" }
+      ];
+    // Array of objects
+    async function pageUpdate(objects) {
+      // Variables
+      let currentIndex = 0;
+      const displayElement = document.getElementById('display');
+      const prevButton = document.getElementById('prevBtn');
+      const nextButton = document.getElementById('nextBtn');
+
+      // Function to display object
+      function displayObject() {
+        console.log("curInd ", currentIndex)
+        const currentObject = objects[currentIndex];
+        displayElement.textContent = `ID: ${currentObject.id} | Name: ${currentObject.name} | Description: ${currentObject.description}`;
+        console.log(`Name: ${currentObject.name} `)
+        // Disable/enable buttons based on the current index
+        prevButton.disabled = currentIndex === 0;
+        nextButton.disabled = currentIndex === objects.length - 1;
+      }
+
+      // Event listeners for button clicks
+      prevButton.addEventListener('click', () => {
+        if (currentIndex > 0) {
+          currentIndex--;
+          displayObject();
+        }
+      });
+
+      nextButton.addEventListener('click', () => {
+        if (currentIndex < objects.length - 1) {
+          currentIndex++;
+          displayObject();
+        }
+      });
+
+      // Initial display
+      displayObject();
+    }
+
+    // Execute pageUpdate function when the window opens
+    window.addEventListener('DOMContentLoaded', pageUpdate(objects));
+  </script>
+</body>
+</html>

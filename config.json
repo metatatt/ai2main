@@ -1,0 +1,11 @@
+{
+    "predictionKey": "88ebd25bf36a4092b05909070aced3ab",
+    "publishedIterationName": "FaceMask",
+    "projectId": "3232c73c-9994-4aec-969d-0521954e1531",
+    "predictionEndpoint": "https://2gollmeast042023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/3232c73c-9994-4aec-969d-0521954e1531/detect/iterations/FaceMask/image",
+    "APP_ID": "fef517e0744c419791338027fdfb232b",
+    "APP_CERTIFICATE" : "80786c878cda4d9284c853ecc5f66093",
+    "CHANNEL" : "simon",
+    "blobConnectionString":"DefaultEndpointsProtocol=https;AccountName=practiz2023public;AccountKey=HvAcrsIQOyisNpFvo6VIwsVipEewUcymqjZtHIye/Yn4LSiy4BuYRe7FD3+IHz//OJOkPfXcqMe3+AStYfqoNA==;EndpointSuffix=core.windows.net",
+    "blobContainerName":"lcam"
+}
