@@ -123,6 +123,11 @@ app.post('/predict', async (req, res) => {
       probability: mostLikelyPrediction.probability,
       boundingBox: mostLikelyPrediction.boundingBox  // Include the bounding box metrics
     };
+
+    // Save the imageData as a file
+    const imageDataPath = './public/img/imagedata.jpg';
+    fs.writeFileSync(imageDataPath, imageData);
+
     res.json(predictionResult);
   } catch (error) {
     console.error(error);
