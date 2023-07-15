@@ -2,11 +2,14 @@
 
 switching workstations:
 
-git pull branch-master
+git pull
 work on code...
 git add .
 git commint -m "xxxx"
-git push -u origin branch-master
+git push 
+
+On branch branch-master
+Your branch is up to date with 'origin/branch-master'.
 
 -------------------------------
 git init
