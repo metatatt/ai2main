@@ -1,4 +1,4 @@
-import { setScreenLayout, joinAgoraRoom, playAnimation,setTopBarText} from './lib/libA.js';
+import { setOverlayScreen, setScreenLayout, joinAgoraRoom, playAnimation,setTopBarText} from './lib/libA.js';
 import { getEachResult, selectBestTwo} from './lib/libB.js';
 import { populateFindings, setAutoPlay } from './lib/libC.js';
 
@@ -32,6 +32,7 @@ var ojoapp = new Vue({
   mounted() {
     this.socket = io(); // Initialize socket connection
     
+    setOverlayScreen.call(this,0.6)
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('userId');
     console.log(userId);
@@ -72,6 +73,8 @@ var ojoapp = new Vue({
   
   methods: {
     async initiateCamera() {
+
+
       setTopBarText("initiating camera...")
       const constraints = {
         video: {
@@ -205,10 +208,6 @@ var ojoapp = new Vue({
     
   async processAudit(imageDataArray) {
     setTopBarText("machine checking...");
-    this.socket.emit('sessionMessage', {
-      gridId: this.gridId,
-      message: `[${this.gridId}:]<br><br>machine checking the images...`
-    });
     this.videoElement.style.zIndex = -1;
     this.canvasElement.style.zIndex = -2;
     const header = { header1: "WIP 3200 (xxxx)", header2: "obtain info from PDF" };
@@ -231,12 +230,20 @@ var ojoapp = new Vue({
         return bProbability - aProbability;
       });
 
-      // Display the audit report with the header and sorted results
+      // Display the Findings with the header and sorted results
       console.log('before Findings-results ', results)
       this.findingsDOM = populateFindings(header, results);
       this.renderSlide(this.findingsDOM)
+
+      this.socket.emit('sessionMessage', {
+        gridId: this.gridId,
+        message: "#showFindings#",
+        findingsDOM: this.findingsDOM
+      });
+
       await setAutoPlay.call(this);
       this.startScanning();
+
     } catch (error) {
       console.log("Error:", error);
       return "Unable to access video stream.";
@@ -315,5 +322,7 @@ var ojoapp = new Vue({
       this.canvasContext.stroke();
     }
     
+
+
   }
 });

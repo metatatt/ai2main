@@ -29,6 +29,9 @@ var app = new Vue({
       console.log('sessionMessage: ', sessionMessage);
       if (sessionMessage.message === '#updateMyInfo#') {
         this.updateVideoGridTable(sessionMessage.gridId, sessionMessage.agoraUid, sessionMessage.userId, sessionMessage.statusAgora);
+      } else if(sessionMessage.message === '#showFindings#'){
+        console.log('#findingsDOM#', sessionMessage.gridId)
+        this.showFindings(sessionMessage.gridId,sessionMessage.findingsDOM)
       } else {
         this.displayUserMessage(sessionMessage.gridId,sessionMessage.message)
       }
@@ -52,7 +55,6 @@ var app = new Vue({
         entry.agoraUid = agoraUid;
         entry.userId = userId;
         entry.statusAgora = statusAgora;
-        console.log('entry agoraUid:', entry.agoraUid);
       }
     },
 
@@ -60,11 +62,7 @@ var app = new Vue({
       this.remoteUsers[user.uid] = user;
       await this.client.subscribe(user, mediaType);
       const track = user.videoTrack;
-      console.log('track ', track)
-      console.log('_videoTrack._id ', user._videoTrack._ID)
-      console.log("remote pub or un-pub: ",user.uid)
       const entry = this.videoGridTable.find(item => item.agoraUid === user.uid);
-      console.log('videoGrTbl ', this.videoGridTable)
       console.log('entry ', entry.gridId)
       if (entry && entry.available) {
         const videoElement = document.getElementById(entry.gridId);
@@ -86,6 +84,26 @@ var app = new Vue({
       const textContent = document.createElement("div");
       textContent.innerHTML = userMessage;
       textContent.classList.add("video-overlay"); // Added CSS class for positioning
+      videoGrid.appendChild(textContent);
+    },
+
+    showFindings(userGridID,findingsDOM){
+      const videoGrid = document.getElementById(userGridID);
+      const existingOverlay = videoGrid.querySelector(".slide");
+      console.log("findingsDOM: ",findingsDOM)
+      if (existingOverlay) {
+        videoGrid.removeChild(existingOverlay);
+      }
+      // Get the root element
+      const root = document.documentElement;
+
+      // Set the value of the "--factor" variable
+      const newFactorValue = 0.5;
+      root.style.setProperty('--factor', newFactorValue);
+
+      const textContent = document.createElement("div");
+      textContent.innerHTML = findingsDOM;
+      textContent.classList.add("slide"); // Added CSS class for positioning
       videoGrid.appendChild(textContent);
     },
     

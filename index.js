@@ -1,4 +1,4 @@
-const { createCanvas, loadImage } = require('canvas');
+//const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const express = require('express');
 const app = express();
@@ -11,7 +11,7 @@ const { RtcTokenBuilder, RtcRole } = require('agora-access-token');
 const PredictionApi = require('@azure/cognitiveservices-customvision-prediction');
 const msRest = require('@azure/ms-rest-js');
 const port = process.env.PORT || 3000;
-const { addBoxToImage } = require('./public/lib/addbox'); // Import the addBoxToImage function from addboximage.js
+// const { addBoxToImage } = require('./public/lib/addbox'); // Import the addBoxToImage function from addboximage.js
 
 
 let iterationName = "";
@@ -89,7 +89,7 @@ app.post('/env', async (req, res) => {
   const privilegeExpireTime = currentTime + expireTime;
 
   const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
-  addBoxToImage("-post-env");
+  // addBoxToImage("-post-env");
   res.json({
     APP_ID,
     TOKEN: token,
@@ -101,7 +101,7 @@ app.post('/env', async (req, res) => {
 });
 
 app.get('/azenv', (req, res) => {
-  addBoxToImage("-get-azenv");
+//  addBoxToImage("-get-azenv");
   res.json({
     predictionEndpoint,
     predictionKey
@@ -176,7 +176,7 @@ app.get('/pinch', function (req, res) {
 });
 
 app.get('/n', function (req, res) {
-  addBoxToImage("get-n");
+//  addBoxToImage("get-n");
   res.sendFile('cameraN.html', { root: __dirname + '/public' });
 });
 

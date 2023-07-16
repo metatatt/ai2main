@@ -131,8 +131,55 @@ export function setScreenLayout() {
   };
 }
 
+export function setOverlayScreen(factorValue) {
+  
+  return new Promise((resolve, reject) => {
 
+        // Set the --factor variable dynamically
+   document.documentElement.style.setProperty('--factor', factorValue);
 
+    const overlay = document.querySelector('.overlay');
+    const elementDOMS = `
+      <nav>
+        <img src="./img/Baton-Icon-Blue.svg" width="100px" height="100px" alt="logo">
+        <ul>
+            <li id="share-btn">
+              <img src="https://i.postimg.cc/JnggC78Q/video.png">
+            </li>
+            <li id="scan-btn">
+              <img src="./img/i-checked.svg">
+            </li>
+            <li id="slide-btn">
+              <img src="https://i.postimg.cc/vmb3JgVy/message.png">
+            </li>
+            <li>
+              <img src="https://i.postimg.cc/k4DZH604/users.png">
+            </li>
+            <li>
+              <img src="https://i.postimg.cc/v84Fqkyz/setting.png">
+            </li>
+        </ul>
+      </nav>
+      <div class="container">
+        <div class="contarols">
+          <div class="set-top1 text-head">--</div>
+          <img src="./img/Baton-Icon-Blue.svg">
+          <div class="set-top2 text-head2"></div>
+        </div>
+      </div>`;
 
+    overlay.innerHTML = elementDOMS;
+    document.getElementById('share-btn').addEventListener('click', this.shareCamera);
+    document.getElementById('scan-btn').addEventListener('click', this.startScanning);
+    document.getElementById('slide-btn').addEventListener('click', this.viewFindings);
+    
 
+    // Check if the content is successfully rendered and resolve the Promise
+    if (overlay.innerHTML === elementDOMS) {
+      resolve();
+    } else {
+      reject(new Error('Failed to render content.'));
+    }
+  });
+}
 

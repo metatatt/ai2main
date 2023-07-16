@@ -24,13 +24,11 @@ export function populateFindings(header, results) {
               <h2>Examined Visual #1 of ${results.length}</h2>
               <p>-marker map for ${auditData0.tag} (${auditData0.probability} confidence)<br></p>
               <br>
-              <img src="${auditData0.image}">
             </div>
             <div style="background:#e95; position: relative;">
               <h2>Examined Visual #2 of ${results.length}</h2>
               <p>-marker map for ${auditData1.tag} (${auditData1.probability} confidence)<br></p>
               <br>
-              <img src="${auditData1.image}">
             </div>
             <div style="background:#e59;">
               <h2>About this Inspection....</h2>
