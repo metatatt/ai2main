@@ -48,27 +48,13 @@ nav ul li img:hover {
   background: #4d6181;
 }
 
-.container {
-  padding: 0 calc(2.5% * var(--factor));
-}
 
-.container.viewer {
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: calc(80vw * var(--factor));
-  position: absolute;
-  background: var(--batonBlue);
-  object-fit: contain;
-  margin: auto;
-}
-
-.container.animation {
+.overlay.animation {
   align-items: center;
   margin: auto;
 }
 
-.container.animation img {
+.olverlay.animation img {
   width: 10vh; 
   height: 10vh;
 }

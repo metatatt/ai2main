@@ -31,7 +31,7 @@
     const videoRect = video.getBoundingClientRect();
     const videoCenterX = videoRect.left + videoRect.width / 2;
     const videoCenterY = videoRect.top + videoRect.height / 2;
-    const container = document.querySelector('.container');
+    const container = document.querySelector('.overlay');
 
     const existingAnimations = document.querySelectorAll('.animation');
     existingAnimations.forEach((animation) => {
@@ -157,13 +157,12 @@ export function setOverlay(factorValue) {
             </li>
         </ul>
       </nav>
-      <div class="container">
-        <div class="message-box">
+      <div class="message-box">
           <div class="text-header1">--</div>
           <img src="./img/Baton-Icon-Blue.svg">
           <div class="text-header2"></div>
-        </div>
-      </div>`;
+      </div>
+    `;
 
     overlay.innerHTML = elementDOMS;
 
@@ -212,13 +211,12 @@ export function setConsoleOverlay(factorValue,gridId) {
             </li>
         </ul>
       </nav>
-      <div class="container">
-        <div class="message-box">
+      <div class="message-box">
           <div class="text-header1">--</div>
           <img src="./img/Baton-Icon-Blue.svg">
           <div class="text-header2"></div>
-        </div>
-      </div>`;
+      </div>
+      `;
 
 
     overlay.innerHTML = elementDOMS;
