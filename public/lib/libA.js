@@ -200,7 +200,6 @@ export function setConsoleOverlay(factorValue,gridId) {
 
     const elementDOMS = `
       <nav>
-        <img src="./img/Baton-Icon-Blue.svg" width="100px" height="100px" alt="logo">
         <ul>
             <li id="share-btn">
               <img src="https://i.postimg.cc/JnggC78Q/video.png">
@@ -210,12 +209,6 @@ export function setConsoleOverlay(factorValue,gridId) {
             </li>
             <li id="slide-btn">
               <img src="https://i.postimg.cc/vmb3JgVy/message.png">
-            </li>
-            <li>
-              <img src="https://i.postimg.cc/k4DZH604/users.png">
-            </li>
-            <li>
-              <img src="https://i.postimg.cc/v84Fqkyz/setting.png">
             </li>
         </ul>
       </nav>
