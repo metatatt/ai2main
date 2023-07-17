@@ -78,7 +78,6 @@ var app = new Vue({
   
     async consoleMessageBox(message, gridId){
       console.log(`grid ${gridId} || message ${message}`)
-      const video = document.getElementById(entry.gridId);
       messageBox(message,gridId)
 
     },

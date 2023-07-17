@@ -62,25 +62,10 @@
 
   export function messageBox(message,gridId) {
     
-    if (gridId){
-    const video = document.getElementById(gridId)
-
-    } else {
-    const video = document.getElementById('video')
-    }
-
-    const videoRect = video.getBoundingClientRect();
   
     const info1 = document.querySelector('.text-header1');
     const info2 = document.querySelector('.text-header2');
   
-    // Position info1 element at 5px margin from the top and left of the video
-    info1.style.top = videoRect.top + 5 + 'px';
-    info1.style.left = videoRect.left + 5 + 'px';
-  
-    // Position info2 element at 5px margin from the top and right of the video
-    info2.style.top = videoRect.top + 5 + 'px';
-    info2.style.right = window.innerWidth - videoRect.right + 5 + 'px';
   
     const currentDate = new Date().toLocaleDateString('en-US', {
       year: '2-digit',
