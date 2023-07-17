@@ -220,41 +220,4 @@ video {
   position: relative;
 }
 
-.message-box {
-  position: absolute;
-  top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.message-box img {
-  width: calc(40px * var(--factor));
-  margin: calc(20px * var(--factor)) calc(10px * var(--factor));
-  cursor: pointer;
-  transition: transform 0.5s;
-}
-
-.message-box .call-icon {
-  width: calc(70px * var(--factor));
-}
-
-.message-box img:hover {
-  transform: translateY(calc(-10px * var(--factor)));
-}
-
-.text-header1 {
-  color: var(--white);
-  font-size: var(--font-size-5);
-  font-weight: normal;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.text-header2 {
-  color: var(--white);
-  font-size: var(--font-size-4);
-  font-weight: normal;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
 

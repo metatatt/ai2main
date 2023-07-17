@@ -31,9 +31,9 @@ var app = new Vue({
         this.updateVideoGridTable(sessionMessage.gridId, sessionMessage.agoraUid, sessionMessage.userId, sessionMessage.statusAgora);
       } else if(sessionMessage.messageClass === '#messageBox#'){
         this.consoleMessageBox(sessionMessage.message, sessionMessage.gridId)
-      } else if(sessionMessage.message === '#graphicsBox#'){
+      } else if(sessionMessage.messageClass === '#graphicsBox#'){
         this.consoleGraphicsBox(sessionMessage.message, sessionMessage.gridId)
-      } else if(sessionMessage.message === '#slide#'){
+      } else if(sessionMessage.messageClass === '#slide#'){
         this.consolePlaySlide(sessionMessage.message, sessionMessage.gridId)
       }
     });
@@ -82,10 +82,8 @@ var app = new Vue({
 
     },
 
-    async consoleGraphicsBox(gridId, message){
-      const video = document.getElementById(entry.gridId);
-      messageBox(message,gridId)
-
+    async consoleGraphicsBox(message, gridId){
+      graphicsBox(message, gridId)
     },
 
     async consolePlaySlide(gridId, message){

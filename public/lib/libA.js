@@ -26,38 +26,36 @@
       });
   }
 
-  export function graphicsBox(iconID) {
-    const video = document.getElementById('video');
-    const videoRect = video.getBoundingClientRect();
-    const videoCenterX = videoRect.left + videoRect.width / 2;
-    const videoCenterY = videoRect.top + videoRect.height / 2;
-    const container = document.querySelector('.overlay');
-
-    const existingAnimations = document.querySelectorAll('.animation');
-    existingAnimations.forEach((animation) => {
-      container.removeChild(animation);
-    });
-  
-    const animation = document.createElement('img');
+  export function graphicsBox(iconSelection, parentId) {
+    const parent = document.querySelector(`#${parentId}`);
+    const overlay = parent.querySelector('.overlay'); // Fetch the .overlay container
+    const graphicsContainer = document.querySelector('.graphics-box');
     let imgSrc = "";
-    if (iconID === "t") {
+  
+    if (iconSelection === "t") {
       imgSrc = "./img/b&plogo.svg";
-    } else if (iconID === "r") {
+    } else if (iconSelection === "r") {
       imgSrc = "./img/i-camera.svg";
     } else {
       imgSrc = "./img/scanSignBlue380Ani.gif";
     }
-    animation.src = imgSrc;
-    animation.classList.add('animation');
-    animation.style.position = "absolute";
-    animation.style.left = videoCenterX - 190 + "px"; // Add "px" unit
-    animation.style.top = videoCenterY - 190 + "px"; // Add "px" unit  
-    container.appendChild(animation);
+  
+    const icon = document.createElement('img');
+    icon.src = imgSrc;
+    icon.classList.add('animation');
+  
+    // Remove any existing content inside graphicsContainer
+    graphicsContainer.innerHTML = '';
+    
+    // Append the icon to graphicsContainer
+    graphicsContainer.appendChild(icon);
   
     return new Promise((resolve) => {
       resolve();
     });
   }
+  
+  
   
 
   export function messageBox(message,gridId) {
@@ -162,6 +160,8 @@ export function setOverlay(factorValue) {
           <img src="./img/Baton-Icon-Blue.svg">
           <div class="text-header2"></div>
       </div>
+      <div class="graphics-box">
+      </div>
     `;
 
     overlay.innerHTML = elementDOMS;
@@ -211,10 +211,12 @@ export function setConsoleOverlay(factorValue,gridId) {
             </li>
         </ul>
       </nav>
-      <div class="message-box">
+      <div class="message-box" style="position: absolute; margin-left: 10%;">
           <div class="text-header1">--</div>
           <img src="./img/Baton-Icon-Blue.svg">
           <div class="text-header2"></div>
+      </div>
+      <div class="graphics-box" style="position: absolute; margin-left: 40%;margin-top: 30%;">
       </div>
       `;
 

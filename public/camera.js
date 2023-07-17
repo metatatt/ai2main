@@ -3,7 +3,7 @@ import { getEachResult, selectBestTwo} from './lib/libB.js';
 import { populateFindings } from './lib/libC.js';
 
 var ojoapp = new Vue({
-  el: '#ojoapp',
+  el: '#batonApp',
   data: {
     agoraUid: "",
     canvasContext: null,
@@ -130,12 +130,12 @@ var ojoapp = new Vue({
       });
       
       // Play scan icon animation
-      graphicsBox('s');
+      graphicsBox('s','batonApp');
         
       this.socket.emit('sessionMessage', {
         role: this.role,
         gridId: this.gridId,
-        messageClass: "graphicsBox",
+        messageClass: "#graphicsBox#",
         message: 's'
       });
     
@@ -230,7 +230,7 @@ var ojoapp = new Vue({
         message: msg
       });
 
-      graphicsBox("t"); // Play Tee logo animation
+      graphicsBox('t','batonApp'); // Play Tee logo animation
       this.socket.emit('sessionMessage', {
         role: this.role,
         gridId: this.gridId,
@@ -276,7 +276,7 @@ var ojoapp = new Vue({
         message: msg
       });
 
-      graphicsBox('r');
+      graphicsBox('r','batonApp');
 
       this.socket.emit('sessionMessage', {
         role: this.role,
