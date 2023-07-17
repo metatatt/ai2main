@@ -1,8 +1,13 @@
+/* banner and logo and text font */
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700');
+
+* {
+  -webkit-font-smoothing: antialiased;
+}
+
+
 :root {
-  --one-row: calc((100vh / 4) * 3);
-  --two-rows: repeat(2, calc((100vh / 4) * 3));
-  --three-rows: repeat(3, calc((100vh / 4) * 3));
-  --four-rows: repeat(4, calc((100vh / 4) * 3));
+
     --factor: 1.2;
     --base-font-size: 16px;
     --font-size-1: calc(0.8rem * var(--factor));
@@ -14,11 +19,19 @@
     --batonGrey: #F2EEE4;
     --white: #ffffff;
     --black: #00000000;
+
+    --one-row: calc((100vh / 4) * 3);
+    --two-rows: repeat(2, calc((100vh / 4) * 3));
+    --three-rows: repeat(3, calc((100vh / 4) * 3));
+    --four-rows: repeat(4, calc((100vh / 4) * 3));
 }
 
 body {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 200;
   background-color: var(--batonGrey);
 }
+
 
 $videos: (
   "1": "A",
@@ -168,42 +181,6 @@ video {
   background-color: #d2cecd; /* Recommended video background color */
 }
 
-.video-overlay {
-  position: absolute;
-  top: 5%;
-  left: 5%;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: flex-start; /* Align text to the top left */
-  align-items: flex-start; /* Align text to the top left */
-  color: #fff;
-  font-size: var(--font-size-1);
-  text-align: left;
-  background-color: rgba(0, 0, 0, 0); /* Transparent background */
-}
-
-
-/* banner and logo and text font */
-@import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700');
-
-* {
-  -webkit-font-smoothing: antialiased;
-}
-
-:root {
-  --font-size-1: 1.2rem;
-  --font-size-2: 1.4rem;
-  --font-size-3: 1.6rem;
-  --font-size-4: 1.8rem;
-  --font-size-5: 2.2rem;
-}
-
-body {
-  font-family: 'Roboto', sans-serif;
-  font-weight: 200;
-}
-
 .banner {
   display: flex;
   align-items: flex-end;
@@ -232,4 +209,10 @@ body {
   margin: 0;
   padding: 0;
   margin-top: 5px; /* Adjust the value as needed */
+}
+
+.overlay {
+  z-index:4;
+  background: transparent;
+  position: absolute;
 }

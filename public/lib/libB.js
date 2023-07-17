@@ -1,8 +1,5 @@
-import {setTopBarText} from './libA.js';
-
 export async function getEachResult(imageArrayObj) {
   console.log('getEachResults ', imageArrayObj);
-  setTopBarText("machine checking...");
 
   // Set up canvas and context for image processing
   const canvasElement = document.getElementById('canvas');
@@ -50,7 +47,6 @@ export async function getEachResult(imageArrayObj) {
     const eachTaggedResult = JSON.stringify(showTagObj);
         // Set a timeout to update UI and display the showTag result
       setTimeout(() => {
-          setTopBarText("prepping data...");
       }, 200);
 
     return eachTaggedResult;
@@ -199,7 +195,6 @@ function displayFullScreen(imageElement) {
   
 
 export function prepPageObj(header, results){
-  setTopBarText("visual inspection details...") 
   const printObj = {};
   //Sequence order: printObj[0] for summary page, printObj[1][2] for results[0], [3][4] for results[2] and so on
   //printObj[1] for text and printObj[2] for image

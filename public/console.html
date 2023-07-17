@@ -27,6 +27,7 @@
     <div id="app">
       <div id="grid-zone" class="grid grid--4">
         <div :id="entry.gridId" class="video-wrapper grid-open" v-for="entry in videoGridTable" :key="entry.gridId">
+          <div class="overlay"></div>
           <!-- Your video content here -->
         </div>
       </div>

@@ -1,3 +1,136 @@
+/* This CSS is utilized by both Camera and Console modes to structure the container, overlay, and slide elements in the HTML. */
+
+
+
+nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--batonBlue);
+  width: calc(120px * var(--factor));
+  padding: calc(10px * var(--factor)) 0;
+}
+
+nav .logo {
+  width: calc(56px * var(--factor));
+  display: block;
+  margin: auto;
+  cursor: pointer;
+}
+
+nav ul {
+  margin-top: calc(160px * var(--factor));
+}
+
+nav ul li {
+  list-style: none;
+}
+
+nav ul li img {
+  width: calc(50px * var(--factor));
+  display: block;
+  margin: calc(10px * var(--factor)) auto;
+  padding: calc(10px * var(--factor));
+  cursor: pointer;
+  opacity: 0.5;
+  border-radius: calc(10px * var(--factor));
+  transition: opacity 0.5s, background 0.5s;
+}
+
+nav ul li img:hover {
+  opacity: 1;
+  background: #4d6181;
+}
+
+.active {
+  opacity: 1;
+  background: #4d6181;
+}
+
+.container {
+  padding: 0 calc(2.5% * var(--factor));
+}
+
+.container.viewer {
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: calc(80vw * var(--factor));
+  position: absolute;
+  background: var(--batonBlue);
+  object-fit: contain;
+  margin: auto;
+}
+
+.container.animation {
+  align-items: center;
+  margin: auto;
+}
+
+.container.animation img {
+  width: 10vh; 
+  height: 10vh;
+}
+
+.top-icons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: calc(25px * var(--factor)) 0;
+}
+
+.top-row {
+  margin-top: calc(5vh * var(--factor));
+  display: flex;
+  justify-content: space-between;
+}
+
+.col-1 {
+  flex-basis: 100%;
+}
+
+.col-2 {
+  flex-basis: calc(30% * var(--factor));
+}
+
+
+.message-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-box img {
+  width: calc(40px * var(--factor));
+  margin: calc(20px * var(--factor)) calc(10px * var(--factor));
+  cursor: pointer;
+  transition: transform 0.5s;
+}
+
+.message-box .call-icon {
+  width: calc(70px * var(--factor));
+}
+
+.message-box img:hover {
+  transform: translateY(calc(-10px * var(--factor)));
+}
+
+.text-header1 {
+  color: var(--white);
+  font-size: var(--font-size-5);
+  font-weight: normal;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.text-header2 {
+  color: var(--white);
+  font-size: var(--font-size-4);
+  font-weight: normal;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+
 /* below are related to displayFinding() */
 
 .slide {

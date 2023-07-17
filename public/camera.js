@@ -1,6 +1,6 @@
-import { setOverlayScreen, setScreenLayout, joinAgoraRoom, playAnimation,setTopBarText} from './lib/libA.js';
+import { setOverlay, pageRouter, playSlide, joinAgoraRoom, graphicsBox, messageBox} from './lib/libA.js';
 import { getEachResult, selectBestTwo} from './lib/libB.js';
-import { populateFindings, setAutoPlay } from './lib/libC.js';
+import { populateFindings } from './lib/libC.js';
 
 var ojoapp = new Vue({
   el: '#ojoapp',
@@ -32,7 +32,7 @@ var ojoapp = new Vue({
   mounted() {
     this.socket = io(); // Initialize socket connection
     
-    setOverlayScreen.call(this,0.6)
+    setOverlay.call(this,1)
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('userId');
     console.log(userId);
@@ -40,7 +40,7 @@ var ojoapp = new Vue({
     // 06-14 to mask userId for dev Ngrok test on iPad
     // this.userId = userId;
     
-    setTopBarText("starting...");
+    messageBox("starting...");
     
     this.userId = "2XXX9-"; //for use in develop testing Ngrok/iPad
     this.role = "camera";
@@ -63,7 +63,8 @@ var ojoapp = new Vue({
           agoraUid: this.agoraUid,
           userId: this.userId,
           statusAgora: this.statusAgora,
-          message: "#updateMyInfo#"
+          messageClass: "#updateMyInfo#",
+          message:``
         });
       }
     }.bind(this));
@@ -74,8 +75,8 @@ var ojoapp = new Vue({
   methods: {
     async initiateCamera() {
 
-
-      setTopBarText("initiating camera...")
+      const msg = "initiating camera..."
+      messageBox(msg)
       const constraints = {
         video: {
           facingMode: "environment",
@@ -88,7 +89,18 @@ var ojoapp = new Vue({
         this.videoElement.srcObject = stream;
         this.videoElement.setAttribute("playsinline", true);
         this.videoElement.play();
-        setTopBarText("camera is on...")
+        
+        const msg = "camera is on..."
+        
+        messageBox(msg)
+        this.socket.emit('sessionMessage', {
+          role: this.role,
+          gridId: this.gridId,
+          messageClass: "#messageBox#",
+          message: msg
+        });
+
+
       } catch (error) {
         console.log("#setUpVideo -Unable to access video stream:", error);
       }
@@ -96,23 +108,36 @@ var ojoapp = new Vue({
 
   startScanning() {
       // Setup screen layout
-      const layout = setScreenLayout();
+      const layout = pageRouter();
       layout.scan();
      
       // Disable the setAutoPlay timer if it exists
-      if (typeof this.stopAutoPlay === 'function') {
-        this.stopAutoPlay();
+      if (typeof this.stopSlide === 'function') {
+        this.stopSlide();
       }
     
       // Enable scanning and reset scanImageArray
       this.isScanEnabled = true;
       this.scanImageArray = [];
-      
-      // Set top bar text to indicate readiness for scanning
-      setTopBarText("Ready to scan...");
+      const msg = "camera is on..."
+        
+      messageBox(msg)
+      this.socket.emit('sessionMessage', {
+        role: this.role,
+        gridId: this.gridId,
+        messageClass: "#messageBox#",
+        message: msg
+      });
       
       // Play scan icon animation
-      playAnimation('s');
+      graphicsBox('s');
+        
+      this.socket.emit('sessionMessage', {
+        role: this.role,
+        gridId: this.gridId,
+        messageClass: "graphicsBox",
+        message: 's'
+      });
     
       // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
       this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
@@ -123,7 +148,6 @@ var ojoapp = new Vue({
   // This app switches between the scanQRCode() and processAudit() functions based on the combination of active-idle state and the length of scanImageArray.
 
   scanQRCode() {
-    setTopBarText("idling now...");
 
     // Variables for tracking user activity
     let elapsedIdleSeconds = 0;
@@ -149,7 +173,17 @@ var ojoapp = new Vue({
         // Adjust layers to enable canvas drawing activities
         this.videoElement.style.zIndex = -2;
         this.canvasElement.style.zIndex = -1;
-        setTopBarText("taking images...");
+
+        const msg = "capture from webcam..."
+        
+        messageBox(msg)
+        this.socket.emit('sessionMessage', {
+          role: this.role,
+          gridId: this.gridId,
+          messageClass: "#messageBox#",
+          message: msg
+        });
+
         // Draw a visual indication of the scanned QR code location
         const location = code.location;
         this.drawCircle(location);
@@ -176,7 +210,7 @@ var ojoapp = new Vue({
       this.isScanEnabled = true;
     } // videoElement.readyState
 
-    console.log(`active/idle: ${elapsedActiveSeconds} ${elapsedIdleSeconds}`);
+    console.log(`active/idle/enabled?: ${elapsedActiveSeconds} ${elapsedIdleSeconds} ${this.isScanEnabled}`);
 
     // Remove the scan from 1 second ago if the user is idle
     if (elapsedActiveSeconds > 1) {
@@ -185,16 +219,27 @@ var ojoapp = new Vue({
 
     // If the user has been idle for more than 2 seconds, prepare for the audit check
     if (elapsedIdleSeconds > 2) {
-      this.isScanEnabled = false;
-      setTopBarText("prepping scan images...");
+
+      const msg = "inspect images..."
+        
+      messageBox(msg)
       this.socket.emit('sessionMessage', {
+        role: this.role,
         gridId: this.gridId,
-        message: `[${this.gridId}:]<br><br>scan images...`
+        messageClass: "#messageBox#",
+        message: msg
+      });
+
+      graphicsBox("t"); // Play Tee logo animation
+      this.socket.emit('sessionMessage', {
+        role: this.role,
+        gridId: this.gridId,
+        messageClass: "#graphicsBox#",
+        message: "t"
       });
 
       // Select two "static" images for audit check. 
       const finalImageDataArray = selectBestTwo(this.scanImageArray);
-      playAnimation("t"); // Play Tee logo animation
       //Feed the selected images to audit check process
       this.processAudit(finalImageDataArray);
     }
@@ -207,7 +252,7 @@ var ojoapp = new Vue({
     
     
   async processAudit(imageDataArray) {
-    setTopBarText("machine checking...");
+    this.isScanEnabled = false;
     this.videoElement.style.zIndex = -1;
     this.canvasElement.style.zIndex = -2;
     const header = { header1: "WIP 3200 (xxxx)", header2: "obtain info from PDF" };
@@ -219,9 +264,27 @@ var ojoapp = new Vue({
         // Perform the audit check for each image
         const eachResult = await getEachResult(imageDataArray[i]);
         results.push({ id: i, audit: eachResult });
-  
-        setTopBarText("prepping ...");
       }
+
+      const msg = "create report..."
+        
+      messageBox(msg)
+      this.socket.emit('sessionMessage', {
+        role: this.role,
+        gridId: this.gridId,
+        messageClass: "#messageBox#",
+        message: msg
+      });
+
+      graphicsBox('r');
+
+      this.socket.emit('sessionMessage', {
+        role: this.role,
+        gridId: this.gridId,
+        messageClass: "#graphicsBox#",
+        message: "r"
+      });
+
 
       // Sort the results array based on probability from high to low
       results.sort((a, b) => {
@@ -234,16 +297,15 @@ var ojoapp = new Vue({
       console.log('before Findings-results ', results)
       this.findingsDOM = populateFindings(header, results);
       this.renderSlide(this.findingsDOM)
-
+      
       this.socket.emit('sessionMessage', {
+        role: this.role,
         gridId: this.gridId,
-        message: "#showFindings#",
-        findingsDOM: this.findingsDOM
+        messageClass: "#slide#",
+        message: this.findingsDOM
       });
-
-      await setAutoPlay.call(this);
+      this.isScanEnabled = await playSlide.call(this);
       this.startScanning();
-
     } catch (error) {
       console.log("Error:", error);
       return "Unable to access video stream.";
@@ -251,23 +313,27 @@ var ojoapp = new Vue({
   },
 
   async viewFindings() {
+    this.isScanEnabled=false;
+    console.log("isEnabled? ",this.isScanEnabled)
     if (this.findingsDOM !== null) {
-      this.renderSlide(this.findingsDOM);
-      if (typeof this.stopAutoPlay === 'function') {
-        this.stopAutoPlay();
+      this.isScanEnabled = await this.renderSlide(this.findingsDOM);
+      if (typeof this.stopSlide === 'function') {
+        this.stopSlide();
       }
     }
   },
   
   async renderSlide(findingsDOM){
 
-    const layout = setScreenLayout();
+    const layout = pageRouter();
     layout.slide();
     const overlay = document.querySelector('.overlay');
     const slide = document.createElement('div');
     slide.innerHTML = findingsDOM; 
     slide.classList.add('slide');
     overlay.appendChild(slide);
+
+    return true
   },
 
   
@@ -280,14 +346,14 @@ var ojoapp = new Vue({
   async shareCamera() {
       this.isShareOn = !this.isShareOn
       if (this.statusAgora === 'mute') {
-        setTopBarText("Enable camera sharing...");
+        messageBox("Enable camera sharing...");
         
         this.statusAgora = 'published';
         await this.localTrack.setEnabled(true);
         await this.client.publish(this.localTrack);
         console.log('第：publish');
       } else {
-        setTopBarText("Stop camera sharing...");
+        messageBox("Stop camera sharing...");
         this.statusAgora = 'mute';
         await this.localTrack.setEnabled(false);
       }

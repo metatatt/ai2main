@@ -1,4 +1,4 @@
-import { joinAgoraRoom } from './lib/libA.js';
+import { joinAgoraRoom, setConsoleOverlay, messageBox, graphicsBox,pageRouter } from './lib/libA.js';
 
 var app = new Vue({
   el: '#app',
@@ -27,13 +27,14 @@ var app = new Vue({
     this.statusAgora = 'mute'; // mute, published, etc.
     this.socket.on('sessionMessage', (sessionMessage) => {
       console.log('sessionMessage: ', sessionMessage);
-      if (sessionMessage.message === '#updateMyInfo#') {
+      if (sessionMessage.messageClass === '#updateMyInfo#') {
         this.updateVideoGridTable(sessionMessage.gridId, sessionMessage.agoraUid, sessionMessage.userId, sessionMessage.statusAgora);
-      } else if(sessionMessage.message === '#showFindings#'){
-        console.log('#findingsDOM#', sessionMessage.gridId)
-        this.showFindings(sessionMessage.gridId,sessionMessage.findingsDOM)
-      } else {
-        this.displayUserMessage(sessionMessage.gridId,sessionMessage.message)
+      } else if(sessionMessage.messageClass === '#messageBox#'){
+        this.consoleMessageBox(sessionMessage.message, sessionMessage.gridId)
+      } else if(sessionMessage.message === '#graphicsBox#'){
+        this.consoleGraphicsBox(sessionMessage.message, sessionMessage.gridId)
+      } else if(sessionMessage.message === '#slide#'){
+        this.consolePlaySlide(sessionMessage.message, sessionMessage.gridId)
       }
     });
     this.client = AgoraRTC.createClient({ mode: 'rtc', codec: 'h264' });
@@ -68,14 +69,35 @@ var app = new Vue({
         const videoElement = document.getElementById(entry.gridId);
         const textContent = document.createElement("div");
         if (videoElement && track) {
-            track.play(entry.gridId);
+            track.play(videoElement);
+
+            setConsoleOverlay(0.8,entry.gridId)
           }
         }
     },
   
+    async consoleMessageBox(message, gridId){
+      console.log(`grid ${gridId} || message ${message}`)
+      const video = document.getElementById(entry.gridId);
+      messageBox(message,gridId)
+
+    },
+
+    async consoleGraphicsBox(gridId, message){
+      const video = document.getElementById(entry.gridId);
+      messageBox(message,gridId)
+
+    },
+
+    async consolePlaySlide(gridId, message){
+      const video = document.getElementById(entry.gridId);
+      messageBox(message,gridId)
+
+    },
+
     displayUserMessage(userGridID, userMessage) {
       const videoGrid = document.getElementById(userGridID);
-      const existingOverlay = videoGrid.querySelector(".video-overlay");
+      const existingOverlay = videoGrid.querySelector(".overlay");
   
       if (existingOverlay) {
         videoGrid.removeChild(existingOverlay);
@@ -83,7 +105,7 @@ var app = new Vue({
       
       const textContent = document.createElement("div");
       textContent.innerHTML = userMessage;
-      textContent.classList.add("video-overlay"); // Added CSS class for positioning
+      textContent.classList.add("overlay"); // Added CSS class for positioning
       videoGrid.appendChild(textContent);
     },
 

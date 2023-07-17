@@ -26,7 +26,7 @@
       });
   }
 
-  export function playAnimation(iconID) {
+  export function graphicsBox(iconID) {
     const video = document.getElementById('video');
     const videoRect = video.getBoundingClientRect();
     const videoCenterX = videoRect.left + videoRect.width / 2;
@@ -42,6 +42,8 @@
     let imgSrc = "";
     if (iconID === "t") {
       imgSrc = "./img/b&plogo.svg";
+    } else if (iconID === "r") {
+      imgSrc = "./img/i-camera.svg";
     } else {
       imgSrc = "./img/scanSignBlue380Ani.gif";
     }
@@ -58,12 +60,19 @@
   }
   
 
-  export function setTopBarText(message) {
-    const video = document.getElementById('video');
+  export function messageBox(message,gridId) {
+    
+    if (gridId){
+    const video = document.getElementById(gridId)
+
+    } else {
+    const video = document.getElementById('video')
+    }
+
     const videoRect = video.getBoundingClientRect();
   
-    const info1 = document.querySelector('.set-top1');
-    const info2 = document.querySelector('.set-top2');
+    const info1 = document.querySelector('.text-header1');
+    const info2 = document.querySelector('.text-header2');
   
     // Position info1 element at 5px margin from the top and left of the video
     info1.style.top = videoRect.top + 5 + 'px';
@@ -103,7 +112,7 @@ function isFlat(location) {
   return Math.abs(topDistance - bottomDistance) <= tolerance;
 }
 
-export function setScreenLayout() {
+export function pageRouter() {
   const slideElements = document.querySelectorAll('.slide');
   slideElements.forEach((slideElement) => {
     slideElement.remove();
@@ -131,10 +140,13 @@ export function setScreenLayout() {
   };
 }
 
-export function setOverlayScreen(factorValue) {
+export function setOverlay(factorValue) {
   
   return new Promise((resolve, reject) => {
-
+  if (!document.querySelector('.overlay')){
+    const overlay = document.createElement('div')
+    document.body.appendChild(overlay)
+  }
         // Set the --factor variable dynamically
    document.documentElement.style.setProperty('--factor', factorValue);
 
@@ -161,18 +173,77 @@ export function setOverlayScreen(factorValue) {
         </ul>
       </nav>
       <div class="container">
-        <div class="contarols">
-          <div class="set-top1 text-head">--</div>
+        <div class="message-box">
+          <div class="text-header1">--</div>
           <img src="./img/Baton-Icon-Blue.svg">
-          <div class="set-top2 text-head2"></div>
+          <div class="text-header2"></div>
         </div>
       </div>`;
 
     overlay.innerHTML = elementDOMS;
+
     document.getElementById('share-btn').addEventListener('click', this.shareCamera);
     document.getElementById('scan-btn').addEventListener('click', this.startScanning);
     document.getElementById('slide-btn').addEventListener('click', this.viewFindings);
-    
+  
+    // Check if the content is successfully rendered and resolve the Promise
+    if (overlay.innerHTML === elementDOMS) {
+      resolve();
+    } else {
+      reject(new Error('Failed to render content.'));
+    }
+  });
+}
+
+export function setConsoleOverlay(factorValue,gridId) {
+  
+  return new Promise((resolve, reject) => {
+  if (!document.querySelector('.overlay')){
+    const video = document.getElementById(gridId)
+    console.log('overlay setConsoleOverlay ', video) 
+    const overlay = document.createElement('div')
+    video.appendChild(overlay)
+  }
+        // Set the --factor variable dynamically
+   document.documentElement.style.setProperty('--factor', factorValue);
+
+     // Using querySelector to find the element with id="grid-2"
+   const videoGridEle = document.querySelector('#grid-2');
+
+  // Then, using querySelector on the gridElement to find the .overlay element within it
+  const overlay = videoGridEle.querySelector('.overlay');
+
+    const elementDOMS = `
+      <nav>
+        <img src="./img/Baton-Icon-Blue.svg" width="100px" height="100px" alt="logo">
+        <ul>
+            <li id="share-btn">
+              <img src="https://i.postimg.cc/JnggC78Q/video.png">
+            </li>
+            <li id="scan-btn">
+              <img src="./img/i-checked.svg">
+            </li>
+            <li id="slide-btn">
+              <img src="https://i.postimg.cc/vmb3JgVy/message.png">
+            </li>
+            <li>
+              <img src="https://i.postimg.cc/k4DZH604/users.png">
+            </li>
+            <li>
+              <img src="https://i.postimg.cc/v84Fqkyz/setting.png">
+            </li>
+        </ul>
+      </nav>
+      <div class="container">
+        <div class="message-box">
+          <div class="text-header1">--</div>
+          <img src="./img/Baton-Icon-Blue.svg">
+          <div class="text-header2"></div>
+        </div>
+      </div>`;
+
+
+    overlay.innerHTML = elementDOMS;
 
     // Check if the content is successfully rendered and resolve the Promise
     if (overlay.innerHTML === elementDOMS) {
@@ -183,3 +254,64 @@ export function setOverlayScreen(factorValue) {
   });
 }
 
+
+export async function playSlide() {
+ 
+      // Check if the ".slide" class exists
+      if (!document.querySelector('.slide')) {
+        console.log("No element with class 'slide' found. Autoplay cannot be started.");
+        return;
+      }
+      return new Promise((resolve) => {
+        // Hide prevNext and bullets
+        const prevNext = document.querySelector('.prevNext');
+        const bullets = document.querySelector('.bullets');
+        prevNext.style.display = 'none';
+        bullets.style.display = 'none';
+    
+        // Get the slide elements
+        var slides = document.getElementsByClassName("play-sequence");
+        console.log('autoPlayFindings')
+    
+        // Initialize the slide index
+        var currentSlide = 0;
+        var requestId;
+    
+        // Function to show the current slide
+        function showSlide() {
+          // Hide all slides
+          for (var i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+          }
+    
+          // Show the current slide
+          slides[currentSlide].style.display = "block";
+          console.log(`slides bug: #${currentSlide} object: ${slides[currentSlide]} .id ${slides[currentSlide].id}` )
+          // Update the URL hash to navigate to the next slide
+          window.location.hash = "#" + slides[currentSlide].id;
+    
+          // Increment the slide index
+          currentSlide++;
+    
+          // Resolve the promise when all slides have been shown
+          if (currentSlide >= slides.length) {
+            resolve();
+            return true;
+          }
+    
+          // Request the next animation frame after a delay of 2 seconds (0.5 frames per second)
+          setTimeout(() => {
+            requestId = requestAnimationFrame(showSlide);
+          }, 2500);
+        }
+    
+       // Start the slideshow
+        showSlide();
+    
+        // Assign the stopAutoplay function as a property of 'this'
+        this.stopSlide = () => {
+          cancelAnimationFrame(requestId);
+          resolve();
+        };
+      });
+    }
