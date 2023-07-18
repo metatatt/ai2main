@@ -302,3 +302,57 @@ export async function playSlide() {
         };
       });
     }
+
+    export async function playConsoleSlide() {
+      return new Promise((resolve) => {
+    
+        const prevNext = document.querySelector('.prevNext')
+        const bullets = document.querySelector('.bullets')
+        prevNext.style.display='none'
+        bullets.style.display='none'
+        
+        // Get the slide elements
+        var slides = document.getElementsByClassName("play-sequence");
+        console.log('autoPlayFindings')
+    
+        // Initialize the slide index
+        var currentSlide = 0;
+        var requestId;
+    
+        // Function to show the current slide
+        function showSlide() {
+          // Hide all slides
+          for (var i = 0; i < slides.length; i++) {
+            slides[i].style.display = "none";
+          }
+    
+          // Show the current slide
+          slides[currentSlide].style.display = "block";
+          console.log(`slides bug: #${currentSlide} object: ${slides[currentSlide]} .id ${slides[currentSlide].id}` )
+          // Update the URL hash to navigate to the next slide
+          window.location.hash = "#" + slides[currentSlide].id;
+    
+          // Increment the slide index
+          currentSlide++;
+    
+          // Resolve the promise when all slides have been shown
+          if (currentSlide >= slides.length) {
+            resolve();
+            return true;
+          }
+    
+          // Request the next animation frame after a delay of 2 seconds (0.5 frames per second)
+          setTimeout(() => {
+            requestId = requestAnimationFrame(showSlide);
+          }, 2500);
+        }
+    
+       // Start the slideshow
+        showSlide();
+    
+        // Assign the stopAutoplay function as a property of 'this'
+        this.stopSlide = () => {
+          resolve();
+        };
+      });
+    }

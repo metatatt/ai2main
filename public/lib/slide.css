@@ -254,9 +254,10 @@ http://stackoverflow.com/a/34696029/383904
   /* SLIDER ANIMATION POSITIONS */
   
   #s1:target ~ .slider {transform: translateX(0%); -webkit-transform: translateX(0%);}
-  #s2:target ~ .slider {transform: translateX(-100%); -webkit-transform: translateX(-100%);}
-  #s3:target ~ .slider {transform: translateX(-200%); -webkit-transform: translateX(-200%);}
-  #s4:target ~ .slider {transform: translateX(-300%); -webkit-transform: translateX(-300%);}
+  #s1:target ~ .slider {transform: translateX(0%); -webkit-transform: translateX(0%);}
+  #s2:target ~ .slider {transform: translateX(calc(-100% * var(--factor))); -webkit-transform: translateX(calc(-100% * var(--factor)));}
+  #s3:target ~ .slider {transform: translateX(calc(-200% * var(--factor))); -webkit-transform: translateX(calc(-200% * var(--factor)));}
+  #s4:target ~ .slider {transform: translateX(calc(-300% * var(--factor))); -webkit-transform: translateX(calc(-300% * var(--factor)));}
   /* More slides? Add here more rules */
   
   /* YOU'RE THE DESIGNER! 
