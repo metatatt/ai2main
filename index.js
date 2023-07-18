@@ -11,6 +11,8 @@ const { RtcTokenBuilder, RtcRole } = require('agora-access-token');
 const PredictionApi = require('@azure/cognitiveservices-customvision-prediction');
 const msRest = require('@azure/ms-rest-js');
 const port = process.env.PORT || 3000;
+const { createCanvas, loadImage } = require('canvas');
+
 // const { addBoxToImage } = require('./public/lib/addbox'); // Import the addBoxToImage function from addboximage.js
 
 
@@ -118,10 +120,13 @@ app.post('/predict', async (req, res) => {
       .sort((a, b) => b.probability - a.probability)
       .slice(0, 1)[0];
 
+    console.log("mostLikely ", mostLikelyPrediction)
+    const imagePath = await saveAnnotatedImage(mostLikelyPrediction,imageData)
     const predictionResult = {
       tag: mostLikelyPrediction.tagName,
       probability: mostLikelyPrediction.probability,
-      boundingBox: mostLikelyPrediction.boundingBox  // Include the bounding box metrics
+      boundingBox: mostLikelyPrediction.boundingBox,  // Include the bounding box metrics
+      imagePath: imagePath
     };
     console.log("boundingBox ",mostLikelyPrediction.boundingBox)
     res.json(predictionResult);
@@ -131,6 +136,29 @@ app.post('/predict', async (req, res) => {
   }
 
 });
+
+async function saveAnnotatedImage(prediction, imageData) {
+  const img = await loadImage(imageData);
+  const boundingBox = prediction.boundingBox;
+  const canvas = createCanvas(img.width, img.height);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0); // Draw the original image on the canvas
+  ctx.strokeStyle = '#ff0000'; // Set the bounding box color (red in this example)
+  ctx.lineWidth = 2; // Set the bounding box line width
+  ctx.strokeRect(
+    boundingBox.left * img.width,
+    boundingBox.top * img.height,
+    boundingBox.width * img.width,
+    boundingBox.height * img.height
+  ); // Draw the bounding box on the canvas
+  const imgPath = `xxx-${prediction.id}-yyy.png`; // Replace with the desired image path
+  const imageBuffer = canvas.toBuffer('image/png');
+
+  // Save the imageBuffer to the file system at the specified path
+  fs.writeFileSync(imgPath, imageBuffer, 'binary');
+
+  return imgPath;
+};
 
 // get IternationName (Azure CV Prediction)
 app.get('/iter', async (req, res) => {
