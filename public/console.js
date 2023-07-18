@@ -7,7 +7,7 @@ var app = new Vue({
     agoraUid: '',
     gridId: '',
     role: '',
-    CSSfactor:1,
+    CSSfactor:0.8,
     statusAgora: '',
     socket: null,
     videoGridTable: [
