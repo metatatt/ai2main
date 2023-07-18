@@ -171,18 +171,7 @@ app.get('/', function (req, res) {
 app.get('/lead', function (req, res) {
   res.sendFile('console.html', { root: __dirname + '/public' });
 });
-app.get('/pinch', function (req, res) {
-  res.sendFile('pinch.html', { root: __dirname + '/public' });
-});
 
-app.get('/n', function (req, res) {
-//  addBoxToImage("get-n");
-  res.sendFile('cameraN.html', { root: __dirname + '/public' });
-});
-
-app.get('/chat', function (req, res) {
-  res.sendFile('chat.html', { root: __dirname + '/public' });
-});
 
 io.on('connection', (socket) => {
   // Receive userInfo from camera.html
