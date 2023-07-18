@@ -1,4 +1,4 @@
-import { joinAgoraRoom, setConsoleOverlay, messageBox, graphicsBox,pageRouter } from './lib/libA.js';
+import { joinAgoraRoom, setConsoleOverlay, messageBox, graphicsBox,pageRouter, playSlide } from './lib/libA.js';
 
 var app = new Vue({
   el: '#app',
@@ -86,25 +86,16 @@ var app = new Vue({
       graphicsBox(message, gridId)
     },
 
-    async consolePlaySlide(gridId, message){
-      const video = document.getElementById(entry.gridId);
-      messageBox(message,gridId)
-
+    async consolePlaySlide(findingsDOM,gridId){
+      const videoGrid = document.querySelector(`#${gridId}`);
+      const overlay = videoGrid.querySelector('.overlay'); // Fetch the .overlay container
+      const slide = overlay.querySelector('.slide');
+      slide.style.display="block";
+      slide.innerHTML = findingsDOM;
+      playSlide()
+      return true
     },
 
-    displayUserMessage(userGridID, userMessage) {
-      const videoGrid = document.getElementById(userGridID);
-      const existingOverlay = videoGrid.querySelector(".overlay");
-  
-      if (existingOverlay) {
-        videoGrid.removeChild(existingOverlay);
-      }
-      
-      const textContent = document.createElement("div");
-      textContent.innerHTML = userMessage;
-      textContent.classList.add("overlay"); // Added CSS class for positioning
-      videoGrid.appendChild(textContent);
-    },
 
     showFindings(userGridID,findingsDOM){
       const videoGrid = document.getElementById(userGridID);

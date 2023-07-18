@@ -96,16 +96,15 @@ function isFlat(location) {
 }
 
 export function pageRouter() {
-  const slideElements = document.querySelectorAll('.slide');
-  slideElements.forEach((slideElement) => {
-    slideElement.remove();
-  });
-
   const videoElement=document.getElementById('video')
   const animation = document.querySelector('.animation');
+  const slideElement = document.querySelector('.slide')
+
 
   function slide() {
     videoElement.style.display = "none";
+    slideElement.style.display = "block";
+
     if (animation) {
       animation.style.display = 'none';
     }
@@ -113,13 +112,25 @@ export function pageRouter() {
 
   function scan() {
     videoElement.style.display = "block";
+    slideElement.style.display = "none";
     if (animation) {
       animation.style.display = 'block';
     }
   }
+
+  function report(){
+    videoElement.style.display = "none";
+    slideElement.style.display = "block";
+    if (animation) {
+      animation.style.display = 'none';
+    }
+
+  }
+
   return {
     slide,
-    scan
+    scan,
+    report
   };
 }
 
@@ -161,6 +172,8 @@ export function setOverlay(factorValue) {
           <div class="text-header2"></div>
       </div>
       <div class="graphics-box">
+      </div>
+      <div class="slide" style="display: none">
       </div>
     `;
 
@@ -218,6 +231,8 @@ export function setConsoleOverlay(factorValue,gridId) {
       </div>
       <div class="graphics-box" style="position: absolute; margin-left: 40%;margin-top: 30%;">
       </div>
+      <div class="slide" style="position: absolute; display: none">
+      </div>
       `;
 
 
@@ -234,19 +249,13 @@ export function setConsoleOverlay(factorValue,gridId) {
 
 
 export async function playSlide() {
- 
-      // Check if the ".slide" class exists
-      if (!document.querySelector('.slide')) {
-        console.log("No element with class 'slide' found. Autoplay cannot be started.");
-        return;
-      }
       return new Promise((resolve) => {
-        // Hide prevNext and bullets
-        const prevNext = document.querySelector('.prevNext');
-        const bullets = document.querySelector('.bullets');
-        prevNext.style.display = 'none';
-        bullets.style.display = 'none';
     
+        const prevNext = document.querySelector('.prevNext')
+        const bullets = document.querySelector('.bullets')
+        prevNext.style.display='none'
+        bullets.style.display='none'
+        
         // Get the slide elements
         var slides = document.getElementsByClassName("play-sequence");
         console.log('autoPlayFindings')

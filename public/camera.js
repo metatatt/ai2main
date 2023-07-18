@@ -317,6 +317,8 @@ var ojoapp = new Vue({
     console.log("isEnabled? ",this.isScanEnabled)
     if (this.findingsDOM !== null) {
       this.isScanEnabled = await this.renderSlide(this.findingsDOM);
+
+
       if (typeof this.stopSlide === 'function') {
         this.stopSlide();
       }
@@ -324,14 +326,11 @@ var ojoapp = new Vue({
   },
   
   async renderSlide(findingsDOM){
-
     const layout = pageRouter();
     layout.slide();
-    const overlay = document.querySelector('.overlay');
-    const slide = document.createElement('div');
+    const slide=document.querySelector('.slide')
+    console.log(`slide ${slide} style.display-- ${slide.style.display}`)
     slide.innerHTML = findingsDOM; 
-    slide.classList.add('slide');
-    overlay.appendChild(slide);
 
     return true
   },

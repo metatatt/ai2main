@@ -161,7 +161,7 @@ http://stackoverflow.com/a/34696029/383904
     display: inline-block;
     white-space: normal;
     vertical-align: top;
-    height: calc(100% * var(--factor));
+    height: 100%;
     width: calc(100% * var(--factor));
     background: none 50% no-repeat;
     background-size: cover;
