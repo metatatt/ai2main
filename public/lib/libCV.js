@@ -1,6 +1,4 @@
 export async function getEachResult(imageArrayObj) {
-  console.log('getEachResults ', imageArrayObj);
-
   // Set up canvas and context for image processing
   const canvasElement = document.getElementById('canvas');
   canvasElement.height = imageArrayObj.height;
@@ -37,16 +35,9 @@ export async function getEachResult(imageArrayObj) {
       }
     });
 
-    // Handle the response from the server (saved image URI)
-    const data = await response.json();
-
-    // Get the saved image URI from the response and use it for further processing
-    const savedImageURI = data.savedURI;
-    console.log('Image saved to Azure Blob Storage:', savedImageURI);
-
-    // Use the savedImageURI for any further processing or displaying the image
-    // For example, you can update the UI with the saved image
-    // document.getElementById('imageContainer').src = savedImageURI;
+    const eachResult = await response.json();
+    console.log('getEach results ',eachResult)
+    return eachResult
 
   } catch (error) {
     console.error('Error during image processing:', error.message);

@@ -230,16 +230,17 @@ if (!fs.existsSync(localMetadataFolderPath)) {
   fs.mkdirSync(localMetadataFolderPath);
 }
 
-const localMetadataFilePath = `${localMetadataFolderPath}/${metaFileName}`;
-fs.writeFileSync(localMetadataFilePath, JSON.stringify(metadata, null, 2));
+   const localMetadataFilePath = `${localMetadataFolderPath}/${metaFileName}`;
+  fs.writeFileSync(localMetadataFilePath, JSON.stringify(metadata, null, 2));
 
     // Delete the local file after uploading to Azure Blob Storage
     fs.unlinkSync(req.file.path);
 
     console.log('File uploaded to Azure Blob Storage:', uploadBlobResponse.requestId);
+    console.log('return', bestPredict);
+    // Return the saved image URI path as a JSON response res.json({ savedURI: blobClient.url });
+    res.json(bestPredict)
 
-    // Return the saved image URI path as a JSON response
-    res.json({ savedURI: blobClient.url });
   } catch (error) {
     console.error('Error during image upload:', error.message);
     res.status(500).json({ error: 'Error during image upload.' });
