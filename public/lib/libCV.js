@@ -16,15 +16,25 @@ export async function getEachResult(imageArrayObj) {
   const timestamp = Date.now();
   const uniqueFileName = `u_${timestamp}_${originalFileName}`;
 
+  //
+  const azdata = await (await fetch('/azenv')).json();
+  const endpoint = azdata.predictionEndpoint
+  const key = azdata.predictionKey
+  console.log(`libCVjs key ${key} endpoint ${endpoint}`)
   // Create a FormData object and append the image blob to it
   const formData = new FormData();
   formData.append('imageFile', imageBlob, uniqueFileName);
+
 
   try {
     // Send the image to the backend and save it to Azure Blob Storage
     const response = await fetch('/saveblob', {
       method: 'POST',
       body: formData,
+      headers:{
+        key: key,
+        enpoint: endpoint,
+      }
     });
 
     // Handle the response from the server (saved image URI)

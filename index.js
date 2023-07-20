@@ -194,6 +194,8 @@ app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
 
     // Get the original file name
     const originalFileName = req.file.originalname;
+    const key = req.headers['key'];
+    const endpoint = req.headers['endpoint'];
 
     // Create a unique file name for the image in Azure Blob Storage
     const fileName = `${originalFileName}`;
@@ -204,6 +206,12 @@ app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
     // Upload the file to Azure Blob Storage
     const fileData = fs.readFileSync(req.file.path);
     const uploadBlobResponse = await blobClient.uploadData(fileData);
+
+   // Set Blob Metadata
+    await blobClient.setMetadata({
+      key: key,
+      endpoint: `"${endpoint}"`
+    });
 
     // Delete the local file after uploading to Azure Blob Storage
     fs.unlinkSync(req.file.path);
@@ -217,6 +225,7 @@ app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
     res.status(500).json({ error: 'Error during image upload.' });
   }
 });
+
 
 
 // 7/18一直到这里
