@@ -132,29 +132,29 @@ app.get('/azenv', (req, res) => {
   });
 });
 
-
-
 //从这里开始
-async function predict(endpoint, key, imageBuffer) {
+async function predict(endpoint, key, imageUrl) {
+  console.log('pred() imageUrl', imageUrl)
   try {
     // Set up the headers for the prediction request
     const headers = {
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': 'application/json',
       'Prediction-Key': key,
     };
+
+    // Prepare the request body with the image URL
+    const body = {
+      'Url': imageUrl
+    };
+
     // Make the POST request to the prediction endpoint using axios
-    const response = await axios.post(endpoint, imageBuffer, {
-      headers: headers,
-    });
-
-    console.log('Predict - Response:', response);
-
-    const result = response.data;
-    console.log('-----');
-    console.log('-----');
-    console.log('Predict - Response.data:', result);
+    const response = await axios.post( endpoint, body,
+      {
+      headers: headers
+      });
 
     // Retrieve the most likely prediction
+    const result = response.data
     const lead = result.predictions
       .sort((a, b) => b.probability - a.probability)
       .slice(0, 1)[0];
@@ -167,8 +167,7 @@ async function predict(endpoint, key, imageBuffer) {
         boundingBox: lead.boundingBox,
       };
 
-      console.log('Predict - Best Prediction:', bestPredict);
-
+      console.log('Predict() bestPred:', bestPredict);
       return bestPredict;
     } else {
       console.log('Predict - No prediction found.');
@@ -195,7 +194,7 @@ app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
     // Get the original file name
     const originalFileName = req.file.originalname;
     const key = req.headers['key'];
-    const endpoint = req.headers['endpoint'];
+    const endpoint = req.headers['endpoint'];//error here
 
     // Create a unique file name for the image in Azure Blob Storage
     const fileName = `${originalFileName}`;
@@ -206,12 +205,33 @@ app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
     // Upload the file to Azure Blob Storage
     const fileData = fs.readFileSync(req.file.path);
     const uploadBlobResponse = await blobClient.uploadData(fileData);
+    console.log("saveBlob Response ", uploadBlobResponse)
+    const imageUrl = blobClient.url; // Corrected property name
 
-   // Set Blob Metadata
-    await blobClient.setMetadata({
-      key: key,
-      endpoint: `"${endpoint}"`
-    });
+   // get CV predict
+    const bestPredict = await predict(endpoint, key, imageUrl)
+    console.log('bestPredict ',bestPredict)
+
+   // Set Metadata
+   const metadata = {
+    imageUrl: blobClient.url,
+    key: key,
+    endpoint: endpoint,
+    date: new Date(),
+    bestPredict: bestPredict,
+  };
+
+  // Upload the metadata as a JSON file to local/Server Backend
+const metaFileName = fileName + '.json';
+
+// Save the metadata as a JSON file to the local "metadata" folder
+const localMetadataFolderPath = './public/metadata';
+if (!fs.existsSync(localMetadataFolderPath)) {
+  fs.mkdirSync(localMetadataFolderPath);
+}
+
+const localMetadataFilePath = `${localMetadataFolderPath}/${metaFileName}`;
+fs.writeFileSync(localMetadataFilePath, JSON.stringify(metadata, null, 2));
 
     // Delete the local file after uploading to Azure Blob Storage
     fs.unlinkSync(req.file.path);
@@ -227,124 +247,6 @@ app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
 });
 
 
-
-// 7/18一直到这里
-
-app.post('/checkImage', upload.single('imageFile'), async (req, res) => {
-  try {
-    console.log('Received POST request to /checkImage');
-
-    // Access the uploaded file via req.file
-    if (!req.file) {
-      console.log('No image file received.');
-      return res.status(400).json({ error: 'No image file received.' });
-    }
-
-    // Read the tag data from the request body
-    const { tag } = req.body;
-    const { key, endpoint } = JSON.parse(tag);
-
-    // Perform Azure Computer Vision prediction
-    const headers = {
-      'Content-Type': 'application/octet-stream',
-      'Prediction-Key': key,
-    };
-
-    // Make the POST request to the prediction endpoint using axios
-    const response = await axios.post(endpoint, req.file.buffer, {
-      headers: headers,
-    });
-
-    const bestPredict = response.data;
-    console.log('Azure prediction result:', bestPredict);
-
-    // Upload the file to Azure Blob Storage
-    const imageFileName = generateImageFileName() + '.png';
-    const blobClient = containerClient.getBlockBlobClient(imageFileName);
-    const uploadBlobResponse = await blobClient.uploadData(req.file.buffer);
-    console.log('File uploaded to Azure Blob Storage:', uploadBlobResponse.requestId);
-
-    // Create a metadata object containing the image URI and tag data
-    const metadata = {
-      imageUrl: blobClient.url,
-      key: key,
-      endpoint: endpoint,
-      date: now(),
-      bestPredict: bestPredict,
-    };
-
-    // Upload the metadata as a JSON file to Azure Blob Storage
-    const metadataFileName = generateImageFileName() + '.json';
-    const metadataBlobClient = containerClient.getBlockBlobClient(metadataFileName);
-    const uploadMetadataResponse = await metadataBlobClient.uploadData(JSON.stringify(metadata));
-    console.log('Metadata uploaded to Azure Blob Storage:', uploadMetadataResponse.requestId);
-
-    console.log('Image and metadata saved successfully.');
-
-    // Return the saved image URI path as a JSON response
-    res.json({ savedURI: blobClient.url });
-  } catch (error) {
-    console.error('Error during image processing:', error.message);
-    res.status(500).json({ error: 'Error during image processing.' });
-  }
-});
-
-// Endpoint to handle image uploads and saving tag data
-app.post('/uploadImage', upload.single('imageFile'), async (req, res) => {
-  try {
-    console.log('Received POST request to /uploadImage');
-
-    // Access the uploaded file via req.file
-    if (!req.file) {
-      console.log('No image file received.');
-      return res.status(400).json({ error: 'No image file received.' });
-    }
-
-    // Process the image file here (e.g., save to a specific directory, etc.)
-    const imageUrl = req.file.path; // The path to the uploaded image file
-    const imageBuffer = req.file.buffer;
-
-
-    // Read the tag data from the request body
-    const { tag } = req.body;
-    const { key, endpoint } = JSON.parse(tag);
-
-    const bestPredict = await predict(endpoint, key, imageBuffer)
-
-    console.log('uploadImg- key:', key);
-    console.log('uploadImg- endpoint:', endpoint);
-    console.log('uploadImg- bestPredict: ', bestPredict)
-
-    // Save the uploaded image to the 'public/img' directory with a unique identifier in the file name
-    const imageFileName = generateImageFileName();
-    const targetImagePath = path.join(imgDir, imageFileName + '.png');
-
-    fs.renameSync(imageUrl, targetImagePath);
-
-    // Create a metadata object containing the image URI and tag data
-    const metadata = {
-      imageUrl: `/img/${imageFileName}.png`,
-      key: `${key}`,
-      endpoint: `${endpoint}`,
-      date: `${now()}`,
-      bestPredict:  `${bestPredict}`
-    };
-
-    // Save the metadata as a JSON file with the same name as the image file, but with a .json extension
-    const metadataFileName = imageFileName + '.json';
-    const metadataPath = path.join(imgDir, metadataFileName);
-
-    fs.writeFileSync(metadataPath, JSON.stringify(metadata));
-
-    console.log('Image and metadata saved successfully.');
-
-    // Return the saved image URI path as a JSON response
-    res.json({ savedURI: `/img/${imageFileName}.png` });
-  } catch (error) {
-    console.error('Error during image processing:', error.message);
-    res.status(500).json({ error: 'Error during image processing.' });
-  }
-});
 
 
 function generateImageFileName() {

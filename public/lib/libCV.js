@@ -33,7 +33,7 @@ export async function getEachResult(imageArrayObj) {
       body: formData,
       headers:{
         key: key,
-        enpoint: endpoint,
+        endpoint: endpoint
       }
     });
 
