@@ -1,7 +1,7 @@
 export function populateFindings(header, results) {
     console.log('in Findings-results', results);
-    const auditData0 = JSON.parse(results[0].audit); // Parse the JSON string into an object
-    const auditData1 = JSON.parse(results[1].audit); 
+    const auditData0 = results[0].audit; // Parse the JSON string into an object
+    const auditData1 = results[1].audit; 
     const findingsDOM = `
       <div class="container slide">
         <div class="CSSgal">

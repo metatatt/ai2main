@@ -238,7 +238,6 @@ if (!fs.existsSync(localMetadataFolderPath)) {
 
     console.log('File uploaded to Azure Blob Storage:', uploadBlobResponse.requestId);
     console.log('return', bestPredict);
-    // Return the saved image URI path as a JSON response res.json({ savedURI: blobClient.url });
     res.json(bestPredict)
 
   } catch (error) {

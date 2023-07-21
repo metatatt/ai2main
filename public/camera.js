@@ -1,5 +1,6 @@
 import { setOverlay, pageRouter, playSlide, joinAgoraRoom, graphicsBox, messageBox} from './lib/libA.js';
-import { getEachResult, selectBestTwo} from './lib/libB.js';
+import { selectBestTwo} from './lib/libB.js';
+import { getEachResult} from './lib/libB.js';
 import { populateFindings } from './lib/libC.js';
 
 var ojoapp = new Vue({
@@ -285,11 +286,11 @@ var ojoapp = new Vue({
         message: "r"
       });
 
-
+      console.log('procAudit() results ', results)
       // Sort the results array based on probability from high to low
       results.sort((a, b) => {
-        const aProbability = a.audit ? JSON.parse(a.audit).probability : 0;
-        const bProbability = b.audit ? JSON.parse(b.audit).probability : 0;
+        const aProbability = a.audit ? a.audit.probability : 0;
+        const bProbability = b.audit ? b.audit.probability : 0;
         return bProbability - aProbability;
       });
 

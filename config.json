@@ -2,10 +2,10 @@
     "predictionKey": "a19a2f3fcf784222a2af267179de9125",
     "publishedIterationName": "Iter 2(to be renamed)",
     "projectId": "3232c73c-9994-4aec-969d-0521954e1531",
-    "predictionEndpoint": "https://linecam2023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f98392ca-b533-4966-b222-d5054dfbe357/detect/iterations/model0413/url",
-    "APP_ID": "fef517e0744c419791338027fdfb232b",
-    "APP_CERTIFICATE" : "80786c878cda4d9284c853ecc5f66093",
-    "CHANNEL" : "simon",
+    "predictionEndpoint": "https://linecam2023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f98392ca-b533-4966-b222-d5054dfbe357/detect/iterations/model0413/image",
+    "APP_ID": "c83421cd8569414a871f50c6a11c6239",
+    "APP_CERTIFICATE" : "0da96e3f76324725b210d0f166c4b9c7",
+    "CHANNEL" : "baton",
     "blobConnectionString":"DefaultEndpointsProtocol=https;AccountName=practiz2023public;AccountKey=HvAcrsIQOyisNpFvo6VIwsVipEewUcymqjZtHIye/Yn4LSiy4BuYRe7FD3+IHz//OJOkPfXcqMe3+AStYfqoNA==;EndpointSuffix=core.windows.net",
     "blobContainerName":"lcam"
 }
