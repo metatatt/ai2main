@@ -1,7 +1,6 @@
 // File System and Module Imports
 const fs = require('fs'); // File System operations
 const path = require('path'); // Working with file and directory paths
-const { createCanvas, loadImage } = require('canvas'); // Image manipulation
 const axios = require('axios'); // HTTP client for making requests
 
 // Express and HTTP Server Setup
@@ -254,31 +253,6 @@ function generateImageFileName() {
   return `image_${timestamp}`;
 }
 
-
-async function saveAnnotatedImage(prediction, imageData) {
-  
-  console.log("saveAnnotated ")
-  const img = await loadImage(imageData);
-  const boundingBox = prediction.boundingBox;
-  const canvas = createCanvas(img.width, img.height);
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0); // Draw the original image on the canvas
-  ctx.strokeStyle = '#ff0000'; // Set the bounding box color (red in this example)
-  ctx.lineWidth = 2; // Set the bounding box line width
-  ctx.strokeRect(
-    boundingBox.left * img.width,
-    boundingBox.top * img.height,
-    boundingBox.width * img.width,
-    boundingBox.height * img.height
-  ); // Draw the bounding box on the canvas
-  const imgPath = `xxx-${prediction.id}-yyy.png`; // Replace with the desired image path
-  const imageBuffer = canvas.toBuffer('image/png');
-
-  // Save the imageBuffer to the file system at the specified path
-  fs.writeFileSync(imgPath, imageBuffer, 'binary');
-
-  return imgPath;
-};
 
 // get IternationName (Azure CV Prediction)
 app.get('/iter', async (req, res) => {

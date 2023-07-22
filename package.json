@@ -16,7 +16,6 @@
     "agora-access-token": "^2.0.4",
     "agora-rtc-sdk-ng": "^4.17.2",
     "axios": "^1.4.0",
-    "canvas": "^2.11.2",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "fs": "^0.0.1-security",
