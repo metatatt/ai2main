@@ -187,7 +187,7 @@ var ojoapp = new Vue({
 
         // Draw a visual indication of the scanned QR code location
         const location = code.location;
-        this.drawCircle(location);
+        this.drawArcs(location);
 
         // Calculate deltaX as the distance moved in the X direction from the previous scan
         const lastLoc = this.scanImageArray?.[this.scanImageArray.length - 1]?.imageData.location ?? location;
@@ -372,21 +372,54 @@ var ojoapp = new Vue({
       this.canvasContext.stroke();
     },
 
-    drawCircle(location) {
+    drawArcs(location) {
       const topRight = location.topRightCorner;
-      const viewWidth = document.documentElement.clientWidth;
-      const radius = Math.min(this.canvasElement.width, this.canvasElement.height) / 4; // Updated radius calculation
-      const center = {
-        x: topRight.x ,
-        y: topRight.y // Distance above the width on the upper part
+      const topLeft = location.topLeftCorner;
+      const bottomLeft = location.bottomLeftCorner; // New addition for bottomLeft point
+    
+      // Calculate the distance between topRight and topLeft points
+      const distanceTopRightTopLeft = Math.sqrt((topRight.x - topLeft.x) ** 2 + (topRight.y - topLeft.y) ** 2);
+    
+      // Calculate the new center position at +60 degrees above the line connecting topLeft and topRight
+      const angleInRadians = (60 * Math.PI) / 180; // Convert 60 degrees to radians
+      const newCenter = {
+        x: topRight.x - (distanceTopRightTopLeft / 2) * Math.cos(angleInRadians),
+        y: topRight.y - (distanceTopRightTopLeft / 2) * Math.sin(angleInRadians),
       };
     
+      const viewWidth = document.documentElement.clientWidth;
+      const radius = Math.min(this.canvasElement.width, this.canvasElement.height) / 2; // Updated radius calculation
+    
+      // Clear the previous circle and prepare for the radiation symbol
+      this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
       this.canvasContext.beginPath();
-      this.canvasContext.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    
+      // Calculate the x position difference between topLeft and bottomLeft points
+      const distanceTopLeftBottomLeft = Math.abs(bottomLeft.x - topLeft.x);
+    
+      // Calculate the angle in radians based on the x position difference
+      const angleFromXAxis = Math.atan2(topLeft.y - newCenter.y, topLeft.x - newCenter.x);
+      const angleDifference = (distanceTopLeftBottomLeft / radius) * (Math.PI / 2); // Adjust the angle based on the x position difference
+    
+      // Adjust startAngle and endAngle based on the calculated angle difference
+      const startAngle = angleFromXAxis - angleDifference;
+      const endAngle = angleFromXAxis + angleDifference;
+      
+      // this.canvasContext.arc(newCenter.x, newCenter.y, radius, startAngle, startAngle);
       this.canvasContext.lineWidth = 4;
       this.canvasContext.strokeStyle = "#FF3B58";
       this.canvasContext.stroke();
+    
+      const arcRadiusStep = radius / 4;
+      for (let i = 0; i < 3; i++) {
+        const arcRadius = arcRadiusStep * (i + 1);
+        this.canvasContext.beginPath();
+        this.canvasContext.arc(newCenter.x, newCenter.y, arcRadius, startAngle, startAngle+4.25);
+        this.canvasContext.stroke();
+      }
     }
+    
+    
     
 
 
