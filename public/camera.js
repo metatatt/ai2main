@@ -1,7 +1,7 @@
 import { setOverlay, pageRouter, playSlide, joinAgoraRoom, graphicsBox, messageBox} from './lib/libA.js';
 import { selectBestTwo} from './lib/libB.js';
 import { getEachResult} from './lib/libB.js';
-import { populateFindings } from './lib/libC.js';
+import { populateFindings, batonCam } from './lib/libC.js';
 
 var ojoapp = new Vue({
   el: '#batonApp',
@@ -42,7 +42,6 @@ var ojoapp = new Vue({
     // this.userId = userId;
     
     messageBox("starting...");
-    
     this.userId = "2XXX9-"; //for use in develop testing Ngrok/iPad
     this.role = "camera";
     this.statusAgora = "mute"; //mute, published, eg
@@ -69,6 +68,8 @@ var ojoapp = new Vue({
         });
       }
     }.bind(this));
+
+    this.drawOnCam = new batonCam(this.canvasElement)
     
     this.initiateCamera();
   },
@@ -187,7 +188,7 @@ var ojoapp = new Vue({
 
         // Draw a visual indication of the scanned QR code location
         const location = code.location;
-        this.drawArcs(location);
+        this.drawOnCam.drawCircle(location,250)
 
         // Calculate deltaX as the distance moved in the X direction from the previous scan
         const lastLoc = this.scanImageArray?.[this.scanImageArray.length - 1]?.imageData.location ?? location;
