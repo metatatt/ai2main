@@ -1,15 +1,10 @@
   export class batonCam {
     constructor(canvasElement) {
       this.canvasElement = canvasElement;
-      this.ctx = canvasElement.getContext("2d", { willReadFrequently: true });
-    }
+      this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
   
-    angleXAxis(location) {
-      const topLeft = location.topLeftCorner;
-      const topRight = location.topRightCorner;
-      const atan2Value =  Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x);
-      console.log(`ATAN2: ${atan2Value}`)
-      return atan2Value
+      this.newCanvas = document.createElement('canvas');
+      this.newCtx = this.newCanvas.getContext('2d');
     }
   
     drawSquare(location) {
@@ -55,38 +50,33 @@
       const yOffset = topLeft.y - location.bottomLeftCorner.y;
       const newCenterX = midPointX+xOffset*2
       const newCenterY = midPointY+yOffset*2
-      console.log("New Center:", newCenterX, newCenterY);
+      console.log("New Center 1:", newCenterX, newCenterY);
       console.log("Radius:", radius);
     
       this.ctx.beginPath();
+      this.ctx.arc(newCenterX, newCenterY, 10, 0, 2 * Math.PI);
       this.ctx.arc(newCenterX, newCenterY, radius, 0, 2 * Math.PI);
       this.ctx.strokeStyle = "#FF3B58";
       this.ctx.lineWidth = 4;
       this.ctx.stroke();
+      this.makeClipA(newCenterX, newCenterY,radius)
     }
-    
-    
   
-    captureToFile(location, radius, offset) {
-      const circleCenterX = location.topLeftCorner.X + Math.cos(this.angleXAxis(location)) * offset;
-      const circleCenterY = location.topLeftCorner.Y + Math.sin(this.angleXAxis(location)) * offset;
-      this.ctx.beginPath();
-      this.ctx.arc(circleCenterX, circleCenterY, radius, 0, 2 * Math.PI);
-      this.ctx.clip();
-      this.ctx.drawImage(this.canvas, 0, 0, this.canvas.width, this.canvas.height, 0, 0, this.canvas.width, this.canvas.height);
-  
-      // Create a new canvas to save the circle clip
-      const saveCanvas = document.createElement("canvas");
-      saveCanvas.width = 2 * radius;
-      saveCanvas.height = 2 * radius;
-      const saveCtx = saveCanvas.getContext("2d");
-      saveCtx.drawImage(this.canvas, circleCenterX - radius, circleCenterY - radius, 2 * radius, 2 * radius, 0, 0, 2 * radius, 2 * radius);
-  
-      // Convert the canvas to an image and save it to file
-      const imgData = saveCanvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
-      const fs = require("fs");
-      const path = "./img/pix001.png"; // Change the path and filename as needed
-      fs.writeFileSync(path, imgData, "base64");
+    makeClipA(newCenterX,newCenterY,radius){
+      this.newCanvas.width = 2*radius;
+      this.newCanvas.height = 2*radius;
+      this.newCtx.beginPath()
+      this.newCtx.arc(radius, radius, radius, 0, 2 * Math.PI);
+      this.newCtx.closePath()
+      this.newCtx.clip()
+      const offsetX = newCenterX - radius;
+      const offsetY = newCenterY - radius;
+      this.newCtx.drawImage(this.canvasElement, offsetX, offsetY, 2 * radius, 2 * radius, 0, 0, 2 * radius, 2 * radius);
+      const dataURL = this.newCanvas.toDataURL('image/png');
+      const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'makeClipA.png';
+            link.click();
     }
   }
   
