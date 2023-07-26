@@ -54,15 +54,14 @@
       console.log("Radius:", radius);
     
       this.ctx.beginPath();
-      this.ctx.arc(newCenterX, newCenterY, 10, 0, 2 * Math.PI);
       this.ctx.arc(newCenterX, newCenterY, radius, 0, 2 * Math.PI);
       this.ctx.strokeStyle = "#FF3B58";
       this.ctx.lineWidth = 4;
       this.ctx.stroke();
-      this.makeClipA(newCenterX, newCenterY,radius)
+      this.makeClip(newCenterX, newCenterY,radius)
     }
   
-    makeClipA(newCenterX,newCenterY,radius){
+    makeClip(newCenterX,newCenterY,radius){
       this.newCanvas.width = 2*radius;
       this.newCanvas.height = 2*radius;
       this.newCtx.beginPath()
@@ -78,6 +77,38 @@
             link.download = 'makeClipA.png';
             link.click();
     }
+
+    drawRect(location, scalar) {
+
+      const topLeft = location.topLeftCorner;
+      const topRight = location.topRightCorner;
+      const bottomLeft = location.bottomLeftCorner;
+      const a = topRight.x - topLeft.x;
+      const b = topRight.y - topLeft.y;
+      const c = topLeft.y - bottomLeft.y;
+      const d = bottomLeft.x - topLeft.x
+      const bLX = topLeft.x - a * (scalar - 1) / 2;
+      const bLY = topLeft.y - b * (scalar - 1) / 2;
+      const bRX = topRight.x + a * (scalar - 1) / 2;
+      const bRY = topRight.y + b * (scalar - 1) / 2;
+      const tLX = bLX - d * scalar;
+      const tLY = bLY + c * scalar;
+      const tRX = bRX - d * scalar;
+      const tRY = bRY + c * scalar;
+    
+      this.ctx.beginPath();
+      this.ctx.moveTo(bLX, bLY); // Move to bottom left corner
+      this.ctx.lineTo(bRX, bRY); // Draw line to bottom right corner
+      this.ctx.lineTo(tRX, tRY); // Draw line to top right corner
+      this.ctx.lineTo(tLX, tLY); // Draw line to top left corner
+      this.ctx.closePath(); // Close the path
+    
+      this.ctx.strokeStyle = "#FF3B58";
+      this.ctx.lineWidth = 4;
+      this.ctx.stroke();
+    }
+    
+
   }
   
 export function populateFindings(header, results) {
