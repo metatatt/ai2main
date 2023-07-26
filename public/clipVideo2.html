@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Capture Circular Area from Camera</title>
+</head>
+<body>
+    <video id="video" width="800" height="400" autoplay style="display:none;"></video>
+    <canvas id="myCanvas" width="800" height="400" style="border: 1px solid #000;"></canvas>
+    <button onclick="captureAndSave()">Capture and Save</button>
+
+    <script>
+        let radius = 200; // Half of the desired circular area diameter
+        let centerLocationX = 600;
+        let centerLocationY = 100;
+
+        // Function to draw the video frame on the canvas and apply circular clipping
+        function drawVideoOnCanvas() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('myCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Draw the video frame on the canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Set the circle's center and radius
+            const centerX = centerLocationX;
+            const centerY = centerLocationY;
+
+            // Create a circular clipping on the canvas
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.clip();
+
+            // Clear the canvas (transparent background)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the video frame inside the clipped circular area
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Call the function recursively to draw the next video frame
+            requestAnimationFrame(drawVideoOnCanvas);
+        }
+
+        // Function to capture the circular area and save it as an image
+        function captureAndSave() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('myCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set video dimensions to match canvas dimensions for proper clipping
+            video.width = canvas.width;
+            video.height = canvas.height;
+
+            // Create a new canvas to save the circular area with a transparent background
+            const newCanvas = document.createElement('canvas');
+            newCanvas.width = 2 * radius;
+            newCanvas.height = 2 * radius;
+            const newCtx = newCanvas.getContext('2d');
+
+            // Set the circle's center and radius
+            const centerX = radius;
+            const centerY = radius;
+
+            // Create a circular clipping on the new canvas
+            newCtx.beginPath();
+            newCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            newCtx.closePath();
+            newCtx.clip();
+
+            // Draw the video frame on the new canvas, centered within the circular clipping
+            const offsetX = centerLocationX - radius;
+            const offsetY = centerLocationY - radius;
+            newCtx.drawImage(canvas, offsetX, offsetY, 2 * radius, 2 * radius, 0, 0, 2 * radius, 2 * radius);
+
+            // Convert the new canvas to a data URL (PNG format with transparent background)
+            const dataURL = newCanvas.toDataURL('image/png');
+
+            // Create a temporary link and initiate the download of the saved image
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'capturedImage.png';
+            link.click();
+        }
+
+        // Attach the drawVideoOnCanvas function to window.onload event
+        window.onload = function () {
+            // Access the camera and start capturing video stream
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    const video = document.getElementById('video');
+                    video.srcObject = stream;
+                    video.onloadedmetadata = function () {
+                        drawVideoOnCanvas();
+                    };
+                })
+                .catch(function (error) {
+                    console.error('Error accessing the camera: ', error);
+                });
+        };
+    </script>
+</body>
+</html>
