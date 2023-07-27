@@ -5,6 +5,7 @@
   
       this.newCanvas = document.createElement('canvas');
       this.newCtx = this.newCanvas.getContext('2d');
+      this.savedImageCounter=0;
     }
   
     drawSquare(location) {
@@ -80,6 +81,7 @@
 
     drawRect(location, scalar) {
 
+      const offset = 10;
       const topLeft = location.topLeftCorner;
       const topRight = location.topRightCorner;
       const bottomLeft = location.bottomLeftCorner;
@@ -95,19 +97,74 @@
       const tLY = bLY + c * scalar;
       const tRX = bRX - d * scalar;
       const tRY = bRY + c * scalar;
-    
+      const angle = Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x)
+
       this.ctx.beginPath();
-      this.ctx.moveTo(bLX, bLY); // Move to bottom left corner
-      this.ctx.lineTo(bRX, bRY); // Draw line to bottom right corner
-      this.ctx.lineTo(tRX, tRY); // Draw line to top right corner
-      this.ctx.lineTo(tLX, tLY); // Draw line to top left corner
+      this.ctx.moveTo(bLX-offset, bLY+offset); // Move to bottom left corner
+      this.ctx.lineTo(bRX+offset, bRY+offset); // Draw line to bottom right corner
+      this.ctx.lineTo(tRX+offset, tRY-offset); // Draw line to top right corner
+      this.ctx.lineTo(tLX-offset, tLY-offset); // Draw line to top left corner
       this.ctx.closePath(); // Close the path
     
       this.ctx.strokeStyle = "#FF3B58";
       this.ctx.lineWidth = 4;
       this.ctx.stroke();
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.fillStyle = "#FF3B58";
+      this.ctx.font = "20px Arial";
+      this.ctx.fillText("Angle: " + angle.toFixed(2), tLX+10, tLY+20);
+      console.log("draw rect ",angle.toFixed(2) )
+      const bL ={x: bLX, y:bLY}
+      const bR ={x: bRX, y:bRY}
+      const tL ={x: tLX, y:tLY}
+      const tR = {x: tRX, y:tRY}
+      const newLocation = {
+        bottomLeft: bL,
+        bottomRight: bR,
+        topLeft: tL,
+        topRight: tR,
+      }
+      if (this.savedImageCounter<4){
+      this.savedImageCounter++
+      this.saveRect(newLocation)
+      }
     }
     
+  async saveRect(location) {
+      const { bottomLeft, bottomRight, topLeft, topRight } = location;
+    
+      // Calculate the width and height of the square
+      const width = Math.sqrt((topLeft.x - topRight.x) ** 2 + (topLeft.y - topRight.y) ** 2);
+      const height = Math.sqrt((topLeft.x - bottomLeft.x) ** 2 + (topLeft.y - bottomLeft.y) ** 2);
+    
+      // Calculate the center point of the square
+      const centerX = (topLeft.x + topRight.x + bottomLeft.x + bottomRight.x) / 4;
+      const centerY = (topLeft.y + topRight.y + bottomLeft.y + bottomRight.y) / 4;
+      this.newCtx.clearRect(0, 0, this.newCanvas.width, this.newCanvas.height);
+
+      // Clear the canvas and set its dimensions
+      // this.newCtx.clearRect(0, 0, this.newCanvas.width, this.newCanvas.height);
+      this.newCanvas.width = width;
+      this.newCanvas.height = height;
+      const angle = -Math.atan2(-topLeft.y + topRight.y, -topLeft.x + topRight.x)
+
+      // Rotate and draw the square
+      await new Promise((resolve) => {
+        this.newCtx.translate(width / 2, height / 2);
+        this.newCtx.rotate(angle);
+        this.newCtx.drawImage(this.canvasElement, -centerX, -centerY);
+        resolve();
+      });
+    
+      // Save the rotated square as "saveRect.png"
+      const dataURL = this.newCanvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = 't727.png';
+      link.click();
+    }
+      
 
   }
   
