@@ -127,11 +127,11 @@
       }
       if (this.savedImageCounter<4){
       this.savedImageCounter++
-      this.saveRect(newLocation)
+      return this.saveRect(newLocation)
       }
     }
     
-  async saveRect(location) {
+  saveRect(location) {
       const { bottomLeft, bottomRight, topLeft, topRight } = location;
     
       // Calculate the width and height of the square
@@ -150,21 +150,16 @@
       const angle = -Math.atan2(-topLeft.y + topRight.y, -topLeft.x + topRight.x)
 
       // Rotate and draw the square
-      await new Promise((resolve) => {
         this.newCtx.translate(width / 2, height / 2);
         this.newCtx.rotate(angle);
         this.newCtx.drawImage(this.canvasElement, -centerX, -centerY);
-        resolve();
-      });
     
-      // Save the rotated square as "saveRect.png"
-      const dataURL = this.newCanvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = 't727.png';
-      link.click();
+      // Get the ImageData object from the canvas
+      const imageData = this.newCtx.getImageData(0, 0, width, height);
+      // Return the ImageData object directly
+      return imageData;
     }
-      
+  
 
   }
   

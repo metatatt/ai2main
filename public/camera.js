@@ -188,14 +188,16 @@ var ojoapp = new Vue({
 
         // Draw a visual indication of the scanned QR code location
         const location = code.location;
-        this.drawOnCam.drawCircle(location,250)
+        const clippedImage = this.drawOnCam.drawRect(location,4)
+        console.log("imageData ", imageData)
+        console.log("clipped ", clippedImage)
 
         // Calculate deltaX as the distance moved in the X direction from the previous scan
-        const lastLoc = this.scanImageArray?.[this.scanImageArray.length - 1]?.imageData.location ?? location;
-        const deltaX = Math.abs(lastLoc.topRightCorner.x - location.topRightCorner.x);
+        const lastLoc = location;
+        const deltaX = 15;
 
         // Store the imageData, deltaX, and timestamp in the scanImageArray
-        this.scanImageArray.push({ imageData, deltaX, timestamp: Date.now() });
+        this.scanImageArray.push({ clippedImage, deltaX, timestamp: Date.now() });
         console.log(`scanImageArray: ${this.scanImageArray.length} deltaX: ${deltaX}`);
 
         // Calculate elapsedActive time since the first scan
