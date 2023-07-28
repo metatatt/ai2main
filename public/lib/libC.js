@@ -160,6 +160,34 @@
       return imageData;
     }
   
+    calculateVariance(arr) {
+      const sum = arr.reduce((acc, val) => acc + val, 0);
+      const mean = sum / arr.length;
+      const variance = arr.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / arr.length;
+      return variance;
+    }
+    
+    findLeastVariance(arrayB, n) {
+      if (n <= 0 || n > arrayB.length) {
+        throw new Error("Invalid value of n.");
+      }
+    
+      let minVariance = Infinity;
+      let result = [];
+    
+      for (let i = 0; i <= arrayB.length - n; i++) {
+        const subArray = arrayB.slice(i, i + n);
+        const combinedArray = subArray.flatMap(item => item);
+        const variance = calculateVariance(combinedArray);
+    
+        if (variance < minVariance) {
+          minVariance = variance;
+          result = subArray;
+        }
+      }
+    
+      return result;
+    }
 
   }
   

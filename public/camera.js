@@ -197,7 +197,7 @@ var ojoapp = new Vue({
         const deltaX = 15;
 
         // Store the imageData, deltaX, and timestamp in the scanImageArray
-        this.scanImageArray.push({ clippedImage, deltaX, timestamp: Date.now() });
+        this.scanImageArray.push({ clippedImage, location, timestamp: Date.now() });
         console.log(`scanImageArray: ${this.scanImageArray.length} deltaX: ${deltaX}`);
 
         // Calculate elapsedActive time since the first scan
