@@ -51,7 +51,7 @@ var ojoapp = new Vue({
     this.canvasContext = this.canvasElement.getContext("2d", { willReadFrequently: true });
     
     this.client = AgoraRTC.createClient({ mode: 'rtc', codec: 'h264' });
-    
+  
     this.joinAgoraRoom();
     
     this.socket.on('sessionMessage', function(sessionMessage) {
@@ -69,8 +69,7 @@ var ojoapp = new Vue({
       }
     }.bind(this));
 
-    this.drawOnCam = new batonCam(this.canvasElement)
-    
+    this.batonCam = new batonCam(this.canvasElement)
     this.initiateCamera();
   },
   
@@ -121,6 +120,7 @@ var ojoapp = new Vue({
       // Enable scanning and reset scanImageArray
       this.isScanEnabled = true;
       this.scanImageArray = [];
+      this.batonCam.reset(this.scanImageArray)
       const msg = "camera is on..."
         
       messageBox(msg)
@@ -151,18 +151,11 @@ var ojoapp = new Vue({
 
   scanQRCode() {
 
-    // Variables for tracking user activity
-    let elapsedIdleSeconds = 0;
-    let elapsedActiveSeconds = 0;
-
     // Check if video data is available
     if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
-      // Set canvas dimensions and draw video frame
       this.canvasElement.height = this.videoElement.videoHeight;
       this.canvasElement.width = this.videoElement.videoWidth;
       this.canvasContext.drawImage(this.videoElement, 0, 0, this.canvasElement.width, this.canvasElement.height);
-
-      // Extract image data from the canvas
       var imageData = this.canvasContext.getImageData(0, 0, this.canvasElement.width, this.canvasElement.height);
 
       // Attempt to decode QR code from the image data
@@ -177,7 +170,6 @@ var ojoapp = new Vue({
         this.canvasElement.style.zIndex = -1;
 
         const msg = "capture from webcam..."
-        
         messageBox(msg)
         this.socket.emit('sessionMessage', {
           role: this.role,
@@ -188,44 +180,16 @@ var ojoapp = new Vue({
 
         // Draw a visual indication of the scanned QR code location
         const location = code.location;
-        const clippedImage = this.drawOnCam.drawRect(location,4)
-        console.log("imageData ", imageData)
-        console.log("clipped ", clippedImage)
-
-        // Calculate deltaX as the distance moved in the X direction from the previous scan
-        const lastLoc = location;
-        const deltaX = 15;
-
-        // Store the imageData, deltaX, and timestamp in the scanImageArray
-        this.scanImageArray.push({ clippedImage, location, timestamp: Date.now() });
-        console.log(`scanImageArray: ${this.scanImageArray.length} deltaX: ${deltaX}`);
-
-        // Calculate elapsedActive time since the first scan
-        const firstScan = this.scanImageArray?.[0]?.timestamp ?? Date.now();
-        const elapsedActiveTime = Date.now() - firstScan;
-        elapsedActiveSeconds = elapsedActiveTime / 1000;
+        const clippedImage = this.batonCam.drawRect(location,4) //rect width/height = 4 times of QR box
+        this.batonCam.updateArray(clippedImage, location, performance.now());
+        this.isScanEnabled = true;
       } else {
-        // Calculate elapsedIdle time since the latest scan
-        const latest = this.scanImageArray?.[this.scanImageArray.length - 1]?.timestamp ?? Date.now();
-        const elapsedIdleTime = Date.now() - latest;
-        elapsedIdleSeconds = elapsedIdleTime / 1000;
+        this.isScanEnabled = !this.batonCam.hasTargets() //if targetFound, disable the scan loop
       }
-
-      this.isScanEnabled = true;
-    } // videoElement.readyState
-
-    console.log(`active/idle/enabled?: ${elapsedActiveSeconds} ${elapsedIdleSeconds} ${this.isScanEnabled}`);
-
-    // Remove the scan from 1 second ago if the user is idle
-    if (elapsedActiveSeconds > 1) {
-      this.scanImageArray.shift();
     }
 
-    // If the user has been idle for more than 2 seconds, prepare for the audit check
-    if (elapsedIdleSeconds > 2) {
-
+      if (!this.isScanEnabled) {
       const msg = "inspect images..."
-        
       messageBox(msg)
       this.socket.emit('sessionMessage', {
         role: this.role,
@@ -241,11 +205,10 @@ var ojoapp = new Vue({
         messageClass: "#graphicsBox#",
         message: "t"
       });
-
       // Select two "static" images for audit check. 
-      const finalImageDataArray = selectBestTwo(this.scanImageArray);
-      //Feed the selected images to audit check process
-      this.processAudit(finalImageDataArray);
+      const targetsArray = this.batonCam.extractTargets();
+      // //Feed the selected images to audit check process
+      this.processAudit(targetsArray);
     }
 
     // Continue scanning by recursively calling scanQRCode() using requestAnimationFrame
@@ -266,7 +229,7 @@ var ojoapp = new Vue({
     try {
       for (let i = 0; i < imageDataArray.length; i++) {
         // Perform the audit check for each image
-        const eachResult = await getEachResult(imageDataArray[i]);
+        const eachResult = await getEachResult(imageDataArray[i].clippedImage);
         results.push({ id: i, audit: eachResult });
       }
 

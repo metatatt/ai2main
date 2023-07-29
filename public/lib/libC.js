@@ -2,10 +2,14 @@
     constructor(canvasElement) {
       this.canvasElement = canvasElement;
       this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
-  
+      this.targetsArray = null;
       this.newCanvas = document.createElement('canvas');
       this.newCtx = this.newCanvas.getContext('2d');
-      this.savedImageCounter=0;
+    }
+
+    reset(scanImageArray){
+      this.scanArray = scanImageArray
+      this.targetsArray = null;
     }
   
     drawSquare(location) {
@@ -97,8 +101,6 @@
       const tLY = bLY + c * scalar;
       const tRX = bRX - d * scalar;
       const tRY = bRY + c * scalar;
-      const angle = Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x)
-
       this.ctx.beginPath();
       this.ctx.moveTo(bLX-offset, bLY+offset); // Move to bottom left corner
       this.ctx.lineTo(bRX+offset, bRY+offset); // Draw line to bottom right corner
@@ -113,8 +115,7 @@
       this.ctx.textBaseline = "middle";
       this.ctx.fillStyle = "#FF3B58";
       this.ctx.font = "20px Arial";
-      this.ctx.fillText("Angle: " + angle.toFixed(2), tLX+10, tLY+20);
-      console.log("draw rect ",angle.toFixed(2) )
+      this.ctx.fillText("scanArray Length: " + this.scanArray.length, tLX+10, tLY+20);
       const bL ={x: bLX, y:bLY}
       const bR ={x: bRX, y:bRY}
       const tL ={x: tLX, y:tLY}
@@ -125,10 +126,7 @@
         topLeft: tL,
         topRight: tR,
       }
-      if (this.savedImageCounter<4){
-      this.savedImageCounter++
       return this.saveRect(newLocation)
-      }
     }
     
   saveRect(location) {
@@ -159,7 +157,23 @@
       // Return the ImageData object directly
       return imageData;
     }
+
+  updateArray(clippedImage, location, timeStamp ){
+  if (this.scanArray.length >= 50) {
+    this.scanArray.shift(); // Remove the oldest element (first element)
+  }
+  this.scanArray.push({clippedImage, location, timeStamp})
+  }
   
+  hasTargets() {
+    const array = this.scanArray
+    this.targetsArray = this.findLeastVariance(array, 5);
+    const elapseOnset = performance.now() - (array?.[0]?.timeStamp ?? performance.now());
+    const elapseLatest = performance.now() - (array?.[array.length-1]?.timeStamp ?? performance.now());
+    return this.targetsArray.length > 0 && elapseOnset > 2000 && elapseLatest > 1000 ;
+  }
+  
+
     calculateVariance(arr) {
       const sum = arr.reduce((acc, val) => acc + val, 0);
       const mean = sum / arr.length;
@@ -167,28 +181,33 @@
       return variance;
     }
     
-    findLeastVariance(arrayB, n) {
-      if (n <= 0 || n > arrayB.length) {
-        throw new Error("Invalid value of n.");
+    findLeastVariance(scanArray, n) {
+      if (n <= 0 || n > scanArray.length) {
+        return [];
       }
+      console.log('scanArray ', scanArray)
     
       let minVariance = Infinity;
       let result = [];
     
-      for (let i = 0; i <= arrayB.length - n; i++) {
-        const subArray = arrayB.slice(i, i + n);
-        const combinedArray = subArray.flatMap(item => item);
-        const variance = calculateVariance(combinedArray);
-    
+      for (let i = 0; i <= scanArray.length - n; i++) {
+        const subArray = scanArray.slice(i, i + n);
+        const combinedArray = subArray.flatMap(item => [item.location.topLeftCorner.x, item.location.bottomRightCorner.x]);
+        const variance = this.calculateVariance(combinedArray);
         if (variance < minVariance) {
           minVariance = variance;
           result = subArray;
         }
       }
-    
       return result;
     }
 
+    extractTargets(){
+      // Return the value of this.targetsArray
+      console.log('this Targets: ', this.targetsArray)
+      return this.targetsArray;
+    }
+    
   }
   
 export function populateFindings(header, results) {
