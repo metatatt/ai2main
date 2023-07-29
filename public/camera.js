@@ -1,4 +1,4 @@
-import { setOverlay, pageRouter, playSlide, joinAgoraRoom, batonUI} from './lib/libA.js';
+import { populatePage, populateLayout, playSlide, joinAgoraRoom, batonUI} from './lib/libA.js';
 import { getEachResult} from './lib/libB.js';
 import { populateFindings, batonCam } from './lib/libC.js';
 
@@ -30,7 +30,7 @@ var ojoapp = new Vue({
   mounted() {
     this.socket = io(); // Initialize socket connection
     
-    setOverlay.call(this,1)
+    populatePage.call(this,1)
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('userId');
     console.log(userId);
@@ -72,7 +72,7 @@ var ojoapp = new Vue({
   methods: {
   startScanning() {
       // Setup screen layout
-      const layout = pageRouter();
+      const layout = populateLayout();
       layout.scan();
      
       // Disable the setAutoPlay timer if it exists
@@ -216,7 +216,7 @@ var ojoapp = new Vue({
   },
   
   async renderSlide(findingsDOM){
-    const layout = pageRouter();
+    const layout = populateLayout();
     layout.slide();
     const slide=document.querySelector('.slide')
     console.log(`slide ${slide} style.display-- ${slide.style.display}`)

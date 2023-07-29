@@ -84,7 +84,7 @@
   
   
 
-export function pageRouter() {
+export function populateLayout() {
   const videoElement=document.getElementById('video')
   const animation = document.querySelector('.animation');
   const slideElement = document.querySelector('.slide')
@@ -123,7 +123,7 @@ export function pageRouter() {
   };
 }
 
-export function setOverlay(factorValue) {
+export function populatePage(factorValue) {
   
   return new Promise((resolve, reject) => {
   if (!document.querySelector('.overlay')){
@@ -181,7 +181,7 @@ export function setOverlay(factorValue) {
   });
 }
 
-export function setConsoleOverlay(factorValue,gridId) {
+export function populatePageConsole(factorValue,gridId) {
   
   return new Promise((resolve, reject) => {
   if (!document.querySelector('.overlay')){

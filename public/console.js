@@ -1,4 +1,4 @@
-import { joinAgoraRoom, setConsoleOverlay, messageBox, graphicsBox,pageRouter, playConsoleSlide } from './lib/libA.js';
+import { joinAgoraRoom, populatePageConsole, messageBox, graphicsBox, playConsoleSlide } from './lib/libA.js';
 
 var app = new Vue({
   el: '#app',
@@ -72,7 +72,7 @@ var app = new Vue({
         if (videoElement && track) {
             track.play(videoElement);
 
-            setConsoleOverlay(this.CSSfactor,entry.gridId)
+            populatePageConsole(this.CSSfactor,entry.gridId)
           }
         }
     },
@@ -95,7 +95,7 @@ var app = new Vue({
       slide.innerHTML = findingsDOM;
       const ready = await playConsoleSlide.call(this)
       slide.style.display='none';
-      setConsoleOverlay(this.CSSfactor,gridId)
+      populatePageConsole(this.CSSfactor,gridId)
 
     },
 
