@@ -1,4 +1,4 @@
-import { populatePage, populateLayout, playSlide, joinAgoraRoom, batonUI} from './lib/libA.js';
+import { populatePage, playSlide, joinAgoraRoom, batonUI} from './lib/libA.js';
 import { getEachResult} from './lib/libB.js';
 import { populateFindings, batonCam } from './lib/libC.js';
 
@@ -72,14 +72,11 @@ var ojoapp = new Vue({
   methods: {
   startScanning() {
       // Setup screen layout
-      const layout = populateLayout();
-      layout.scan();
-     
+      this.batonUI.layout('scan')
       // Disable the setAutoPlay timer if it exists
       if (typeof this.stopSlide === 'function') {
         this.stopSlide();
       }
-    
       // Enable scanning and reset scanImageArray
       this.isScanEnabled = true;
       this.scanImageArray = [];
@@ -187,13 +184,7 @@ var ojoapp = new Vue({
       // Display the Findings with the header and sorted results
       this.findingsDOM = populateFindings(header, results);
       this.renderSlide(this.findingsDOM)
-      
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: "#slide#",
-        message: this.findingsDOM
-      });
+      this.batonUI.socketEvent( "#slide#", this.findingsDOM);
       this.isScanEnabled = await playSlide.call(this);
       this.startScanning();
     } catch (error) {
@@ -207,8 +198,6 @@ var ojoapp = new Vue({
     console.log("isEnabled? ",this.isScanEnabled)
     if (this.findingsDOM !== null) {
       this.isScanEnabled = await this.renderSlide(this.findingsDOM);
-
-
       if (typeof this.stopSlide === 'function') {
         this.stopSlide();
       }
@@ -216,8 +205,7 @@ var ojoapp = new Vue({
   },
   
   async renderSlide(findingsDOM){
-    const layout = populateLayout();
-    layout.slide();
+    this.batonUI.layout('slide')
     const slide=document.querySelector('.slide')
     console.log(`slide ${slide} style.display-- ${slide.style.display}`)
     slide.innerHTML = findingsDOM; 

@@ -33,7 +33,20 @@
       this.socket = socket
     }
 
-  graphicsBox(iconSelection, parentId) {
+    layout(mode) {
+      const videoElement = document.getElementById('video');
+      const animation = document.querySelector('.animation');
+      const slideElement = document.querySelector('.slide');
+    
+      videoElement.style.display = mode === 'scan' ? 'block' : 'none';
+      slideElement.style.display = mode === 'slide' || mode === 'report' ? 'block' : 'none';
+    
+      if (animation) {
+        animation.style.display = mode === 'scan' ? 'block' : 'none';
+      }
+    }
+    
+    graphicsBox(iconSelection, parentId) {
     const parent = document.querySelector(`#${parentId}`);
     const overlay = parent.querySelector('.overlay'); // Fetch the .overlay container
     const graphicsContainer = document.querySelector('.graphics-box');
@@ -80,47 +93,6 @@
       });
     }
 
-}
-  
-  
-
-export function populateLayout() {
-  const videoElement=document.getElementById('video')
-  const animation = document.querySelector('.animation');
-  const slideElement = document.querySelector('.slide')
-
-
-  function slide() {
-    videoElement.style.display = "none";
-    slideElement.style.display = "block";
-
-    if (animation) {
-      animation.style.display = 'none';
-    }
-  }
-
-  function scan() {
-    videoElement.style.display = "block";
-    slideElement.style.display = "none";
-    if (animation) {
-      animation.style.display = 'block';
-    }
-  }
-
-  function report(){
-    videoElement.style.display = "none";
-    slideElement.style.display = "block";
-    if (animation) {
-      animation.style.display = 'none';
-    }
-
-  }
-
-  return {
-    slide,
-    scan,
-    report
-  };
 }
 
 export function populatePage(factorValue) {
