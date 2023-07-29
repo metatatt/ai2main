@@ -64,38 +64,12 @@ var ojoapp = new Vue({
       }
     }.bind(this));
 
-    this.batonCam = new batonCam(this.canvasElement)
+    this.batonCam = new batonCam(this.canvasElement,this.videoElement)
     this.batonUI = new batonUI(this.role, this.gridId, this.socket)
-    this.initiateCamera();
+    this.batonCam.initiateCamera();
   },
   
   methods: {
-    async initiateCamera() {
-
-      const msg = "initiating camera..."
-      this.batonUI.messageBox(msg)
-      const constraints = {
-        video: {
-          facingMode: "environment",
-          width: 1024,
-          height: 768
-        }
-      };
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        this.videoElement.srcObject = stream;
-        this.videoElement.setAttribute("playsinline", true);
-        this.videoElement.play();
-        
-        const msg = "camera is on..."
-        this.batonUI.messageBox(msg)
-        this.batonUI.socketEvent("#messageBox#", msg);
-
-      } catch (error) {
-        console.log("#setUpVideo -Unable to access video stream:", error);
-      }
-    },
-
   startScanning() {
       // Setup screen layout
       const layout = pageRouter();
@@ -127,7 +101,6 @@ var ojoapp = new Vue({
   // This app switches between the scanQRCode() and processAudit() functions based on the combination of active-idle state and the length of scanImageArray.
 
   scanQRCode() {
-
     // Check if video data is available
     if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
       this.canvasElement.height = this.videoElement.videoHeight;
@@ -212,7 +185,6 @@ var ojoapp = new Vue({
       });
 
       // Display the Findings with the header and sorted results
-      console.log('before Findings-results ', results)
       this.findingsDOM = populateFindings(header, results);
       this.renderSlide(this.findingsDOM)
       
@@ -253,8 +225,7 @@ var ojoapp = new Vue({
     return true
   },
 
-  
-  
+
   async joinAgoraRoom() {
       await joinAgoraRoom.call(this);
    },
@@ -279,9 +250,6 @@ var ojoapp = new Vue({
         message: `[${this.gridId}:]<br><br>share camera`
       });
     },
-    
-    
-
 
   }
 });

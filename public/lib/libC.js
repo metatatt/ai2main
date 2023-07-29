@@ -1,5 +1,6 @@
   export class batonCam {
-    constructor(canvasElement) {
+    constructor(canvasElement, videoElement) {
+      this.videoElement = videoElement
       this.canvasElement = canvasElement;
       this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
       this.targetsArray = null;
@@ -11,7 +12,30 @@
       this.scanArray = scanImageArray
       this.targetsArray = null;
     }
-  
+
+    async initiateCamera(){
+      const constraints = {
+        video: {
+          facingMode: "environment",
+          width: 1024,
+          height: 768
+        }
+      };
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        this.videoElement.srcObject = stream;
+        this.videoElement.setAttribute("playsinline", true);
+        this.videoElement.play();
+        
+        const msg = "camera is on..."
+        this.batonUI.messageBox(msg)
+        this.batonUI.socketEvent("#messageBox#", msg);
+
+      } catch (error) {
+        console.log("#setUpVideo -Unable to access video stream:", error);
+      }
+    }
+   
     drawSquare(location) {
       console.log("here drawSquare");
       const topLeft = location.topLeftCorner;
