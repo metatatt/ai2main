@@ -1,5 +1,4 @@
-import { setOverlay, pageRouter, playSlide, joinAgoraRoom, graphicsBox, messageBox} from './lib/libA.js';
-import { selectBestTwo} from './lib/libB.js';
+import { setOverlay, pageRouter, playSlide, joinAgoraRoom, batonUI} from './lib/libA.js';
 import { getEachResult} from './lib/libB.js';
 import { populateFindings, batonCam } from './lib/libC.js';
 
@@ -39,9 +38,7 @@ var ojoapp = new Vue({
     console.log(userId);
     
     // 06-14 to mask userId for dev Ngrok test on iPad
-    // this.userId = userId;
-    
-    messageBox("starting...");
+    // this.userId = userId;    
     this.userId = "2XXX9-"; //for use in develop testing Ngrok/iPad
     this.role = "camera";
     this.statusAgora = "mute"; //mute, published, eg
@@ -70,6 +67,7 @@ var ojoapp = new Vue({
     }.bind(this));
 
     this.batonCam = new batonCam(this.canvasElement)
+    this.batonUI = new batonUI(this.role, this.gridId, this.socket)
     this.initiateCamera();
   },
   
@@ -77,7 +75,7 @@ var ojoapp = new Vue({
     async initiateCamera() {
 
       const msg = "initiating camera..."
-      messageBox(msg)
+      this.batonUI.messageBox(msg)
       const constraints = {
         video: {
           facingMode: "environment",
@@ -92,15 +90,8 @@ var ojoapp = new Vue({
         this.videoElement.play();
         
         const msg = "camera is on..."
-        
-        messageBox(msg)
-        this.socket.emit('sessionMessage', {
-          role: this.role,
-          gridId: this.gridId,
-          messageClass: "#messageBox#",
-          message: msg
-        });
-
+        this.batonUI.messageBox(msg)
+        this.batonUI.socketEvent("#messageBox#", msg);
 
       } catch (error) {
         console.log("#setUpVideo -Unable to access video stream:", error);
@@ -122,24 +113,12 @@ var ojoapp = new Vue({
       this.scanImageArray = [];
       this.batonCam.reset(this.scanImageArray)
       const msg = "camera is on..."
-        
-      messageBox(msg)
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: "#messageBox#",
-        message: msg
-      });
+      this.batonUI.messageBox(msg)
+      this.batonUI.socketEvent("#messageBox#", msg);
       
       // Play scan icon animation
-      graphicsBox('s','batonApp');
-        
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: "#graphicsBox#",
-        message: 's'
-      });
+      this.batonUI.graphicsBox('s','batonApp');
+      this.batonUI.socketEvent("#graphicsBox#", 's');
     
       // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
       this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
@@ -170,13 +149,8 @@ var ojoapp = new Vue({
         this.canvasElement.style.zIndex = -1;
 
         const msg = "capture from webcam..."
-        messageBox(msg)
-        this.socket.emit('sessionMessage', {
-          role: this.role,
-          gridId: this.gridId,
-          messageClass: "#messageBox#",
-          message: msg
-        });
+        this.batonUI.messageBox(msg)
+        this.batonUI.socketEvent("#messageBox#", msg);
 
         // Draw a visual indication of the scanned QR code location
         const location = code.location;
@@ -190,21 +164,11 @@ var ojoapp = new Vue({
 
       if (!this.isScanEnabled) {
       const msg = "inspect images..."
-      messageBox(msg)
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: "#messageBox#",
-        message: msg
-      });
+      this.batonUI.messageBox(msg)
+      this.batonUI.socketEvent("#messageBox#", msg);
 
-      graphicsBox('t','batonApp'); // Play Tee logo animation
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: "#graphicsBox#",
-        message: "t"
-      });
+      this.batonUI.graphicsBox('t','batonApp'); // Play Tee logo animation
+      this.batonUI.socketEvent("#graphicsBox#", 't');
       // Select two "static" images for audit check. 
       const targetsArray = this.batonCam.extractTargets();
       // //Feed the selected images to audit check process
@@ -235,22 +199,11 @@ var ojoapp = new Vue({
 
       const msg = "create report..."
         
-      messageBox(msg)
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: "#messageBox#",
-        message: msg
-      });
+      this.batonUI.messageBox(msg)
+      this.batonUI.socketEvent("#messageBox#", msg);
 
-      graphicsBox('r','batonApp');
-
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: "#graphicsBox#",
-        message: "r"
-      });
+      this.batonUI.graphicsBox('r','batonApp');
+      this.batonUI.socketEvent("#graphicsBox#", 'r');
 
       console.log('procAudit() results ', results)
       // Sort the results array based on probability from high to low
@@ -312,14 +265,14 @@ var ojoapp = new Vue({
   async shareCamera() {
       this.isShareOn = !this.isShareOn
       if (this.statusAgora === 'mute') {
-        messageBox("Enable camera sharing...");
+        this.batonUI.messageBox("Enable camera sharing...");
         
         this.statusAgora = 'published';
         await this.localTrack.setEnabled(true);
         await this.client.publish(this.localTrack);
         console.log('第：publish');
       } else {
-        messageBox("Stop camera sharing...");
+        this.batonUI.messageBox("Stop camera sharing...");
         this.statusAgora = 'mute';
         await this.localTrack.setEnabled(false);
       }

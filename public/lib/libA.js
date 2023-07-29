@@ -26,12 +26,18 @@
       });
   }
 
-  export function graphicsBox(iconSelection, parentId) {
+  export class batonUI {
+    constructor(role, gridId, socket){
+      this.role = role,
+      this.gridId = gridId,
+      this.socket = socket
+    }
+
+  graphicsBox(iconSelection, parentId) {
     const parent = document.querySelector(`#${parentId}`);
     const overlay = parent.querySelector('.overlay'); // Fetch the .overlay container
     const graphicsContainer = document.querySelector('.graphics-box');
     let imgSrc = "";
-  
     if (iconSelection === "t") {
       imgSrc = "./img/b&plogo.svg";
     } else if (iconSelection === "r") {
@@ -39,7 +45,6 @@
     } else {
       imgSrc = "./img/scanSignBlue380Ani.gif";
     }
-  
     const icon = document.createElement('img');
     icon.src = imgSrc;
     icon.classList.add('animation');
@@ -49,51 +54,35 @@
     
     // Append the icon to graphicsContainer
     graphicsContainer.appendChild(icon);
-  
     return new Promise((resolve) => {
       resolve();
     });
-  }
-  
-  
-  
+    }
 
-  export function messageBox(message,gridId) {
-    
-  
-    const info1 = document.querySelector('.text-header1');
-    const info2 = document.querySelector('.text-header2');
-  
-  
-    const currentDate = new Date().toLocaleDateString('en-US', {
-      year: '2-digit',
-      month: '2-digit',
-      day: '2-digit',
-    });
-  
-    info2.innerHTML = currentDate;
-    info1.innerHTML = message;
-  }
-  
+    messageBox(message) {
+      const info1 = document.querySelector('.text-header1');
+      const info2 = document.querySelector('.text-header2');
+      const currentDate = new Date().toLocaleDateString('en-US', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      info2.innerHTML = currentDate;
+      info1.innerHTML = message;
+    }
 
-function isFlat(location) {
-  const topLeft = location.topLeftCorner;
-  const topRight = location.topRightCorner;
-  const bottomLeft = location.bottomLeftCorner;
-  const bottomRight = location.bottomRightCorner;
-  
-  const topDistance = Math.sqrt(
-    Math.pow(topRight.x - topLeft.x, 2) + Math.pow(topRight.y - topLeft.y, 2)
-  );
-  
-  const bottomDistance = Math.sqrt(
-    Math.pow(bottomRight.x - bottomLeft.x, 2) + Math.pow(bottomRight.y - bottomLeft.y, 2)
-  );
-  
-  const tolerance = 1; // Adjust this value as needed
-  
-  return Math.abs(topDistance - bottomDistance) <= tolerance;
+    socketEvent(msgClass, msg){
+      this.socket.emit('sessionMessage', {
+        role: this.role,
+        gridId: this.gridId,
+        messageClass: msgClass,
+        message: msg
+      });
+    }
+
 }
+  
+  
 
 export function pageRouter() {
   const videoElement=document.getElementById('video')
