@@ -22,8 +22,6 @@ var ojoapp = new Vue({
     scanRequestId: null,
     socket: null,
     statusAgora: "",
-    statusCheck: "listening",
-    taskMode: "scan", // mode = scan, inspect, findings
     userId: null,
     videoElement: null,
   },
@@ -281,63 +279,6 @@ var ojoapp = new Vue({
         message: `[${this.gridId}:]<br><br>share camera`
       });
     },
-    
-    drawLine(begin, end, color) {
-      this.canvasContext.beginPath();
-      this.canvasContext.moveTo(begin.x, begin.y);
-      this.canvasContext.lineTo(end.x, end.y);
-      this.canvasContext.lineWidth = 4;
-      this.canvasContext.strokeStyle = color;
-      this.canvasContext.stroke();
-    },
-
-    drawArcs(location) {
-      const topRight = location.topRightCorner;
-      const topLeft = location.topLeftCorner;
-      const bottomLeft = location.bottomLeftCorner; // New addition for bottomLeft point
-    
-      // Calculate the distance between topRight and topLeft points
-      const distanceTopRightTopLeft = Math.sqrt((topRight.x - topLeft.x) ** 2 + (topRight.y - topLeft.y) ** 2);
-    
-      // Calculate the new center position at +60 degrees above the line connecting topLeft and topRight
-      const angleInRadians = (60 * Math.PI) / 180; // Convert 60 degrees to radians
-      const newCenter = {
-        x: topRight.x - (distanceTopRightTopLeft / 2) * Math.cos(angleInRadians),
-        y: topRight.y - (distanceTopRightTopLeft / 2) * Math.sin(angleInRadians),
-      };
-    
-      const viewWidth = document.documentElement.clientWidth;
-      const radius = Math.min(this.canvasElement.width, this.canvasElement.height) / 2; // Updated radius calculation
-    
-      // Clear the previous circle and prepare for the radiation symbol
-      this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-      this.canvasContext.beginPath();
-    
-      // Calculate the x position difference between topLeft and bottomLeft points
-      const distanceTopLeftBottomLeft = Math.abs(bottomLeft.x - topLeft.x);
-    
-      // Calculate the angle in radians based on the x position difference
-      const angleFromXAxis = Math.atan2(topLeft.y - newCenter.y, topLeft.x - newCenter.x);
-      const angleDifference = (distanceTopLeftBottomLeft / radius) * (Math.PI / 2); // Adjust the angle based on the x position difference
-    
-      // Adjust startAngle and endAngle based on the calculated angle difference
-      const startAngle = angleFromXAxis - angleDifference;
-      const endAngle = angleFromXAxis + angleDifference;
-      
-      // this.canvasContext.arc(newCenter.x, newCenter.y, radius, startAngle, startAngle);
-      this.canvasContext.lineWidth = 4;
-      this.canvasContext.strokeStyle = "#FF3B58";
-      this.canvasContext.stroke();
-    
-      const arcRadiusStep = radius / 4;
-      for (let i = 0; i < 3; i++) {
-        const arcRadius = arcRadiusStep * (i + 1);
-        this.canvasContext.beginPath();
-        this.canvasContext.arc(newCenter.x, newCenter.y, arcRadius, startAngle, startAngle+4.25);
-        this.canvasContext.stroke();
-      }
-    }
-    
     
     
 
