@@ -44,12 +44,7 @@ export async function getEachResult(imageArrayObj) {
       image: imageDataSource, // Add the image source to the showTag output
       boundingBox: mostLikelyPrediction.boundingBox
     };
-    const eachTaggedResult = JSON.stringify(showTagObj);
-        // Set a timeout to update UI and display the showTag result
-      setTimeout(() => {
-      }, 200);
-
-    return eachTaggedResult;
+    return showTagObj;
   }
     return null;
 }

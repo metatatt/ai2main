@@ -155,16 +155,17 @@ var ojoapp = new Vue({
     this.videoElement.style.zIndex = -1;
     this.canvasElement.style.zIndex = -2;
     const header = { header1: "WIP 3200 (xxxx)", header2: "obtain info from PDF" };
-    let results = [];
-  
-    // Iterate through the imageDataArray for processing each image
+    const results = []; // Initialize an empty array to store the results
     try {
       for (let i = 0; i < imageDataArray.length; i++) {
-        // Perform the audit check for each image
-        const eachResult = await getEachResult(imageDataArray[i].clippedImage);
-        results.push({ id: i, audit: eachResult });
+        const res = await getEachResult(imageDataArray[i].clippedImage);
+        results.push(res); // Add the result object to the results array
       }
-
+    } catch (error) {
+      console.error(error);
+    }
+  
+    // Iterate through the imageDataArray for processing each image
       const msg = "create report..."
         
       this.batonUI.messageBox(msg)
@@ -172,12 +173,15 @@ var ojoapp = new Vue({
 
       this.batonUI.graphicsBox('r','batonApp');
       this.batonUI.socketEvent("#graphicsBox#", 'r');
+      console.log('procAudit() d', results)
 
-      console.log('procAudit() results ', results)
+      console.log('procAudit() [0]', results[0])
+      console.log('procAudit() prob ', results[0].probability)
+      console.log('procAudit() prob ', results[0].image)
       // Sort the results array based on probability from high to low
       results.sort((a, b) => {
-        const aProbability = a.audit ? a.audit.probability : 0;
-        const bProbability = b.audit ? b.audit.probability : 0;
+        const aProbability = a ? a.probability : 0;
+        const bProbability = b ? b.probability : 0;
         return bProbability - aProbability;
       });
 
@@ -187,10 +191,6 @@ var ojoapp = new Vue({
       this.batonUI.socketEvent( "#slide#", this.findingsDOM);
       this.isScanEnabled = await playSlide.call(this);
       this.startScanning();
-    } catch (error) {
-      console.log("Error:", error);
-      return "Unable to access video stream.";
-    }
   },
 
   async viewFindings() {
