@@ -1,4 +1,5 @@
-import { joinAgoraRoom, populatePageConsole, messageBox, graphicsBox, playConsoleSlide } from './lib/libA.js';
+import { joinAgoraRoom} from './lib/libA.js'; 
+import {populatePageConsole, messageBox, graphicsBox, playConsoleSlide } from './lib/libC.js';
 
 var app = new Vue({
   el: '#app',

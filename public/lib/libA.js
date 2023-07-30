@@ -26,294 +26,238 @@
       });
   }
 
-  export class batonUI {
-    constructor(role, gridId, socket){
-      this.role = role,
-      this.gridId = gridId,
-      this.socket = socket
+  export class batonCam {
+    constructor(canvasElement, videoElement) {
+      this.videoElement = videoElement
+      this.canvasElement = canvasElement;
+      this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
+      this.targetsArray = null;
+      this.newCanvas = document.createElement('canvas');
+      this.newCtx = this.newCanvas.getContext('2d');
     }
 
-    layout(mode) {
-      const videoElement = document.getElementById('video');
-      const animation = document.querySelector('.animation');
-      const slideElement = document.querySelector('.slide');
-    
-      videoElement.style.display = mode === 'scan' ? 'block' : 'none';
-      slideElement.style.display = mode === 'slide' || mode === 'report' ? 'block' : 'none';
-    
-      if (animation) {
-        animation.style.display = mode === 'scan' ? 'block' : 'none';
+    reset(scanImageArray){
+      this.scanArray = scanImageArray
+      this.targetsArray = null;
+    }
+
+    async initiateCamera(){
+      const constraints = {
+        video: {
+          facingMode: "environment",
+          width: 1024,
+          height: 768
+        }
+      };
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        this.videoElement.srcObject = stream;
+        this.videoElement.setAttribute("playsinline", true);
+        this.videoElement.play();
+        
+        const msg = "camera is on..."
+        this.batonUI.messageBox(msg)
+        this.batonUI.socketEvent("#messageBox#", msg);
+
+      } catch (error) {
+        console.log("#setUpVideo -Unable to access video stream:", error);
       }
     }
+   
+    drawSquare(location) {
+      console.log("here drawSquare");
+      const topLeft = location.topLeftCorner;
+      const topRight = location.topRightCorner;
+      const xOffset = topLeft.x - location.bottomLeftCorner.x;
+      const yOffset = topLeft.y - location.bottomLeftCorner.y;
     
-    graphicsBox(iconSelection, parentId) {
-    const parent = document.querySelector(`#${parentId}`);
-    const overlay = parent.querySelector('.overlay'); // Fetch the .overlay container
-    const graphicsContainer = document.querySelector('.graphics-box');
-    let imgSrc = "";
-    if (iconSelection === "t") {
-      imgSrc = "./img/b&plogo.svg";
-    } else if (iconSelection === "r") {
-      imgSrc = "./img/i-camera.svg";
-    } else {
-      imgSrc = "./img/scanSignBlue380Ani.gif";
-    }
-    const icon = document.createElement('img');
-    icon.src = imgSrc;
-    icon.classList.add('animation');
-  
-    // Remove any existing content inside graphicsContainer
-    graphicsContainer.innerHTML = '';
+      const newTopLeftX = topLeft.x + xOffset
+      const newTopLeftY= topLeft.y + yOffset
+      const newTopRightX = topRight.x + xOffset
+      const newTopRightY = topRight.y + yOffset
+
+      console.log("Top Left:", topLeft);
+      console.log("Top Right:", topRight);
+      console.log("New Top Left:", newTopLeftX, newTopLeftY);
+      console.log("New Top Right:", newTopRightX, newTopRightY);
     
-    // Append the icon to graphicsContainer
-    graphicsContainer.appendChild(icon);
-    return new Promise((resolve) => {
-      resolve();
-    });
+      this.ctx.beginPath();
+      this.ctx.moveTo(topLeft.x, topLeft.y);
+      this.ctx.lineTo(newTopLeftX, newTopLeftY);
+      this.ctx.lineTo(newTopRightX, newTopRightY);
+      this.ctx.lineTo(topRight.x, topRight.y);
+      this.ctx.lineTo(topLeft.x, topLeft.y);
+    
+      // Set the line width and stroke style for the square.
+      this.ctx.lineWidth = 4;
+      this.ctx.strokeStyle = "#FF3B58";
+    
+      // Draw the square with the specified line width and stroke style.
+      this.ctx.stroke();
     }
-
-    messageBox(message) {
-      const info1 = document.querySelector('.text-header1');
-      const info2 = document.querySelector('.text-header2');
-      const currentDate = new Date().toLocaleDateString('en-US', {
-        year: '2-digit',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      info2.innerHTML = currentDate;
-      info1.innerHTML = message;
+    
+    drawCircle(location, radius) {
+      console.log("here drawBiggerSquare");
+    
+      const topLeft = location.topLeftCorner;
+      const topRight = location.topRightCorner;
+      const midPointX = (topLeft.x + topRight.x) / 2;
+      const midPointY = (topLeft.y + topRight.y) / 2;
+      const xOffset = topLeft.x - location.bottomLeftCorner.x;
+      const yOffset = topLeft.y - location.bottomLeftCorner.y;
+      const newCenterX = midPointX+xOffset*2
+      const newCenterY = midPointY+yOffset*2
+      console.log("New Center 1:", newCenterX, newCenterY);
+      console.log("Radius:", radius);
+    
+      this.ctx.beginPath();
+      this.ctx.arc(newCenterX, newCenterY, radius, 0, 2 * Math.PI);
+      this.ctx.strokeStyle = "#FF3B58";
+      this.ctx.lineWidth = 4;
+      this.ctx.stroke();
+      this.makeClip(newCenterX, newCenterY,radius)
     }
-
-    socketEvent(msgClass, msg){
-      this.socket.emit('sessionMessage', {
-        role: this.role,
-        gridId: this.gridId,
-        messageClass: msgClass,
-        message: msg
-      });
-    }
-
-}
-
-export function populatePage(factorValue) {
   
-  return new Promise((resolve, reject) => {
-  if (!document.querySelector('.overlay')){
-    const overlay = document.createElement('div')
-    document.body.appendChild(overlay)
+    makeClip(newCenterX,newCenterY,radius){
+      this.newCanvas.width = 2*radius;
+      this.newCanvas.height = 2*radius;
+      this.newCtx.beginPath()
+      this.newCtx.arc(radius, radius, radius, 0, 2 * Math.PI);
+      this.newCtx.closePath()
+      this.newCtx.clip()
+      const offsetX = newCenterX - radius;
+      const offsetY = newCenterY - radius;
+      this.newCtx.drawImage(this.canvasElement, offsetX, offsetY, 2 * radius, 2 * radius, 0, 0, 2 * radius, 2 * radius);
+      const dataURL = this.newCanvas.toDataURL('image/png');
+      const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'makeClipA.png';
+            link.click();
+    }
+
+    drawRect(location, scalar) {
+
+      const offset = 10;
+      const topLeft = location.topLeftCorner;
+      const topRight = location.topRightCorner;
+      const bottomLeft = location.bottomLeftCorner;
+      const a = topRight.x - topLeft.x;
+      const b = topRight.y - topLeft.y;
+      const c = topLeft.y - bottomLeft.y;
+      const d = bottomLeft.x - topLeft.x
+      const bLX = topLeft.x - a * (scalar - 1) / 2;
+      const bLY = topLeft.y - b * (scalar - 1) / 2;
+      const bRX = topRight.x + a * (scalar - 1) / 2;
+      const bRY = topRight.y + b * (scalar - 1) / 2;
+      const tLX = bLX - d * scalar;
+      const tLY = bLY + c * scalar;
+      const tRX = bRX - d * scalar;
+      const tRY = bRY + c * scalar;
+      this.ctx.beginPath();
+      this.ctx.moveTo(bLX-offset, bLY+offset); // Move to bottom left corner
+      this.ctx.lineTo(bRX+offset, bRY+offset); // Draw line to bottom right corner
+      this.ctx.lineTo(tRX+offset, tRY-offset); // Draw line to top right corner
+      this.ctx.lineTo(tLX-offset, tLY-offset); // Draw line to top left corner
+      this.ctx.closePath(); // Close the path
+    
+      this.ctx.strokeStyle = "#FF3B58";
+      this.ctx.lineWidth = 4;
+      this.ctx.stroke();
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.fillStyle = "#FF3B58";
+      this.ctx.font = "20px Arial";
+      this.ctx.fillText("scanArray Length: " + this.scanArray.length, tLX+10, tLY+20);
+      const bL ={x: bLX, y:bLY}
+      const bR ={x: bRX, y:bRY}
+      const tL ={x: tLX, y:tLY}
+      const tR = {x: tRX, y:tRY}
+      const newLocation = {
+        bottomLeft: bL,
+        bottomRight: bR,
+        topLeft: tL,
+        topRight: tR,
+      }
+      return this.saveRect(newLocation)
+    }
+    
+  saveRect(location) {
+      const { bottomLeft, bottomRight, topLeft, topRight } = location;
+    
+      // Calculate the width and height of the square
+      const width = Math.sqrt((topLeft.x - topRight.x) ** 2 + (topLeft.y - topRight.y) ** 2);
+      const height = Math.sqrt((topLeft.x - bottomLeft.x) ** 2 + (topLeft.y - bottomLeft.y) ** 2);
+    
+      // Calculate the center point of the square
+      const centerX = (topLeft.x + topRight.x + bottomLeft.x + bottomRight.x) / 4;
+      const centerY = (topLeft.y + topRight.y + bottomLeft.y + bottomRight.y) / 4;
+      this.newCtx.clearRect(0, 0, this.newCanvas.width, this.newCanvas.height);
+
+      // Clear the canvas and set its dimensions
+      // this.newCtx.clearRect(0, 0, this.newCanvas.width, this.newCanvas.height);
+      this.newCanvas.width = width;
+      this.newCanvas.height = height;
+      const angle = -Math.atan2(-topLeft.y + topRight.y, -topLeft.x + topRight.x)
+
+      // Rotate and draw the square
+        this.newCtx.translate(width / 2, height / 2);
+        this.newCtx.rotate(angle);
+        this.newCtx.drawImage(this.canvasElement, -centerX, -centerY);
+    
+      // Get the ImageData object from the canvas
+      const imageData = this.newCtx.getImageData(0, 0, width, height);
+      // Return the ImageData object directly
+      return imageData;
+    }
+
+  updateArray(clippedImage, location, timeStamp ){
+  if (this.scanArray.length >= 50) {
+    this.scanArray.shift(); // Remove the oldest element (first element)
   }
-        // Set the --factor variable dynamically
-   document.documentElement.style.setProperty('--factor', factorValue);
-
-    const overlay = document.querySelector('.overlay');
-    const elementDOMS = `
-      <nav>
-        <img src="./img/Baton-Icon-Blue.svg" width="100px" height="100px" alt="logo">
-        <ul>
-            <li id="share-btn">
-              <img src="https://i.postimg.cc/JnggC78Q/video.png">
-            </li>
-            <li id="scan-btn">
-              <img src="./img/i-checked.svg">
-            </li>
-            <li id="slide-btn">
-              <img src="https://i.postimg.cc/vmb3JgVy/message.png">
-            </li>
-            <li>
-              <img src="https://i.postimg.cc/k4DZH604/users.png">
-            </li>
-            <li>
-              <img src="https://i.postimg.cc/v84Fqkyz/setting.png">
-            </li>
-        </ul>
-      </nav>
-      <div class="message-box">
-          <div class="text-header1">--</div>
-          <img src="./img/Baton-Icon-Blue.svg">
-          <div class="text-header2"></div>
-      </div>
-      <div class="graphics-box">
-      </div>
-      <div class="slide" style="display: none">
-      </div>
-    `;
-
-    overlay.innerHTML = elementDOMS;
-
-    document.getElementById('share-btn').addEventListener('click', this.shareCamera);
-    document.getElementById('scan-btn').addEventListener('click', this.startScanning);
-    document.getElementById('slide-btn').addEventListener('click', this.viewFindings);
-  
-    // Check if the content is successfully rendered and resolve the Promise
-    if (overlay.innerHTML === elementDOMS) {
-      resolve();
-    } else {
-      reject(new Error('Failed to render content.'));
-    }
-  });
-}
-
-export function populatePageConsole(factorValue,gridId) {
-  
-  return new Promise((resolve, reject) => {
-  if (!document.querySelector('.overlay')){
-    const video = document.getElementById(gridId)
-    console.log('overlay setConsoleOverlay ', video) 
-    const overlay = document.createElement('div')
-    video.appendChild(overlay)
+  this.scanArray.push({clippedImage, location, timeStamp})
   }
-        // Set the --factor variable dynamically
-   document.documentElement.style.setProperty('--factor', factorValue);
+  
+  hasTargets() {
+    const array = this.scanArray
+    this.targetsArray = this.findLeastVariance(array, 5);
+    const elapseOnset = performance.now() - (array?.[0]?.timeStamp ?? performance.now());
+    const elapseLatest = performance.now() - (array?.[array.length-1]?.timeStamp ?? performance.now());
+    return this.targetsArray.length > 0 && elapseOnset > 2000 && elapseLatest > 1000 ;
+  }
+  
 
-     // Using querySelector to find the element with id="grid-2"
-   const videoGridEle = document.querySelector('#grid-2');
-
-  // Then, using querySelector on the gridElement to find the .overlay element within it
-  const overlay = videoGridEle.querySelector('.overlay');
-
-    const elementDOMS = `
-      <nav>
-        <ul>
-            <li id="share-btn">
-              <img src="https://i.postimg.cc/JnggC78Q/video.png">
-            </li>
-            <li id="scan-btn">
-              <img src="./img/i-checked.svg">
-            </li>
-            <li id="slide-btn">
-              <img src="https://i.postimg.cc/vmb3JgVy/message.png">
-            </li>
-        </ul>
-      </nav>
-      <div class="message-box" style="position: absolute; margin-left: 10%;">
-          <div class="text-header1">--</div>
-          <img src="./img/Baton-Icon-Blue.svg">
-          <div class="text-header2"></div>
-      </div>
-      <div class="graphics-box" style="position: absolute; margin-left: 40%;margin-top: 30%;">
-      </div>
-      <div class="slide" style="position: absolute; display: none">
-      </div>
-      `;
-
-
-    overlay.innerHTML = elementDOMS;
-
-    // Check if the content is successfully rendered and resolve the Promise
-    if (overlay.innerHTML === elementDOMS) {
-      resolve();
-    } else {
-      reject(new Error('Failed to render content.'));
+    calculateVariance(arr) {
+      const sum = arr.reduce((acc, val) => acc + val, 0);
+      const mean = sum / arr.length;
+      const variance = arr.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / arr.length;
+      return variance;
     }
-  });
-}
-
-
-export async function playSlide() {
-      return new Promise((resolve) => {
     
-        const prevNext = document.querySelector('.prevNext')
-        const bullets = document.querySelector('.bullets')
-        prevNext.style.display='none'
-        bullets.style.display='none'
-        
-        // Get the slide elements
-        var slides = document.getElementsByClassName("play-sequence");
-        console.log('autoPlayFindings')
+    findLeastVariance(scanArray, n) {
+      if (n <= 0 || n > scanArray.length) {
+        return [];
+      }
+      console.log('scanArray ', scanArray)
     
-        // Initialize the slide index
-        var currentSlide = 0;
-        var requestId;
+      let minVariance = Infinity;
+      let result = [];
     
-        // Function to show the current slide
-        function showSlide() {
-          // Hide all slides
-          for (var i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
-          }
-    
-          // Show the current slide
-          slides[currentSlide].style.display = "block";
-          console.log(`slides bug: #${currentSlide} object: ${slides[currentSlide]} .id ${slides[currentSlide].id}` )
-          // Update the URL hash to navigate to the next slide
-          window.location.hash = "#" + slides[currentSlide].id;
-    
-          // Increment the slide index
-          currentSlide++;
-    
-          // Resolve the promise when all slides have been shown
-          if (currentSlide >= slides.length) {
-            resolve();
-            return true;
-          }
-    
-          // Request the next animation frame after a delay of 2 seconds (0.5 frames per second)
-          setTimeout(() => {
-            requestId = requestAnimationFrame(showSlide);
-          }, 2500);
+      for (let i = 0; i <= scanArray.length - n; i++) {
+        const subArray = scanArray.slice(i, i + n);
+        const combinedArray = subArray.flatMap(item => [item.location.topLeftCorner.x, item.location.bottomRightCorner.x]);
+        const variance = this.calculateVariance(combinedArray);
+        if (variance < minVariance) {
+          minVariance = variance;
+          result = subArray;
         }
-    
-       // Start the slideshow
-        showSlide();
-    
-        // Assign the stopAutoplay function as a property of 'this'
-        this.stopSlide = () => {
-          cancelAnimationFrame(requestId);
-          resolve();
-        };
-      });
+      }
+      return result;
     }
 
-    export async function playConsoleSlide() {
-      return new Promise((resolve) => {
-    
-        const prevNext = document.querySelector('.prevNext')
-        const bullets = document.querySelector('.bullets')
-        prevNext.style.display='none'
-        bullets.style.display='none'
-        
-        // Get the slide elements
-        var slides = document.getElementsByClassName("play-sequence");
-        console.log('autoPlayFindings')
-    
-        // Initialize the slide index
-        var currentSlide = 0;
-        var requestId;
-    
-        // Function to show the current slide
-        function showSlide() {
-          // Hide all slides
-          for (var i = 0; i < slides.length; i++) {
-            slides[i].style.display = "none";
-          }
-    
-          // Show the current slide
-          slides[currentSlide].style.display = "block";
-          console.log(`slides bug: #${currentSlide} object: ${slides[currentSlide]} .id ${slides[currentSlide].id}` )
-          // Update the URL hash to navigate to the next slide
-          window.location.hash = "#" + slides[currentSlide].id;
-    
-          // Increment the slide index
-          currentSlide++;
-    
-          // Resolve the promise when all slides have been shown
-          if (currentSlide >= slides.length) {
-            resolve();
-            return true;
-          }
-    
-          // Request the next animation frame after a delay of 2 seconds (0.5 frames per second)
-          setTimeout(() => {
-            requestId = requestAnimationFrame(showSlide);
-          }, 2500);
-        }
-    
-       // Start the slideshow
-        showSlide();
-    
-        // Assign the stopAutoplay function as a property of 'this'
-        this.stopSlide = () => {
-          resolve();
-        };
-      });
+    extractTargets(){
+      // Return the value of this.targetsArray
+      console.log('this Targets: ', this.targetsArray)
+      return this.targetsArray;
     }
+    
+  }

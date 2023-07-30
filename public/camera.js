@@ -1,6 +1,6 @@
-import { populatePage, playSlide, joinAgoraRoom, batonUI} from './lib/libA.js';
+import { joinAgoraRoom, batonCam} from './lib/libA.js';
 import { getEachResult} from './lib/libB.js';
-import { populateFindings, batonCam } from './lib/libC.js';
+import { populateFindings, populatePage, playSlide, batonUI} from './lib/libC.js';
 
 var ojoapp = new Vue({
   el: '#batonApp',
