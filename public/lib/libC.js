@@ -1,7 +1,6 @@
 export class batonUI {
-  constructor(role, gridId, socket){
+  constructor(role, socket){
     this.role = role,
-    this.gridId = gridId,
     this.socket = socket
   }
 
@@ -56,10 +55,11 @@ export class batonUI {
     info1.innerHTML = message;
   }
 
-  socketEvent(msgClass, msg){
+  socketEvent(msgClass, msg, gridId){
+    console.log('debug gridId ', gridId)
     this.socket.emit('sessionMessage', {
       role: this.role,
-      gridId: this.gridId,
+      gridId: gridId,
       messageClass: msgClass,
       message: msg
     });

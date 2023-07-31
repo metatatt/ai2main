@@ -30,14 +30,14 @@ var ojoapp = new Vue({
   mounted() {
     this.socket = io(); // Initialize socket connection
     
-    populatePage.call(this,1)
+    populatePage.call(this,1);
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('userId');
     console.log(userId);
     
     // 06-14 to mask userId for dev Ngrok test on iPad
     // this.userId = userId;    
-    this.userId = "2XXX9-"; //for use in develop testing Ngrok/iPad
+    this.userId = "2XXX9-SIXDI%20Chen"; //for use in develop testing Ngrok/iPad
     this.role = "camera";
     this.statusAgora = "mute"; //mute, published, eg
     
@@ -46,7 +46,7 @@ var ojoapp = new Vue({
     this.canvasContext = this.canvasElement.getContext("2d", { willReadFrequently: true });
     
     this.client = AgoraRTC.createClient({ mode: 'rtc', codec: 'h264' });
-  
+
     this.joinAgoraRoom();
     
     this.socket.on('sessionMessage', function(sessionMessage) {
@@ -63,9 +63,8 @@ var ojoapp = new Vue({
         });
       }
     }.bind(this));
-
-    this.batonCam = new batonCam(this.canvasElement,this.videoElement)
-    this.batonUI = new batonUI(this.role, this.gridId, this.socket)
+    this.batonCam = new batonCam(this.canvasElement,this.videoElement);
+    this.batonUI = new batonUI(this.role, this.socket);
     this.batonCam.initiateCamera();
   },
   
@@ -83,11 +82,11 @@ var ojoapp = new Vue({
       this.batonCam.reset(this.scanImageArray)
       const msg = "camera is on..."
       this.batonUI.messageBox(msg)
-      this.batonUI.socketEvent("#messageBox#", msg);
+      this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
       
       // Play scan icon animation
       this.batonUI.graphicsBox('s','batonApp');
-      this.batonUI.socketEvent("#graphicsBox#", 's');
+      this.batonUI.socketEvent("#graphicsBox#", 's', this.gridId);
     
       // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
       this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
@@ -118,7 +117,7 @@ var ojoapp = new Vue({
 
         const msg = "capture from webcam..."
         this.batonUI.messageBox(msg)
-        this.batonUI.socketEvent("#messageBox#", msg);
+        this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
 
         // Draw a visual indication of the scanned QR code location
         const location = code.location;
@@ -133,10 +132,11 @@ var ojoapp = new Vue({
       if (!this.isScanEnabled) {
       const msg = "inspect images..."
       this.batonUI.messageBox(msg)
-      this.batonUI.socketEvent("#messageBox#", msg);
+      console.log('debug Camerajs gridId ', this.gridId)
+      this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
 
       this.batonUI.graphicsBox('t','batonApp'); // Play Tee logo animation
-      this.batonUI.socketEvent("#graphicsBox#", 't');
+      this.batonUI.socketEvent("#graphicsBox#", 't', this.gridId);
       // Select two "static" images for audit check. 
       const targetsArray = this.batonCam.extractTargets();
       // //Feed the selected images to audit check process
@@ -169,10 +169,10 @@ var ojoapp = new Vue({
       const msg = "create report..."
         
       this.batonUI.messageBox(msg)
-      this.batonUI.socketEvent("#messageBox#", msg);
+      this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
 
       this.batonUI.graphicsBox('r','batonApp');
-      this.batonUI.socketEvent("#graphicsBox#", 'r');
+      this.batonUI.socketEvent("#graphicsBox#", 'r', this.gridId);
       console.log('procAudit() d', results)
 
       console.log('procAudit() [0]', results[0])
@@ -188,7 +188,7 @@ var ojoapp = new Vue({
       // Display the Findings with the header and sorted results
       this.findingsDOM = populateFindings(header, results);
       this.renderSlide(this.findingsDOM)
-      this.batonUI.socketEvent( "#slide#", this.findingsDOM);
+      this.batonUI.socketEvent( "#slide#", this.findingsDOM, this.gridId);
       this.isScanEnabled = await playSlide.call(this);
       this.startScanning();
   },
@@ -213,10 +213,9 @@ var ojoapp = new Vue({
     return true
   },
 
-
   async joinAgoraRoom() {
-      await joinAgoraRoom.call(this);
-   },
+    await joinAgoraRoom.call(this);
+  },
 
 
   async shareCamera() {
