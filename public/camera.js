@@ -66,6 +66,7 @@ var ojoapp = new Vue({
     this.batonCam = new batonCam(this.canvasElement,this.videoElement);
     this.batonUI = new batonUI(this.role, this.socket);
     this.batonCam.initiateCamera();
+    this.batonCam.initiateTM();
   },
   
   methods: {

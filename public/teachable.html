@@ -2,10 +2,29 @@
 <button type="button" onclick="init()">Start</button>
 <div id="webcam-container"></div>
 <div id="label-container"></div>
+<canvas id="simon">hello
+</canvas>
+
 <img id="exampleImg" width="640" height="360" crossorigin src="https://practiz2023public.blob.core.windows.net/lcam/wi320b.png" />
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 <script type="text/javascript">
+
+        const canvasSimon = document.getElementById('simon')
+        const ctx = canvasSimon.getContext('2d')
+        const img = new Image();
+
+        // Set the source of the image
+        img.src = './img/pinchTest.png'; // Replace 'path_to_your_image.jpg' with the actual path to your image
+
+        // When the image is loaded, draw it on the canvas
+        img.onload = function() {
+  
+        // ctx.drawImage(img, x, y, width, height);
+
+        ctx.drawImage(img, 0, 0, 400, 500);
+        }
+
     // More API functions here:
     // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
 
@@ -13,6 +32,8 @@
     const URL = "https://teachablemachine.withgoogle.com/models/14T7MuS5-/";
 
     let model, webcam, labelContainer, maxPredictions;
+
+    
 
     // Load the image model and setup the webcam
     async function init() {
@@ -27,7 +48,8 @@
         model = await tmImage.load(modelURL, metadataURL);
         maxPredictions = model.getTotalClasses();
 
-        // Convenience function to setup a webcam
+
+
         const flip = true; // whether to flip the webcam
         webcam = new tmImage.Webcam(200, 200, flip); // width, height, flip
         await webcam.setup(); // request access to the webcam
@@ -51,7 +73,7 @@
     // run the webcam image through the image model
     async function predict() {
         // predict can take in an image, video or canvas html element
-        const prediction = await model.predict(document.getElementById('exampleImg'));
+        const prediction = await model.predict(document.getElementById('simon'));
         for (let i = 0; i < maxPredictions; i++) {
             const classPrediction =
                 prediction[i].className + ": " + prediction[i].probability.toFixed(2);

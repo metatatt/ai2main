@@ -34,6 +34,7 @@
       this.targetsArray = null;
       this.newCanvas = document.createElement('canvas');
       this.newCtx = this.newCanvas.getContext('2d');
+      this.tmModel= null;
     }
 
     reset(scanImageArray){
@@ -62,6 +63,18 @@
       } catch (error) {
         console.log("#setUpVideo -Unable to access video stream:", error);
       }
+    }
+
+    async initiateTM(){  //Teachable Machine Learning
+      const URL = "https://teachablemachine.withgoogle.com/models/14T7MuS5-/";
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+       
+          // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+          // or files from your local hard drive
+          // Note: the pose library adds "tmImage" object to your window (window.tmImage)
+      this.tmModel = await tmImage.load(modelURL, metadataURL);
+      console.log('tmModel ',this.tmModel)
     }
    
     drawSquare(location) {
@@ -206,9 +219,16 @@
     
       // Get the ImageData object from the canvas
       const imageData = this.newCtx.getImageData(0, 0, width, height);
+      this.tmPredict(this.newCanvas);
+
       // Return the ImageData object directly
       return imageData;
     }
+    
+  async tmPredict(canvas) {
+      const prediction = await this.tmModel.predict(canvas);
+      console.log('tmPrediction ', prediction);
+  }
 
   updateArray(clippedImage, location, timeStamp ){
   if (this.scanArray.length >= 50) {
