@@ -31,15 +31,10 @@
       this.videoElement = videoElement
       this.canvasElement = canvasElement;
       this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
-      this.targetsArray = null;
       this.newCanvas = document.createElement('canvas');
       this.newCtx = this.newCanvas.getContext('2d');
       this.tmModel= null;
-    }
-
-    reset(scanImageArray){
-      this.scanArray = scanImageArray
-      this.targetsArray = null;
+      this.tmTargetClass = 'wi320tiny';
     }
 
     async initiateCamera(){
@@ -77,79 +72,8 @@
       console.log('tmModel ',this.tmModel)
     }
    
-    drawSquare(location) {
-      console.log("here drawSquare");
-      const topLeft = location.topLeftCorner;
-      const topRight = location.topRightCorner;
-      const xOffset = topLeft.x - location.bottomLeftCorner.x;
-      const yOffset = topLeft.y - location.bottomLeftCorner.y;
-    
-      const newTopLeftX = topLeft.x + xOffset
-      const newTopLeftY= topLeft.y + yOffset
-      const newTopRightX = topRight.x + xOffset
-      const newTopRightY = topRight.y + yOffset
-
-      console.log("Top Left:", topLeft);
-      console.log("Top Right:", topRight);
-      console.log("New Top Left:", newTopLeftX, newTopLeftY);
-      console.log("New Top Right:", newTopRightX, newTopRightY);
-    
-      this.ctx.beginPath();
-      this.ctx.moveTo(topLeft.x, topLeft.y);
-      this.ctx.lineTo(newTopLeftX, newTopLeftY);
-      this.ctx.lineTo(newTopRightX, newTopRightY);
-      this.ctx.lineTo(topRight.x, topRight.y);
-      this.ctx.lineTo(topLeft.x, topLeft.y);
-    
-      // Set the line width and stroke style for the square.
-      this.ctx.lineWidth = 4;
-      this.ctx.strokeStyle = "#FF3B58";
-    
-      // Draw the square with the specified line width and stroke style.
-      this.ctx.stroke();
-    }
-    
-    drawCircle(location, radius) {
-      console.log("here drawBiggerSquare");
-    
-      const topLeft = location.topLeftCorner;
-      const topRight = location.topRightCorner;
-      const midPointX = (topLeft.x + topRight.x) / 2;
-      const midPointY = (topLeft.y + topRight.y) / 2;
-      const xOffset = topLeft.x - location.bottomLeftCorner.x;
-      const yOffset = topLeft.y - location.bottomLeftCorner.y;
-      const newCenterX = midPointX+xOffset*2
-      const newCenterY = midPointY+yOffset*2
-      console.log("New Center 1:", newCenterX, newCenterY);
-      console.log("Radius:", radius);
-    
-      this.ctx.beginPath();
-      this.ctx.arc(newCenterX, newCenterY, radius, 0, 2 * Math.PI);
-      this.ctx.strokeStyle = "#FF3B58";
-      this.ctx.lineWidth = 4;
-      this.ctx.stroke();
-      this.makeClip(newCenterX, newCenterY,radius)
-    }
-  
-    makeClip(newCenterX,newCenterY,radius){
-      this.newCanvas.width = 2*radius;
-      this.newCanvas.height = 2*radius;
-      this.newCtx.beginPath()
-      this.newCtx.arc(radius, radius, radius, 0, 2 * Math.PI);
-      this.newCtx.closePath()
-      this.newCtx.clip()
-      const offsetX = newCenterX - radius;
-      const offsetY = newCenterY - radius;
-      this.newCtx.drawImage(this.canvasElement, offsetX, offsetY, 2 * radius, 2 * radius, 0, 0, 2 * radius, 2 * radius);
-      const dataURL = this.newCanvas.toDataURL('image/png');
-      const link = document.createElement('a');
-            link.href = dataURL;
-            link.download = 'makeClipA.png';
-            link.click();
-    }
-
-    drawRect(location, scalar) {
-
+  drawRect(location, scalar) {
+    console.log('location ',location)
       const offset = 10;
       const topLeft = location.topLeftCorner;
       const topRight = location.topRightCorner;
@@ -176,11 +100,6 @@
       this.ctx.strokeStyle = "#FF3B58";
       this.ctx.lineWidth = 4;
       this.ctx.stroke();
-      this.ctx.textAlign = "center";
-      this.ctx.textBaseline = "middle";
-      this.ctx.fillStyle = "#FF3B58";
-      this.ctx.font = "20px Arial";
-      this.ctx.fillText("scanArray Length: " + this.scanArray.length, tLX+10, tLY+20);
       const bL ={x: bLX, y:bLY}
       const bR ={x: bRX, y:bRY}
       const tL ={x: tLX, y:tLY}
@@ -191,10 +110,10 @@
         topLeft: tL,
         topRight: tR,
       }
-      return this.saveRect(newLocation)
+      return newLocation;
     }
     
-  saveRect(location) {
+  async detectTarget(location) {
       const { bottomLeft, bottomRight, topLeft, topRight } = location;
     
       // Calculate the width and height of the square
@@ -219,65 +138,12 @@
     
       // Get the ImageData object from the canvas
       const imageData = this.newCtx.getImageData(0, 0, width, height);
-      this.tmPredict(this.newCanvas);
-
-      // Return the ImageData object directly
-      return imageData;
+      const prediction = await this.tmModel.predictTopK(this.newCanvas, 1, false);
+      const className = prediction[0].className; //match with Teachable ML image classification model 
+          console.log('predict Class ', prediction);
+          console.log('predict Class ', className);
+          console.log('target Class ', this.tmTargetClass);
+          console.log('isTarget True/False ',className === this.tmTargetClass)
+      return { isTarget: className === this.tmTargetClass,  imageData: imageData };
     }
-    
-  async tmPredict(canvas) {
-      const prediction = await this.tmModel.predict(canvas);
-      console.log('tmPrediction ', prediction);
-  }
-
-  updateArray(clippedImage, location, timeStamp ){
-  if (this.scanArray.length >= 50) {
-    this.scanArray.shift(); // Remove the oldest element (first element)
-  }
-  this.scanArray.push({clippedImage, location, timeStamp})
-  }
-  
-  hasTargets() {
-    const array = this.scanArray
-    this.targetsArray = this.findLeastVariance(array, 5);
-    const elapseOnset = performance.now() - (array?.[0]?.timeStamp ?? performance.now());
-    const elapseLatest = performance.now() - (array?.[array.length-1]?.timeStamp ?? performance.now());
-    return this.targetsArray.length > 0 && elapseOnset > 2000 && elapseLatest > 1000 ;
-  }
-  
-
-    calculateVariance(arr) {
-      const sum = arr.reduce((acc, val) => acc + val, 0);
-      const mean = sum / arr.length;
-      const variance = arr.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / arr.length;
-      return variance;
-    }
-    
-    findLeastVariance(scanArray, n) {
-      if (n <= 0 || n > scanArray.length) {
-        return [];
-      }
-      console.log('scanArray ', scanArray)
-    
-      let minVariance = Infinity;
-      let result = [];
-    
-      for (let i = 0; i <= scanArray.length - n; i++) {
-        const subArray = scanArray.slice(i, i + n);
-        const combinedArray = subArray.flatMap(item => [item.location.topLeftCorner.x, item.location.bottomRightCorner.x]);
-        const variance = this.calculateVariance(combinedArray);
-        if (variance < minVariance) {
-          minVariance = variance;
-          result = subArray;
-        }
-      }
-      return result;
-    }
-
-    extractTargets(){
-      // Return the value of this.targetsArray
-      console.log('this Targets: ', this.targetsArray)
-      return this.targetsArray;
-    }
-    
   }

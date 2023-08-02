@@ -18,7 +18,6 @@ var ojoapp = new Vue({
     isUserActive: false,
     localTrack: null,
     role: "",
-    scanImageArray: [],
     scanRequestId: null,
     socket: null,
     statusAgora: "",
@@ -77,10 +76,7 @@ var ojoapp = new Vue({
       if (typeof this.stopSlide === 'function') {
         this.stopSlide();
       }
-      // Enable scanning and reset scanImageArray
       this.isScanEnabled = true;
-      this.scanImageArray = [];
-      this.batonCam.reset(this.scanImageArray)
       const msg = "camera is on..."
       this.batonUI.messageBox(msg)
       this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
@@ -94,12 +90,10 @@ var ojoapp = new Vue({
   },
   
 
-  // Purpose: This function is responsible for scanning QR codes, tracking user activity (active or idle), and storing relevant data in the scanImageArray.
-  // This app switches between the scanQRCode() and processAudit() functions based on the combination of active-idle state and the length of scanImageArray.
-
   scanQRCode() {
     // Check if video data is available
     if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
+      this.batonUI.layout('scan')
       this.canvasElement.height = this.videoElement.videoHeight;
       this.canvasElement.width = this.videoElement.videoWidth;
       this.canvasContext.drawImage(this.videoElement, 0, 0, this.canvasElement.width, this.canvasElement.height);
@@ -109,40 +103,36 @@ var ojoapp = new Vue({
       var code = jsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: "dontInvert",
       });
-
-      // Check if a valid QR code is scanned
+      // scan check QR Code
       if (code && code.data.startsWith('@pr-')) {
         // Adjust layers to enable canvas drawing activities
         this.videoElement.style.zIndex = -2;
         this.canvasElement.style.zIndex = -1;
-
+        this.batonUI.layout('predict')
         const msg = "capture from webcam..."
         this.batonUI.messageBox(msg)
         this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
+        // Peek if the detectLoc rect area contains a Target
+        const qrLoc = code.location;
+        console.log('qrLoc', qrLoc)
+        const detectLoc = this.batonCam.drawRect(qrLoc,4)
+        console.log('detectLoc', detectLoc)
+        const result = this.batonCam.detectTarget(detectLoc);
+        console.log('detectTarget res.Target', result.isTarget)
 
-        // Draw a visual indication of the scanned QR code location
-        const location = code.location;
-        const clippedImage = this.batonCam.drawRect(location,4) //rect width/height = 4 times of QR box
-        this.batonCam.updateArray(clippedImage, location, performance.now());
-        this.isScanEnabled = true;
-      } else {
-        this.isScanEnabled = !this.batonCam.hasTargets() //if targetFound, disable the scan loop
-      }
-    }
+            // Check if the target was detected
+            if (result.isTarget) {
+              console.log('Target detected!');
+              this.isScanEnabled = false;
+              const imageData = result.imageData;
+              this.cloudPredict(imageData);
+              console.log('ImageData:', imageData);
+            } else {
+              // Target not detected!
+            }
+        } // if (code && code.data.startsWith('@pr-')
 
-      if (!this.isScanEnabled) {
-      const msg = "inspect images..."
-      this.batonUI.messageBox(msg)
-      console.log('debug Camerajs gridId ', this.gridId)
-      this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
-
-      this.batonUI.graphicsBox('t','batonApp'); // Play Tee logo animation
-      this.batonUI.socketEvent("#graphicsBox#", 't', this.gridId);
-      // Select two "static" images for audit check. 
-      const targetsArray = this.batonCam.extractTargets();
-      // //Feed the selected images to audit check process
-      this.processAudit(targetsArray);
-    }
+       }
 
     // Continue scanning by recursively calling scanQRCode() using requestAnimationFrame
     if (this.isScanEnabled) {
@@ -151,43 +141,25 @@ var ojoapp = new Vue({
   },
     
     
-  async processAudit(imageDataArray) {
-    this.isScanEnabled = false;
+  async cloudPredict(imageData) {
+    let msg = "inspect images..."
+    this.batonUI.messageBox(msg)
+    this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
+    this.batonUI.graphicsBox('t','batonApp'); // Play Tee logo animation
+    this.batonUI.socketEvent("#graphicsBox#", 't', this.gridId);
     this.videoElement.style.zIndex = -1;
     this.canvasElement.style.zIndex = -2;
+    let result='';
     const header = { header1: "WIP 3200 (xxxx)", header2: "obtain info from PDF" };
-    const results = []; // Initialize an empty array to store the results
     try {
-      for (let i = 0; i < imageDataArray.length; i++) {
-        const res = await getEachResult(imageDataArray[i].clippedImage);
-        results.push(res); // Add the result object to the results array
-      }
+        result = await getEachResult(imageData);
     } catch (error) {
       console.error(error);
     }
-  
-    // Iterate through the imageDataArray for processing each image
-      const msg = "create report..."
-        
-      this.batonUI.messageBox(msg)
-      this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
-
-      this.batonUI.graphicsBox('r','batonApp');
-      this.batonUI.socketEvent("#graphicsBox#", 'r', this.gridId);
-      console.log('procAudit() d', results)
-
-      console.log('procAudit() [0]', results[0])
-      console.log('procAudit() prob ', results[0].probability)
-      console.log('procAudit() prob ', results[0].image)
-      // Sort the results array based on probability from high to low
-      results.sort((a, b) => {
-        const aProbability = a ? a.probability : 0;
-        const bProbability = b ? b.probability : 0;
-        return bProbability - aProbability;
-      });
-
+    console.log('result- ', result)
       // Display the Findings with the header and sorted results
-      this.findingsDOM = populateFindings(header, results);
+      this.findingsDOM = populateFindings(header, result);
+      console.log('findingsDOM- ', this.findingsDOM)
       this.renderSlide(this.findingsDOM)
       this.batonUI.socketEvent( "#slide#", this.findingsDOM, this.gridId);
       this.isScanEnabled = await playSlide.call(this);
@@ -239,5 +211,4 @@ var ojoapp = new Vue({
       });
     },
 
-  }
-});
+  }});
