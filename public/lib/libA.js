@@ -35,6 +35,10 @@
       this.newCtx = this.newCanvas.getContext('2d');
       this.tmModel= null;
       this.tmTargetClass = 'wi320tiny';
+      this.frames = [];
+      this.intervalDuration = 1000;
+      this.thresholdDistance = 10; // Threshold for steady position (holding for 1 second), in px value
+      this.latestActiveTime =0;
     }
 
     async initiateCamera(){
@@ -73,7 +77,6 @@
     }
    
   drawRect(location, scalar) {
-    console.log('location ',location)
       const offset = 10;
       const topLeft = location.topLeftCorner;
       const topRight = location.topRightCorner;
@@ -146,4 +149,65 @@
           console.log('isTarget True/False ',className === this.tmTargetClass)
       return { isTarget: className === this.tmTargetClass,  imageData: imageData };
     }
+
+    addFrame(newLoc) {
+      const currentTime = Date.now();
+      console.log('2-add frame/length ', this.frames.length )
+      if (this.frames.length > 0) {
+        const lastLoc = this.frames[this.frames.length - 1].topLeft;
+        const distance = this.getDistance(newLoc, lastLoc);
+        this.latestActiveTime = currentTime;
+        let movement = '';
+        if (distance < this.thresholdDistance) {
+          movement = 's'; //static
+        } else {
+          movement = newLoc.x > lastLoc.x ? 'r' : 'l'; //right or left
+        }
+        this.frames.push({ topLeft: newLoc, distance: distance, movement: movement, timeStamp: currentTime });
+      } else {
+        this.frames.push({ topLeft: newLoc, distance: 0, movement: '', timeStamp: currentTime });
+      }
+    }
+  
+    hasEnoughFrame() {
+      const currentTime = Date.now();
+      while (this.frames.length > 0 && currentTime - this.frames[0].timeStamp >= this.intervalDuration) {
+        this.frames.shift(); // Remove the earliest entry from the log
+      }
+      return this.frames.length > 0;
+    }
+  
+    getDistance(point1, point2) {
+      const dx = point2.x - point1.x;
+      const dy = point2.y - point1.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+  
+    countFrames(movementType) {
+      return this.frames.filter(frame => frame.movement === movementType).length;
+    }
+  
+    // Utility function to determine the motion state of the QR marker
+    motion(location) {
+      const newLoc = location.topLeftCorner;
+      this.addFrame(newLoc);
+      let isStatic = false; //default return mode
+      if (this.hasEnoughFrame()) {
+        const totalCounts = this.frames.length;
+        console.log('3-counts of Static ', this.countFrames('s'))
+        if (this.countFrames('s') > totalCounts * 0.8) {
+          isStatic = true;
+        }
+      }
+      return isStatic;
+    }
+    isIdle() {
+      const now = Date.now(); // Declare and initialize the 'now' variable with the current timestamp
+      if (this.latestActiveTime > 0 && now - this.latestActiveTime >= this.intervalDuration * 5) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    
   }

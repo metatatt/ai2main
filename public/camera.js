@@ -49,7 +49,6 @@ var ojoapp = new Vue({
     this.joinAgoraRoom();
     
     this.socket.on('sessionMessage', function(sessionMessage) {
-      console.log("sessionMessage: ", sessionMessage);
       if (sessionMessage.role === "console") {
         this.socket.emit('sessionMessage', {
           role: this.role,
@@ -93,7 +92,9 @@ var ojoapp = new Vue({
   scanQRCode() {
     // Check if video data is available
     if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
-      this.batonUI.layout('scan');
+      if(this.batonCam.isIdle()){
+        this.batonUI.layout('scan')
+      };
       this.canvasElement.height = this.videoElement.videoHeight;
       this.canvasElement.width = this.videoElement.videoWidth;
       this.canvasContext.drawImage(this.videoElement, 0, 0, this.canvasElement.width, this.canvasElement.height);
@@ -103,9 +104,15 @@ var ojoapp = new Vue({
       var code = jsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: "dontInvert",
       });
-  
+      let isStatic =false
+      let qrLoc = ''
+      if (code){
+        qrLoc = code.location
+        isStatic = this.batonCam.motion(qrLoc)
+        console.log('static?', isStatic);
+      }
       // scan check QR Code
-      if (code && code.data.startsWith('@pr-')) {
+      if (isStatic && code.data.startsWith('@pr-')) {
         // Adjust layers to enable canvas drawing activities
         this.videoElement.style.zIndex = -2;
         this.canvasElement.style.zIndex = -1;
@@ -115,22 +122,16 @@ var ojoapp = new Vue({
         this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
   
         // Peek if the detectLoc rect area contains a Target
-        const qrLoc = code.location;
-        console.log('qrLoc', qrLoc);
         const detectLoc = this.batonCam.drawRect(qrLoc, 4);
-        console.log('detectLoc', detectLoc);
-  
         this.batonCam.detectTarget(detectLoc)
           .then((result) => {
-            console.log('detectTarget res.Target', result);
-  
             // Check if the target was detected
+            console.log('bug here: result? ', result)
+            console.log('bug here: result in Target? ', result.isTarget)
             if (result.isTarget) {
-              console.log('Target detected!');
               this.isScanEnabled = false;
               const imageData = result.imageData;
               this.cloudPredict(imageData);
-              console.log('ImageData:', imageData);
             } else {
               // Target not detected!
             }
@@ -161,12 +162,9 @@ var ojoapp = new Vue({
   
     getEachResult(imageData)
       .then((result) => {
-        console.log('result- ', result);
   
         // Display the Findings with the header and sorted results
         this.findingsDOM = populateFindings(header, result);
-  
-        console.log('findingsDOM- ', this.findingsDOM);
         this.renderSlide(this.findingsDOM);
         this.batonUI.socketEvent("#slide#", this.findingsDOM, this.gridId);
   
