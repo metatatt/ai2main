@@ -93,33 +93,37 @@ var ojoapp = new Vue({
   scanQRCode() {
     // Check if video data is available
     if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
-      this.batonUI.layout('scan')
+      this.batonUI.layout('scan');
       this.canvasElement.height = this.videoElement.videoHeight;
       this.canvasElement.width = this.videoElement.videoWidth;
       this.canvasContext.drawImage(this.videoElement, 0, 0, this.canvasElement.width, this.canvasElement.height);
       var imageData = this.canvasContext.getImageData(0, 0, this.canvasElement.width, this.canvasElement.height);
-
+  
       // Attempt to decode QR code from the image data
       var code = jsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: "dontInvert",
       });
+  
       // scan check QR Code
       if (code && code.data.startsWith('@pr-')) {
         // Adjust layers to enable canvas drawing activities
         this.videoElement.style.zIndex = -2;
         this.canvasElement.style.zIndex = -1;
-        this.batonUI.layout('predict')
-        const msg = "capture from webcam..."
-        this.batonUI.messageBox(msg)
+        this.batonUI.layout('predict');
+        const msg = "capture from webcam...";
+        this.batonUI.messageBox(msg);
         this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
+  
         // Peek if the detectLoc rect area contains a Target
         const qrLoc = code.location;
-        console.log('qrLoc', qrLoc)
-        const detectLoc = this.batonCam.drawRect(qrLoc,4)
-        console.log('detectLoc', detectLoc)
-        const result = this.batonCam.detectTarget(detectLoc);
-        console.log('detectTarget res.Target', result.isTarget)
-
+        console.log('qrLoc', qrLoc);
+        const detectLoc = this.batonCam.drawRect(qrLoc, 4);
+        console.log('detectLoc', detectLoc);
+  
+        this.batonCam.detectTarget(detectLoc)
+          .then((result) => {
+            console.log('detectTarget res.Target', result);
+  
             // Check if the target was detected
             if (result.isTarget) {
               console.log('Target detected!');
@@ -130,41 +134,54 @@ var ojoapp = new Vue({
             } else {
               // Target not detected!
             }
-        } // if (code && code.data.startsWith('@pr-')
-
-       }
-
+          })
+          .catch((error) => {
+            console.error('An error occurred:', error);
+            // Handle errors if the Promise gets rejected
+          });
+      } // if (code && code.data.startsWith('@pr-'))
+    } // end if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA)
+  
     // Continue scanning by recursively calling scanQRCode() using requestAnimationFrame
     if (this.isScanEnabled) {
       this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
     }
   },
-    
-    
-  async cloudPredict(imageData) {
-    let msg = "inspect images..."
-    this.batonUI.messageBox(msg)
+  
+  cloudPredict(imageData) {
+    let msg = "inspect images...";
+    this.batonUI.messageBox(msg);
     this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
-    this.batonUI.graphicsBox('t','batonApp'); // Play Tee logo animation
+    this.batonUI.graphicsBox('t', 'batonApp'); // Play Tee logo animation
     this.batonUI.socketEvent("#graphicsBox#", 't', this.gridId);
     this.videoElement.style.zIndex = -1;
     this.canvasElement.style.zIndex = -2;
-    let result='';
+    let result = '';
     const header = { header1: "WIP 3200 (xxxx)", header2: "obtain info from PDF" };
-    try {
-        result = await getEachResult(imageData);
-    } catch (error) {
-      console.error(error);
-    }
-    console.log('result- ', result)
-      // Display the Findings with the header and sorted results
-      this.findingsDOM = populateFindings(header, result);
-      console.log('findingsDOM- ', this.findingsDOM)
-      this.renderSlide(this.findingsDOM)
-      this.batonUI.socketEvent( "#slide#", this.findingsDOM, this.gridId);
-      this.isScanEnabled = await playSlide.call(this);
-      this.startScanning();
+  
+    getEachResult(imageData)
+      .then((result) => {
+        console.log('result- ', result);
+  
+        // Display the Findings with the header and sorted results
+        this.findingsDOM = populateFindings(header, result);
+  
+        console.log('findingsDOM- ', this.findingsDOM);
+        this.renderSlide(this.findingsDOM);
+        this.batonUI.socketEvent("#slide#", this.findingsDOM, this.gridId);
+  
+        return playSlide.call(this);
+      })
+      .then((isScanEnabled) => {
+        this.isScanEnabled = isScanEnabled;
+        this.startScanning();
+      })
+      .catch((error) => {
+        console.error(error);
+        // Handle errors if the Promises get rejected
+      });
   },
+  
 
   async viewFindings() {
     this.isScanEnabled=false;

@@ -30,7 +30,7 @@ export async function getEachResult(imageArrayObj) {
 
   const result = await response.json();
   //
-  console.log('libB.js 从Azure 得到的预测 result ', result);
+  console.log('libB.js -Azure result ', result);
   // Retrieve the most likely prediction
   const mostLikelyPrediction = result.predictions
     .sort((a, b) => b.probability - a.probability)
@@ -44,6 +44,7 @@ export async function getEachResult(imageArrayObj) {
       image: imageDataSource, // Add the image source to the showTag output
       boundingBox: mostLikelyPrediction.boundingBox
     };
+    console.log('libB.js- showTagObj ', showTagObj)
     return showTagObj;
   }
     return null;
