@@ -12,6 +12,7 @@ import {
   let runningMode = "IMAGE";
   let enableWebcamButton = document.getElementById("webcamButton");
   let webcamRunning = false;
+  let angleDegArray =[];
   
   // Before we can use HandLandmarker class we must wait for it to finish
   // loading. Machine Learning models can be large and take a moment to
@@ -105,11 +106,13 @@ import {
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
-        drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
-          color: "#00FF00",
-          lineWidth: 5
-        });
-        drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 });
+          drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+            color: "#00FF00",
+            lineWidth: 5
+          });
+          drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 });
+          const tf = isTwoFingerPointing(landmarks);
+          enableWebcamButton.innerText = `Austin Power? ${tf}`;
       }
     }
     canvasCtx.restore();
@@ -119,3 +122,40 @@ import {
       window.requestAnimationFrame(predictWebcam);
     }
   }
+
+
+  function isTwoFingerPointing(landmarks){
+    const newAngle = angleDeg(landmarks);
+    angleDegArray.push(newAngle); // Use push to add newAngle to angleDegArray
+    if (angleDegArray.length > 4) {
+      angleDegArray.shift(); // Remove the first element to keep the array size to 4
+    }
+    const averageAngle = angleDegArray.reduce((sum, angle) => sum + angle, 0) / angleDegArray.length;
+    console.log("Average Angle between vector A and B:", averageAngle);
+    return averageAngle <= 8;
+  }
+  
+
+  function angleDeg(landmarks) {
+    const p5 = landmarks[5];
+    const p8 = landmarks[8];
+    const p9 = landmarks[9];
+    const p12 = landmarks[12];
+  
+    // Calculate vectors A and B
+    const vectorA = { x: p8.x - p5.x, y: p8.y - p5.y };
+    const vectorB = { x: p12.x - p9.x, y: p12.y - p9.y };
+  
+    // Calculate the angle between vectors A and B
+    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+    const magnitudeA = Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
+    const magnitudeB = Math.sqrt(vectorB.x * vectorB.x + vectorB.y * vectorB.y);
+    const cosAngle = dotProduct / (magnitudeA * magnitudeB);
+    const angleRad = Math.acos(cosAngle);
+    const angleDeg = (angleRad * 180) / Math.PI;
+  
+    console.log("Angle between vector A and B:", angleDeg);
+    return angleDeg
+  }
+  
+
