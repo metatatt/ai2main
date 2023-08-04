@@ -111,8 +111,9 @@ import {
             lineWidth: 5
           });
           drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 });
+          const pointAt = canvasLoc(landmarks[8],canvasElement.width ,canvasElement.height )
           const tf = isTwoFingerPointing(landmarks);
-          enableWebcamButton.innerText = `Austin Power? ${tf}`;
+          enableWebcamButton.innerText = `${tf} -now pointing at:${pointAt.x} ${pointAt.y}`;
       }
     }
     canvasCtx.restore();
@@ -123,7 +124,12 @@ import {
     }
   }
 
-
+  function canvasLoc(landmarks,canvasWidth,canvasHeight){
+    const canvasX = landmarks.x*canvasWidth
+    const canvasY = landmarks.y*canvasHeight
+    return ({x: canvasX, y: canvasY})
+    
+  }
   function isTwoFingerPointing(landmarks){
     const newAngle = angleDeg(landmarks);
     angleDegArray.push(newAngle); // Use push to add newAngle to angleDegArray
