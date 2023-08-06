@@ -30,8 +30,11 @@ import {
       numHands: 2
     });
     demosSection.classList.remove("invisible");
+    console.log('1-handLandmarker ',  handLandmarker)
   };
   createHandLandmarker();
+
+
   
   /********************************************************************
   // Demo 2: Continuously grab image from webcam stream and detect it.
@@ -57,6 +60,7 @@ import {
   
   // Enable the live webcam view and start detection.
   function enableCam() {
+    console.log('2-handLandmarker ',  handLandmarker)
     if (!handLandmarker) {
       console.log("Wait! objectDetector not loaded yet.");
       return;
@@ -84,6 +88,7 @@ import {
   
   let lastVideoTime = -1;
   let results = undefined;
+  const factorOne = 0.4
   console.log(video);
   async function predictWebcam() {
     canvasElement.style.width = video.videoWidth;;
@@ -100,17 +105,21 @@ import {
     if (lastVideoTime !== video.currentTime) {
       lastVideoTime = video.currentTime;
       results = handLandmarker.detectForVideo(video, startTimeMs);
+      console.log('results ', results)
+      console.log('videoElement ', video)
+
     }
   
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     if (results.landmarks) {
+      console.log('resultLand ',results.landmarks )
       for (const landmarks of results.landmarks) {
           drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
             color: "#00FF00",
             lineWidth: 5
-          });
-          drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 });
+          }, factorOne);
+          drawLandmarks(canvasCtx, landmarks, { color: "#FF0000", lineWidth: 2 }, factorOne);
           const pointAt = canvasLoc(landmarks[8],canvasElement.width ,canvasElement.height )
           const tf = isTwoFingerPointing(landmarks);
           enableWebcamButton.innerText = `${tf} -now pointing at:${pointAt.x} ${pointAt.y}`;
