@@ -85,7 +85,11 @@ import {
     // Activate the webcam stream.
     navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
       video.srcObject = stream;
-      video.addEventListener("loadeddata", predictWebcam);
+      video.addEventListener("loadedmetadata", () => {
+        canvasElement.width = video.videoWidth;
+        canvasElement.height = video.videoHeight;
+        predictWebcam();
+      });
     });
   }
   
