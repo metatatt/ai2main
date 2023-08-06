@@ -46,7 +46,6 @@ export async function joinAgoraRoom() {
       this.thresholdDistance = 10; // Threshold for steady position (holding for 1 second), in px value
       this.latestActiveTime =0;
       this.handLandmarker=undefined;
-      this.lastVideoFrameTime =0;
       this.angleDegArray =[];
     }
 
@@ -86,24 +85,15 @@ export async function joinAgoraRoom() {
       runningMode: runningMode,
       numHands: 2
     });
-      console.log('3-handLandmarker ', this.handLandmarker)
     }
   
   async predictHand(){
     let startTimeMs = performance.now();
- //   if (this.videoElement.currentTime !== this.lastVideoFrameTime ) { //avoid double processing
-  //    this.lastVideoFrameTime = this.videoElement.currentTime;
       const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
-      console.log('handLandmarker ', this.handLandmarker)
-      console.log('results ', results)
-      console.log('videoElement ', this.videoElement)
- //   }
 
     this.ctx.save();
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-    console.log('ctx save')
     if (results.landmarks) {
-      console.log('resultLand ',results.landmarks )
       for (const landmarks of results.landmarks) {
           drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
             color: "#00FF00",
@@ -111,9 +101,9 @@ export async function joinAgoraRoom() {
           });
           drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
           console.log(`index- ${landmarks[8]}`)
-          // const pointAt = canvasLoc(landmarks[8],this.canvasElement.width ,this.canvasElement.height )
-          // const tf = isTwoFingerPointing(landmarks);
-          // console.log(`${tf} -now pointing at:${pointAt.x} ${pointAt.y}`);
+          const pointAt = this.canvasLoc(landmarks[8],this.canvasElement.width ,this.canvasElement.height )
+          const tf = this.isTwoFingerPointing(landmarks);
+          console.log(`这里 ${tf} -now pointing at:${pointAt.x} ${pointAt.y}`);
       }
     }
     this.ctx.restore();
@@ -122,6 +112,45 @@ export async function joinAgoraRoom() {
 
   }
 
+  
+  canvasLoc(landmarks,canvasWidth,canvasHeight){
+    const canvasX = landmarks.x*canvasWidth
+    const canvasY = landmarks.y*canvasHeight
+    return ({x: canvasX, y: canvasY})
+    
+  }
+  isTwoFingerPointing(landmarks){
+    const newAngle = this.angleDeg(landmarks);
+    this.angleDegArray.push(newAngle); // Use push to add newAngle to angleDegArray
+    if (this.angleDegArray.length > 4) {
+      this.angleDegArray.shift(); // Remove the first element to keep the array size to 4
+    }
+    const averageAngle = this.angleDegArray.reduce((sum, angle) => sum + angle, 0) / this.angleDegArray.length;
+    console.log("Average Angle between vector A and B:", averageAngle);
+    return averageAngle <= 8;
+  }
+  
+
+  angleDeg(landmarks) {
+    const p5 = landmarks[5];
+    const p8 = landmarks[8];
+    const p9 = landmarks[9];
+    const p12 = landmarks[12];
+  
+    // Calculate vectors A and B
+    const vectorA = { x: p8.x - p5.x, y: p8.y - p5.y };
+    const vectorB = { x: p12.x - p9.x, y: p12.y - p9.y };
+  
+    // Calculate the angle between vectors A and B
+    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+    const magnitudeA = Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
+    const magnitudeB = Math.sqrt(vectorB.x * vectorB.x + vectorB.y * vectorB.y);
+    const cosAngle = dotProduct / (magnitudeA * magnitudeB);
+    const angleRad = Math.acos(cosAngle);
+    const angleDeg = (angleRad * 180) / Math.PI;
+    return angleDeg
+  }
+  
   drawRect(location, scalar) {
       const offset = 10;
       const topLeft = location.topLeftCorner;
@@ -165,7 +194,6 @@ export async function joinAgoraRoom() {
 
     addFrame(newLoc) {
       const currentTime = Date.now();
-      console.log('2-add frame/length ', this.frames.length )
       if (this.frames.length > 0) {
         const lastLoc = this.frames[this.frames.length - 1].topLeft;
         const distance = this.getDistance(newLoc, lastLoc);
@@ -207,7 +235,6 @@ export async function joinAgoraRoom() {
       let isStatic = false; //default return mode
       if (this.hasEnoughFrame()) {
         const totalCounts = this.frames.length;
-        console.log('3-counts of Static ', this.countFrames('s'))
         if (this.countFrames('s') > totalCounts * 0.8) {
           isStatic = true;
         }
