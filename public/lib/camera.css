@@ -26,15 +26,19 @@ body {
   background-color: var(--batonBlue);
 }
 
+.media{
+  position: relative; 
+}
+
 canvas {
   z-index: -3;
   position:absolute;
   top: 0;
   left: 0;
-  margin-top: calc(2.5vh * var(--factor));
-  height: calc(95vh * var(--factor));
-  margin-left: calc(20vw * var(--factor));
-  border-radius: calc(45px * var(--factor));
+  margin-top: 2.5vh;
+  height: 95vh;
+  margin-left: 20vw;
+  border-radius: 45px;
   background: transparent;
 } 
 

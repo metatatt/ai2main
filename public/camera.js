@@ -64,7 +64,7 @@ var ojoapp = new Vue({
     this.batonCam = new batonCam(this.canvasElement,this.videoElement);
     this.batonUI = new batonUI(this.role, this.socket);
     this.batonCam.initiateCamera();
-    this.batonCam.initiateTM();
+    this.batonCam.initiateHand();
   },
   
   methods: {
@@ -85,7 +85,8 @@ var ojoapp = new Vue({
       this.batonUI.socketEvent("#graphicsBox#", 's', this.gridId);
     
       // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
-      this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
+     // this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
+     this.batonCam.predictHand();
   },
   
 

@@ -1,4 +1,10 @@
- export async function joinAgoraRoom() {
+import {
+  HandLandmarker,
+  FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+
+
+export async function joinAgoraRoom() {
     const response = await fetch('/env', {
       method: 'POST',
       headers: {
@@ -30,7 +36,7 @@
     constructor(canvasElement, videoElement) {
       this.videoElement = videoElement
       this.canvasElement = canvasElement;
-      this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
+      this.ctx = canvasElement.getContext("2d", { willReadFrequently: true });
       this.newCanvas = document.createElement('canvas');
       this.newCtx = this.newCanvas.getContext('2d');
       this.tmModel= null;
@@ -39,6 +45,9 @@
       this.intervalDuration = 1000;
       this.thresholdDistance = 10; // Threshold for steady position (holding for 1 second), in px value
       this.latestActiveTime =0;
+      this.handLandmarker=undefined;
+      this.lastVideoFrameTime =0;
+      this.angleDegArray =[];
     }
 
     async initiateCamera(){
@@ -64,18 +73,55 @@
       }
     }
 
-    async initiateTM(){  //Teachable Machine Learning
-      const URL = "https://teachablemachine.withgoogle.com/models/14T7MuS5-/";
-      const modelURL = URL + "model.json";
-      const metadataURL = URL + "metadata.json";
-       
-          // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
-          // or files from your local hard drive
-          // Note: the pose library adds "tmImage" object to your window (window.tmImage)
-      this.tmModel = await tmImage.load(modelURL, metadataURL);
-      console.log('tmModel ',this.tmModel)
+  async initiateHand(){
+    const runningMode = "VIDEO"
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+    );
+    this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+        delegate: "GPU"
+      },
+      runningMode: runningMode,
+      numHands: 2
+    });
+      console.log('3-handLandmarker ', this.handLandmarker)
     }
-   
+  
+  async predictHand(){
+    let startTimeMs = performance.now();
+ //   if (this.videoElement.currentTime !== this.lastVideoFrameTime ) { //avoid double processing
+  //    this.lastVideoFrameTime = this.videoElement.currentTime;
+      const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
+      console.log('handLandmarker ', this.handLandmarker)
+      console.log('results ', results)
+      console.log('videoElement ', this.videoElement)
+ //   }
+
+    this.ctx.save();
+    this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+    console.log('ctx save')
+    if (results.landmarks) {
+      console.log('resultLand ',results.landmarks )
+      for (const landmarks of results.landmarks) {
+          drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
+            color: "#00FF00",
+            lineWidth: 1.5
+          });
+          drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
+          console.log(`index- ${landmarks[8]}`)
+          // const pointAt = canvasLoc(landmarks[8],this.canvasElement.width ,this.canvasElement.height )
+          // const tf = isTwoFingerPointing(landmarks);
+          // console.log(`${tf} -now pointing at:${pointAt.x} ${pointAt.y}`);
+      }
+    }
+    this.ctx.restore();
+
+    window.requestAnimationFrame(this.predictHand.bind(this));
+
+  }
+
   drawRect(location, scalar) {
       const offset = 10;
       const topLeft = location.topLeftCorner;
@@ -116,39 +162,6 @@
       return newLocation;
     }
     
-  async detectTarget(location) {
-      const { bottomLeft, bottomRight, topLeft, topRight } = location;
-    
-      // Calculate the width and height of the square
-      const width = Math.sqrt((topLeft.x - topRight.x) ** 2 + (topLeft.y - topRight.y) ** 2);
-      const height = Math.sqrt((topLeft.x - bottomLeft.x) ** 2 + (topLeft.y - bottomLeft.y) ** 2);
-    
-      // Calculate the center point of the square
-      const centerX = (topLeft.x + topRight.x + bottomLeft.x + bottomRight.x) / 4;
-      const centerY = (topLeft.y + topRight.y + bottomLeft.y + bottomRight.y) / 4;
-      this.newCtx.clearRect(0, 0, this.newCanvas.width, this.newCanvas.height);
-
-      // Clear the canvas and set its dimensions
-      // this.newCtx.clearRect(0, 0, this.newCanvas.width, this.newCanvas.height);
-      this.newCanvas.width = width;
-      this.newCanvas.height = height;
-      const angle = -Math.atan2(-topLeft.y + topRight.y, -topLeft.x + topRight.x)
-
-      // Rotate and draw the square
-        this.newCtx.translate(width / 2, height / 2);
-        this.newCtx.rotate(angle);
-        this.newCtx.drawImage(this.canvasElement, -centerX, -centerY);
-    
-      // Get the ImageData object from the canvas
-      const imageData = this.newCtx.getImageData(0, 0, width, height);
-      const prediction = await this.tmModel.predictTopK(this.newCanvas, 1, false);
-      const className = prediction[0].className; //match with Teachable ML image classification model 
-          console.log('predict Class ', prediction);
-          console.log('predict Class ', className);
-          console.log('target Class ', this.tmTargetClass);
-          console.log('isTarget True/False ',className === this.tmTargetClass)
-      return { isTarget: className === this.tmTargetClass,  imageData: imageData };
-    }
 
     addFrame(newLoc) {
       const currentTime = Date.now();
