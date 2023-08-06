@@ -86,8 +86,6 @@ import {
     navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
       video.srcObject = stream;
       video.addEventListener("loadedmetadata", () => {
-        // canvasElement.width = video.videoWidth;
-        // canvasElement.height = video.videoHeight;
         predictWebcam();
       });
     });
@@ -98,8 +96,6 @@ import {
   const factorOne = 1
   console.log(video);
   async function predictWebcam() {
-    canvasElement.style.width = video.videoWidth;;
-    canvasElement.style.height = video.videoHeight;
     canvasElement.width = video.videoWidth;
     canvasElement.height = video.videoHeight;
     
