@@ -294,8 +294,8 @@ app.get('/lead', function (req, res) {
   res.sendFile('console.html', { root: __dirname + '/public' });
 });
 
-app.get('/u', function (req, res) {
-  res.sendFile('upload.html', { root: __dirname + '/public' });
+app.get('/h', function (req, res) {
+  res.sendFile('hand.html', { root: __dirname + '/public' });
 });
 
 io.on('connection', (socket) => {

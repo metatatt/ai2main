@@ -76,7 +76,10 @@ import {
   
     // getUsermedia parameters.
     const constraints = {
-      video: true
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
     };
   
     // Activate the webcam stream.
@@ -88,7 +91,7 @@ import {
   
   let lastVideoTime = -1;
   let results = undefined;
-  const factorOne = 0.4
+  const factorOne = 1
   console.log(video);
   async function predictWebcam() {
     canvasElement.style.width = video.videoWidth;;
