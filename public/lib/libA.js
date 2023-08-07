@@ -43,10 +43,10 @@ export async function joinAgoraRoom() {
       this.tmTargetClass = 'wi320tiny';
       this.frames = [];
       this.intervalDuration = 1000;
-      this.thresholdDistance = 10; // Threshold for steady position (holding for 1 second), in px value
+      this.angleDeg = 8;  // Threshold angle spray for act of "aiming"
       this.latestActiveTime =0;
       this.handLandmarker=undefined;
-      this.angleDegArray =[];
+      this.fingersMatrices =[];
     }
 
     async initiateCamera(){
@@ -89,7 +89,7 @@ export async function joinAgoraRoom() {
   
   async predictHand(){
     let startTimeMs = performance.now();
-      const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
+    const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
 
     this.ctx.save();
     this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
@@ -101,9 +101,19 @@ export async function joinAgoraRoom() {
           });
           drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
           console.log(`index- ${landmarks[8]}`)
-          const pointAt = this.canvasLoc(landmarks[8],this.canvasElement.width ,this.canvasElement.height )
-          const tf = this.isTwoFingerPointing(landmarks);
-          console.log(`这里 ${tf} -now pointing at:${pointAt.x} ${pointAt.y}`);
+          const isAiming = this.isAiming(landmarks)
+          console.log(`aiming- ${isAiming}`)
+          if (isAiming){
+            const latestMatrix = this.fingersMatrices[this.fingersMatrices.length-1];
+            const zoneLT = latestMatrix.zoneLT;// Corrected the syntax and usage
+            const zoneLB = latestMatrix.zoneLB; // Corrected the syntax and usage
+            const zoneRT = latestMatrix.zoneRT; // Corrected the syntax and usage
+            const zoneRB = latestMatrix.zoneRB; // Corrected the syntax and usage
+
+            console.log(`这里 -now pointing at:${zoneLT.x} ${zoneLT.y}`);
+          };
+          
+        
       }
     }
     this.ctx.restore();
@@ -112,45 +122,74 @@ export async function joinAgoraRoom() {
 
   }
 
+averageXY(coordinatesArray) {
+    if (coordinatesArray.length === 0) {
+        return { x: 0, y: 0 }; // Default to (0, 0) if the array is empty
+    }
+    
+    const sumX = coordinatesArray.reduce((sum, coord) => sum + coord.x, 0);
+    const sumY = coordinatesArray.reduce((sum, coord) => sum + coord.y, 0);
+    
+    const averageX = sumX / coordinatesArray.length;
+    const averageY = sumY / coordinatesArray.length;
+    
+    return { x: averageX, y: averageY };
+}
+
   
-  canvasLoc(landmarks,canvasWidth,canvasHeight){
+  aimedZone(landmarks,canvasWidth,canvasHeight, sideLength){
     const canvasX = landmarks.x*canvasWidth
     const canvasY = landmarks.y*canvasHeight
     return ({x: canvasX, y: canvasY})
-    
   }
-  isTwoFingerPointing(landmarks){
-    const newAngle = this.angleDeg(landmarks);
-    this.angleDegArray.push(newAngle); // Use push to add newAngle to angleDegArray
-    if (this.angleDegArray.length > 4) {
-      this.angleDegArray.shift(); // Remove the first element to keep the array size to 4
-    }
-    const averageAngle = this.angleDegArray.reduce((sum, angle) => sum + angle, 0) / this.angleDegArray.length;
-    console.log("Average Angle between vector A and B:", averageAngle);
-    return averageAngle <= 8;
+  isAiming(landmarks){
+    const matrix = this.fingersMatrix(landmarks);
+    console.log('matrix added ',matrix)
+    this.fingersMatrices.push(matrix); 
+    if (this.fingersMatrices.length > 4) {
+      this.fingersMatrices.shift(); // Remove the first element to keep the array size to 4
+    } 
+    const aimingCounts = this.fingersMatrices.filter(matrix => matrix.isFingersClosed).length; // Added missing filtering and length calculation
+    return aimingCounts >= 4; // confirm as aiming when closing in index and middle fingers 
   }
-  
 
-  angleDeg(landmarks) {
+fingersMatrix(landmarks) {
     const p5 = landmarks[5];
     const p8 = landmarks[8];
     const p9 = landmarks[9];
     const p12 = landmarks[12];
   
     // Calculate vectors A and B
-    const vectorA = { x: p8.x - p5.x, y: p8.y - p5.y };
-    const vectorB = { x: p12.x - p9.x, y: p12.y - p9.y };
+    const vectorA = { x: p8.x - p5.x, y: p8.y - p5.y }; //index finger
+    const vectorB = { x: p12.x - p9.x, y: p12.y - p9.y }; // middle finger
   
-    // Calculate the angle between vectors A and B
+    // Calculate the angle spray between vectors A and B
     const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
     const magnitudeA = Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
     const magnitudeB = Math.sqrt(vectorB.x * vectorB.x + vectorB.y * vectorB.y);
     const cosAngle = dotProduct / (magnitudeA * magnitudeB);
     const angleRad = Math.acos(cosAngle);
     const angleDeg = (angleRad * 180) / Math.PI;
-    return angleDeg
-  }
-  
+
+    // Calculate location of pCenter, the virtual center for the target zone
+    const extendedVectorA = { x: p8.x + vectorA.x, y: p8.y + vectorA.y };
+    const scaleFactor = 50 / Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
+    const pCenter = { x: extendedVectorA.x + vectorA.x * scaleFactor, y: extendedVectorA.y + vectorA.y * scaleFactor };
+
+    // Calculate orientation of pSquare, the zone
+    const orientationVector = vectorA;
+
+    // Calculate the four corners of pSquare
+    const squareSize = 100; // Change this to your desired square size
+    const halfSquareSize = squareSize / 2;
+    const locLT = { x: pCenter.x - halfSquareSize, y: pCenter.y - halfSquareSize };
+    const locRT = { x: pCenter.x + halfSquareSize, y: pCenter.y - halfSquareSize };
+    const locRB = { x: pCenter.x + halfSquareSize, y: pCenter.y + halfSquareSize };
+    const locLB = { x: pCenter.x - halfSquareSize, y: pCenter.y + halfSquareSize };
+    console.log('-isClosed ', angleDeg <= this.angleDeg)
+    return { isFingersClosed: angleDeg <= this.angleDeg, zoneLT: locLT, zoneRT: locRT, zoneRB: locRB, zoneLB: locLB };
+}
+
   drawRect(location, scalar) {
       const offset = 10;
       const topLeft = location.topLeftCorner;
