@@ -34,13 +34,10 @@ export async function joinAgoraRoom() {
 
   export class batonCam {
     constructor(canvasElement, videoElement) {
-      this.videoElement = videoElement
+      this.videoElement = videoElement;
       this.canvasElement = canvasElement;
       this.ctx = canvasElement.getContext("2d", { willReadFrequently: true });
-      this.newCanvas = document.createElement('canvas');
-      this.newCtx = this.newCanvas.getContext('2d');
-      this.tmModel= null;
-      this.tmTargetClass = 'wi320tiny';
+
       this.frames = [];
       this.intervalDuration = 1000;
       this.angleDeg = 8;  // Threshold angle spray for act of "aiming"
@@ -88,11 +85,15 @@ export async function joinAgoraRoom() {
     }
   
   async predictHand(){
+    const vWidth = this.videoElement.videoWidth
+    const vHeight = this.videoElement.videoHeight
+    this.canvasElement.width=vWidth
+    this.canvasElement.height=vHeight
     let startTimeMs = performance.now();
     const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
 
     this.ctx.save();
-    this.ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+    this.ctx.clearRect(0, 0, this.videoWidth, this.videoHeight);
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
           drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
@@ -109,11 +110,8 @@ export async function joinAgoraRoom() {
             const zoneLB = latestMatrix.zoneLB; // Corrected the syntax and usage
             const zoneRT = latestMatrix.zoneRT; // Corrected the syntax and usage
             const zoneRB = latestMatrix.zoneRB; // Corrected the syntax and usage
-
-            console.log(`这里 -now pointing at:${zoneLT.x} ${zoneLT.y}`);
+            const imageData = this.captureZoneVideo(zoneLT,zoneRT,zoneRB,zoneLB)
           };
-          
-        
       }
     }
     this.ctx.restore();
@@ -182,111 +180,69 @@ fingersMatrix(landmarks) {
     // Calculate the four corners of pSquare
     const squareSize = 100; // Change this to your desired square size
     const halfSquareSize = squareSize / 2;
-    const locLT = { x: pCenter.x - halfSquareSize, y: pCenter.y - halfSquareSize };
-    const locRT = { x: pCenter.x + halfSquareSize, y: pCenter.y - halfSquareSize };
-    const locRB = { x: pCenter.x + halfSquareSize, y: pCenter.y + halfSquareSize };
-    const locLB = { x: pCenter.x - halfSquareSize, y: pCenter.y + halfSquareSize };
-    console.log('-isClosed ', angleDeg <= this.angleDeg)
+    let locLT = { x: pCenter.x - halfSquareSize, y: pCenter.y - halfSquareSize };
+    let locRT = { x: pCenter.x + halfSquareSize, y: pCenter.y - halfSquareSize };
+    let locRB = { x: pCenter.x + halfSquareSize, y: pCenter.y + halfSquareSize };
+    let locLB = { x: pCenter.x - halfSquareSize, y: pCenter.y + halfSquareSize };
+
+    //convert to actuals
+    locLT = { x: locLT.x*this.videoWidth, y: locLT.y*this.videoHeight }
+    locRT = { x: locRT.x*this.videoWidth, y: locRT.y*this.videoHeight }
+    locRB = { x: locRB.x*this.videoWidth, y: locRB.y*this.videoHeight }
+    locLB = { x: locLB.x*this.videoWidth, y: locLB.y*this.videoHeight }
+
     return { isFingersClosed: angleDeg <= this.angleDeg, zoneLT: locLT, zoneRT: locRT, zoneRB: locRB, zoneLB: locLB };
 }
 
-  drawRect(location, scalar) {
-      const offset = 10;
-      const topLeft = location.topLeftCorner;
-      const topRight = location.topRightCorner;
-      const bottomLeft = location.bottomLeftCorner;
-      const a = topRight.x - topLeft.x;
-      const b = topRight.y - topLeft.y;
-      const c = topLeft.y - bottomLeft.y;
-      const d = bottomLeft.x - topLeft.x
-      const bLX = topLeft.x - a * (scalar - 1) / 2;
-      const bLY = topLeft.y - b * (scalar - 1) / 2;
-      const bRX = topRight.x + a * (scalar - 1) / 2;
-      const bRY = topRight.y + b * (scalar - 1) / 2;
-      const tLX = bLX - d * scalar;
-      const tLY = bLY + c * scalar;
-      const tRX = bRX - d * scalar;
-      const tRY = bRY + c * scalar;
-      this.ctx.beginPath();
-      this.ctx.moveTo(bLX-offset, bLY+offset); // Move to bottom left corner
-      this.ctx.lineTo(bRX+offset, bRY+offset); // Draw line to bottom right corner
-      this.ctx.lineTo(tRX+offset, tRY-offset); // Draw line to top right corner
-      this.ctx.lineTo(tLX-offset, tLY-offset); // Draw line to top left corner
-      this.ctx.closePath(); // Close the path
+
     
-      this.ctx.strokeStyle = "#FF3B58";
-      this.ctx.lineWidth = 4;
-      this.ctx.stroke();
-      const bL ={x: bLX, y:bLY}
-      const bR ={x: bRX, y:bRY}
-      const tL ={x: tLX, y:tLY}
-      const tR = {x: tRX, y:tRY}
-      const newLocation = {
-        bottomLeft: bL,
-        bottomRight: bR,
-        topLeft: tL,
-        topRight: tR,
-      }
-      return newLocation;
+  captureZoneVideo(topLeft, topRight, bottomRight, bottomLeft) {
+      const width = Math.sqrt((topLeft.x - topRight.x) ** 2 + (topLeft.y - topRight.y) ** 2);
+      const height = Math.sqrt((topLeft.x - bottomLeft.x) ** 2 + (topLeft.y - bottomLeft.y) ** 2);
+    
+      const centerX = (topLeft.x + topRight.x + bottomLeft.x + bottomRight.x) / 4;
+      const centerY = (topLeft.y + topRight.y + bottomLeft.y + bottomRight.y) / 4;
+      const newCanvas = document.createElement('canvas');
+      newCanvas.width = width;
+      newCanvas.height = height;
+      const newCtx =  newCanvas.getContext('2d');
+      
+      newCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
+      const angle = -Math.atan2(-topLeft.y + topRight.y, -topLeft.x + topRight.x);    
+      newCtx.translate(width / 2, height / 2);
+      newCtx.rotate(angle);
+      console.log(`CenterXY: ${-centerX}, ${-centerY}`)
+      newCtx.drawImage(this.videoElement, -centerX, -centerY);
+    
+      const imageData = newCtx.getImageData(0, 0, width, height);
+    
+      const newImageElement = document.createElement('img');
+      newImageElement.src = newCanvas.toDataURL('image/png');
+    
+      // Add it to the page (optional, for visual validation)
+      document.body.appendChild(newImageElement);
+
+      // Generate a dynamic filename based on the current timestamp
+      const timestamp = Date.now();
+      const filename = `img${timestamp}.png`;
+      const filename2 = `im2${timestamp}.png`;
+
+      const downloadLink = document.createElement('a');
+      downloadLink.href = newCanvas.toDataURL('image/png');
+      downloadLink.download = filename; // Set the filename
+      downloadLink.click();
+    
+      // Add console.log statements for debugging
+      // console.log('Width:', width);
+      // console.log('Height:', height);
+      // console.log('CenterX:', centerX);
+      // console.log('CenterY:', centerY);
+      // console.log('Angle:', angle);
+      // console.log('Image Data:', imageData);
+    
+      return imageData;
     }
     
 
-    addFrame(newLoc) {
-      const currentTime = Date.now();
-      if (this.frames.length > 0) {
-        const lastLoc = this.frames[this.frames.length - 1].topLeft;
-        const distance = this.getDistance(newLoc, lastLoc);
-        this.latestActiveTime = currentTime;
-        let movement = '';
-        if (distance < this.thresholdDistance) {
-          movement = 's'; //static
-        } else {
-          movement = newLoc.x > lastLoc.x ? 'r' : 'l'; //right or left
-        }
-        this.frames.push({ topLeft: newLoc, distance: distance, movement: movement, timeStamp: currentTime });
-      } else {
-        this.frames.push({ topLeft: newLoc, distance: 0, movement: '', timeStamp: currentTime });
-      }
-    }
-  
-    hasEnoughFrame() {
-      const currentTime = Date.now();
-      while (this.frames.length > 0 && currentTime - this.frames[0].timeStamp >= this.intervalDuration) {
-        this.frames.shift(); // Remove the earliest entry from the log
-      }
-      return this.frames.length > 0;
-    }
-  
-    getDistance(point1, point2) {
-      const dx = point2.x - point1.x;
-      const dy = point2.y - point1.y;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-  
-    countFrames(movementType) {
-      return this.frames.filter(frame => frame.movement === movementType).length;
-    }
-  
-    // Utility function to determine the motion state of the QR marker
-    motion(location) {
-      const newLoc = location.topLeftCorner;
-      this.addFrame(newLoc);
-      let isStatic = false; //default return mode
-      if (this.hasEnoughFrame()) {
-        const totalCounts = this.frames.length;
-        if (this.countFrames('s') > totalCounts * 0.8) {
-          isStatic = true;
-        }
-      }
-      return isStatic;
-    }
-    isIdle() {
-      const now = Date.now(); // Declare and initialize the 'now' variable with the current timestamp
-      if (this.latestActiveTime > 0 && now - this.latestActiveTime >= this.intervalDuration * 5) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-    
+
   }

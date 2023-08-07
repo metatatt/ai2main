@@ -30,8 +30,7 @@ body {
   position: relative; 
 }
 
-canvas {
-  z-index: -3;
+#canvas {
   position:absolute;
   top: 0;
   left: 0;
@@ -42,7 +41,7 @@ canvas {
   background: transparent;
 } 
 
-video {
+#video {
   z-index: -2;
   position:absolute;
   top: 0;
