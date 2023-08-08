@@ -1,12 +1,15 @@
 import { joinAgoraRoom, batonCam} from './lib/libA.js';
 import { getEachResult} from './lib/libB.js';
 import { populateFindings, populatePage, playSlide, batonUI} from './lib/libC.js';
+import {
+  HandLandmarker,
+  FilesetResolver
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
 var ojoapp = new Vue({
   el: '#batonApp',
   data: {
     agoraUid: "",
-    canvasContext: null,
     canvasElement: null,
     canvasHeight: 768,
     canvasWidth: 1024,
@@ -23,6 +26,8 @@ var ojoapp = new Vue({
     statusAgora: "",
     userId: null,
     videoElement: null,
+    handLandmarker:undefined,
+    landMarkers:[],
   },
   
 
@@ -42,7 +47,7 @@ var ojoapp = new Vue({
     
     this.videoElement = document.getElementById("video");
     this.canvasElement = document.getElementById("canvas");
-    this.canvasContext = this.canvasElement.getContext("2d", { willReadFrequently: true });
+    this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
     
     this.client = AgoraRTC.createClient({ mode: 'rtc', codec: 'h264' });
 
@@ -64,10 +69,27 @@ var ojoapp = new Vue({
     this.batonCam = new batonCam(this.canvasElement,this.videoElement);
     this.batonUI = new batonUI(this.role, this.socket);
     this.batonCam.initiateCamera();
-    this.batonCam.initiateHand();
+    this.initiateHand();
   },
   
   methods: {
+
+  async initiateHand(){
+      const runningMode = "VIDEO"
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+      );
+      this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+          delegate: "GPU"
+        },
+        runningMode: runningMode,
+        numHands: 2
+      });
+      console.log('handLM ',this.handLandmarker)
+  },
+  
   startScanning() {
       // Setup screen layout
       this.batonUI.layout('scan')
@@ -86,68 +108,43 @@ var ojoapp = new Vue({
     
       // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
      // this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
-     this.batonCam.predictHand();
+     this.predictHand();
   },
   
 
-  scanQRCode() {
-    // Check if video data is available
-    if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
-      if(this.batonCam.isIdle()){
-        this.batonUI.layout('scan')
-      };
-      this.canvasElement.height = this.videoElement.videoHeight;
-      this.canvasElement.width = this.videoElement.videoWidth;
-      this.canvasContext.drawImage(this.videoElement, 0, 0, this.canvasElement.width, this.canvasElement.height);
-      var imageData = this.canvasContext.getImageData(0, 0, this.canvasElement.width, this.canvasElement.height);
-  
-      // Attempt to decode QR code from the image data
-      var code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: "dontInvert",
-      });
-      let isStatic =false
-      let qrLoc = ''
-      if (code){
-        qrLoc = code.location
-        isStatic = this.batonCam.motion(qrLoc)
-        console.log('static?', isStatic);
-      }
-      // scan check QR Code
-      if (isStatic && code.data.startsWith('@pr-')) {
-        // Adjust layers to enable canvas drawing activities
-        this.videoElement.style.zIndex = -2;
-        this.canvasElement.style.zIndex = -1;
-        this.batonUI.layout('predict');
-        const msg = "capture from webcam...";
-        this.batonUI.messageBox(msg);
-        this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
-  
-        // Peek if the detectLoc rect area contains a Target
-        const detectLoc = this.batonCam.drawRect(qrLoc, 4);
-        this.batonCam.detectTarget(detectLoc)
-          .then((result) => {
-            // Check if the target was detected
-            console.log('bug here: result? ', result)
-            console.log('bug here: result in Target? ', result.isTarget)
-            if (result.isTarget) {
-              this.isScanEnabled = false;
-              const imageData = result.imageData;
-              this.cloudPredict(imageData);
-            } else {
-              // Target not detected!
-            }
-          })
-          .catch((error) => {
-            console.error('An error occurred:', error);
-            // Handle errors if the Promise gets rejected
+  async predictHand(){
+    const vWidth = this.videoElement.videoWidth
+    const vHeight = this.videoElement.videoHeight
+    this.canvasElement.width=vWidth
+    this.canvasElement.height=vHeight
+    let startTimeMs = performance.now();
+    const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
+    this.ctx.save();
+    this.ctx.clearRect(0, 0, vWidth, vHeight);
+    if (results.landmarks) {
+      for (const landmarks of results.landmarks) {
+          drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
+            color: "#00FF00",
+            lineWidth: 1.5
           });
-      } // if (code && code.data.startsWith('@pr-'))
-    } // end if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA)
-  
-    // Continue scanning by recursively calling scanQRCode() using requestAnimationFrame
-    if (this.isScanEnabled) {
-      this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
+          drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
+          const marker = this.batonCam.decodeLandmarks(landmarks)
+          this.landMarkers.push(marker); 
+          let isAiming = false
+          if (this.landMarkers.length > 4) {
+            this.landMarkers.shift(); // Remove the first element to keep the array size to 4
+            isAiming = this.landMarkers.every(marker => marker.isFingersClosed);
+          }
+          if (isAiming){
+            const latestMarker = this.landMarkers[this.landMarkers.length-1];
+            const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
+            const imageData = this.batonCam.captureMarkerVideo(boxLoc)
+            this.cloudPredict(imageData)
+          };
+      }
     }
+    this.ctx.restore();
+    window.requestAnimationFrame(this.predictHand);
   },
   
   cloudPredict(imageData) {
@@ -156,8 +153,8 @@ var ojoapp = new Vue({
     this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
     this.batonUI.graphicsBox('t', 'batonApp'); // Play Tee logo animation
     this.batonUI.socketEvent("#graphicsBox#", 't', this.gridId);
-    this.videoElement.style.zIndex = -1;
-    this.canvasElement.style.zIndex = -2;
+    // this.videoElement.style.zIndex = -1;
+    // this.canvasElement.style.zIndex = -2;
     let result = '';
     const header = { header1: "WIP 3200 (xxxx)", header2: "obtain info from PDF" };
   
@@ -165,15 +162,15 @@ var ojoapp = new Vue({
       .then((result) => {
   
         // Display the Findings with the header and sorted results
-        this.findingsDOM = populateFindings(header, result);
-        this.renderSlide(this.findingsDOM);
-        this.batonUI.socketEvent("#slide#", this.findingsDOM, this.gridId);
-  
-        return playSlide.call(this);
+        // this.findingsDOM = populateFindings(header, result);
+        // this.renderSlide(this.findingsDOM);
+        // this.batonUI.socketEvent("#slide#", this.findingsDOM, this.gridId);
+        console.log('getEachR ', result)
+        // return playSlide.call(this);
       })
       .then((isScanEnabled) => {
-        this.isScanEnabled = isScanEnabled;
-        this.startScanning();
+        // this.isScanEnabled = isScanEnabled;
+        // this.startScanning();
       })
       .catch((error) => {
         console.error(error);

@@ -1,9 +1,3 @@
-import {
-  HandLandmarker,
-  FilesetResolver
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
-
-
 export async function joinAgoraRoom() {
     const response = await fetch('/env', {
       method: 'POST',
@@ -42,8 +36,6 @@ export async function joinAgoraRoom() {
       this.intervalDuration = 1000;
       this.angleDeg = 8;  // Threshold angle spray for act of "aiming"
       this.latestActiveTime =0;
-      this.handLandmarker=undefined;
-      this.landMarkers =[];
     }
 
     async initiateCamera(){
@@ -69,78 +61,6 @@ export async function joinAgoraRoom() {
       }
     }
 
-  async initiateHand(){
-    const runningMode = "VIDEO"
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
-    );
-    this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
-        delegate: "GPU"
-      },
-      runningMode: runningMode,
-      numHands: 2
-    });
-    }
-  
-  async predictHand(){
-    const vWidth = this.videoElement.videoWidth
-    const vHeight = this.videoElement.videoHeight
-    this.canvasElement.width=vWidth
-    this.canvasElement.height=vHeight
-    let startTimeMs = performance.now();
-    const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
-
-    this.ctx.save();
-    this.ctx.clearRect(0, 0, vWidth, vHeight);
-    if (results.landmarks) {
-      for (const landmarks of results.landmarks) {
-          drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
-            color: "#00FF00",
-            lineWidth: 1.5
-          });
-          drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
-          const marker = this.decodeLandmarks(landmarks)
-          this.landMarkers.push(marker); 
-          let isAiming = false
-          if (this.landMarkers.length > 4) {
-            this.landMarkers.shift(); // Remove the first element to keep the array size to 4
-            isAiming = this.landMarkers.every(marker => marker.isFingersClosed);
-          }
-          if (isAiming){
-            const latestMarker = this.landMarkers[this.landMarkers.length-1];
-            const boxLoc = this.virtualBoxLoc(latestMarker,vWidth,vHeight)
-            this.captureMarkerVideo(boxLoc)
-          };
-      }
-    }
-    this.ctx.restore();
-
-    window.requestAnimationFrame(this.predictHand.bind(this));
-
-  }
-
-averageXY(coordinatesArray) {
-    if (coordinatesArray.length === 0) {
-        return { x: 0, y: 0 }; // Default to (0, 0) if the array is empty
-    }
-    
-    const sumX = coordinatesArray.reduce((sum, coord) => sum + coord.x, 0);
-    const sumY = coordinatesArray.reduce((sum, coord) => sum + coord.y, 0);
-    
-    const averageX = sumX / coordinatesArray.length;
-    const averageY = sumY / coordinatesArray.length;
-    
-    return { x: averageX, y: averageY };
-}
-
-  
-  aimedZone(landmarks,canvasWidth,canvasHeight, sideLength){
-    const canvasX = landmarks.x*canvasWidth
-    const canvasY = landmarks.y*canvasHeight
-    return ({x: canvasX, y: canvasY})
-  }
   decodeLandmarks(landmarks){
     const p5 = landmarks[5];
     const p8 = landmarks[8];
@@ -247,15 +167,15 @@ captureMarkerVideo(boxLoc) {
     // Get the ImageData object from the canvas
     const imageData = newCtx.getImageData(0, 0, width, height);
 
-    const timestamp = Date.now();
-    const filename = `img${timestamp}.png`;
+    // const timestamp = Date.now();
+    // const filename = `img${timestamp}.png`;
 
-    const downloadLink = document.createElement('a');
-    downloadLink.href = newCanvas.toDataURL('image/png');
-    downloadLink.download = filename; // Set the filename
-    downloadLink.click();    
+    // const downloadLink = document.createElement('a');
+    // downloadLink.href = newCanvas.toDataURL('image/png');
+    // downloadLink.download = filename; // Set the filename
+    // downloadLink.click();    
 
-  // return imageData;
+  return imageData;
 }
 
 
