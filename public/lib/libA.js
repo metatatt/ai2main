@@ -101,7 +101,6 @@ export async function joinAgoraRoom() {
             lineWidth: 1.5
           });
           drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
-          console.log(`index- ${landmarks[8]}`)
           const marker = this.decodeLandmarks(landmarks)
           this.landMarkers.push(marker); 
           let isAiming = false
@@ -111,8 +110,8 @@ export async function joinAgoraRoom() {
           }
           if (isAiming){
             const latestMarker = this.landMarkers[this.landMarkers.length-1];
-            this.captureMarkerVideo(latestMarker,vWidth,vHeight)
-            console.log('latest ',latestMarker)
+            const boxLoc = this.virtualBoxLoc(latestMarker,vWidth,vHeight)
+            this.captureMarkerVideo(boxLoc)
           };
       }
     }
@@ -164,76 +163,101 @@ averageXY(coordinatesArray) {
     const deltaX = p5.x - p8.x;
     const deltaY = p5.y - p8.y;
     const orienRotate = Math.atan2(deltaY, deltaX); //usage newCtx.rotate(orienRotate)
-    console.log(`spray ${angleDeg} index ${p8.x}|${p8.y} orient ${orienRotate}`) 
     const angle_degrees = orienRotate * (180 / Math.PI);
     const info1 = document.querySelector('.text-header1');
     info1.innerHTML=`orient ${orienRotate} angle ${angle_degrees} `
-    return { isFingersClosed: angleDeg <= this.angleDeg, indexFinger : p8, orienRotate: orienRotate};
+    return { isFingersClosed: angleDeg <= this.angleDeg, p5: p5, p8 : p8, orienRotate: orienRotate};
 }
 
-captureMarkerVideo(marker, canvasWidth, canvasHeight) {
-  const loc = marker.indexFinger;
-  const rotation = marker.orienRotate;
-  const newCanvas = document.createElement('canvas');
-  newCanvas.width = 224;
-  newCanvas.height = 224;
-  const offset = 50;
-  const canvsLocX = loc.x * canvasWidth;
-  const canvsLocY = loc.y * canvasHeight;
-  const newCtx = newCanvas.getContext('2d');
-  
-  const newCenter = {
-    x: canvsLocX + 50 * Math.cos(rotation * (Math.PI / 180)),
-    y: canvsLocY + offset + 50 * Math.sin(rotation * (Math.PI / 180)),
-  };
-
-  console.log(`newCenter ${newCenter.x}|${newCenter.y}`)
-  console.log(`canvasLoc ${canvsLocX}|${canvsLocY}`)
-
-  // Use newCenter.x and newCenter.y for your calculations or drawing
-}
-
-
-captureOld(marker,width,height) {
-    const loc = marker.indexFinger
-    const rotation = marker.orienRotate
-
-    const newCanvas = document.createElement('canvas');
-    newCanvas.width = 224;
-    newCanvas.height = 224;
-    const offset = 50
-    const newCtx =  newCanvas.getContext('2d');
-    const centerX = loc.x*width
-    const centerY = loc.y*height + offset
-    console.log(`index XY: ${loc.x}, ${loc.y}`)
-    console.log(`CenterXY: ${centerX}, ${centerY}`)
-
-    newCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
-
-      newCtx.translate(width / 2, height / 2);
-      newCtx.rotate(angle);
-      console.log(`CenterXY: ${-centerX}, ${-centerY}`)
-      newCtx.drawImage(this.videoElement, -centerX, -centerY);
+  virtualBoxLoc(marker, canvasWidth, canvasHeight) {
+      const p5 = marker.p5;
+      const p8 = marker.p8;
+      p5.x = p5.x * canvasWidth;
+      p8.x = p8.x * canvasWidth;
+      p5.y = p5.y * canvasHeight;
+      p8.y = p8.y * canvasHeight;
+      const squareSideLength = 224;
     
-      const imageData = newCtx.getImageData(0, 0, width, height);
+      // Calculate the direction from p5 to p8
+      const vectorDirection = { x: p8.x - p5.x, y: p8.y - p5.y };
+      const magnitude = Math.sqrt(vectorDirection.x * vectorDirection.x + vectorDirection.y * vectorDirection.y);
+      const normalizedDirection = { x: vectorDirection.x / magnitude, y: vectorDirection.y / magnitude };
     
-      const newImageElement = document.createElement('img');
-      newImageElement.src = newCanvas.toDataURL('image/png');
+      // Calculate the perpendicular vector to the normalized direction
+      const perpendicularVector = { x: -normalizedDirection.y, y: normalizedDirection.x };
     
-      // Add it to the page (optional, for visual validation)
-      document.body.appendChild(newImageElement);
+      // Calculate the midpoint of the bottom edge line
+      const midBottom = {
+        x: (p5.x + p8.x) / 2,
+        y: (p5.y + p8.y) / 2
+      };
+    
+      // Calculate the corner coordinates
+      const cornerTL = {
+        x: midBottom.x - (perpendicularVector.x * squareSideLength) / 2,
+        y: midBottom.y - (perpendicularVector.y * squareSideLength) / 2
+      };
+      const cornerTR = {
+        x: midBottom.x + (perpendicularVector.x * squareSideLength) / 2,
+        y: midBottom.y + (perpendicularVector.y * squareSideLength) / 2
+      };
+      const cornerBL = {
+        x: cornerTL.x + normalizedDirection.x * squareSideLength,
+        y: cornerTL.y + normalizedDirection.y * squareSideLength
+      };
+      const cornerBR = {
+        x: cornerTR.x + normalizedDirection.x * squareSideLength,
+        y: cornerTR.y + normalizedDirection.y * squareSideLength
+      };
 
-      // Generate a dynamic filename based on the current timestamp
-      const timestamp = Date.now();
-      const filename = `img${timestamp}.png`;
-
-      const downloadLink = document.createElement('a');
-      downloadLink.href = newCanvas.toDataURL('image/png');
-      downloadLink.download = filename; // Set the filename
-      downloadLink.click();    
-      return imageData;
+    
+    const info1 = document.querySelector('.text-header1');
+    info1.innerHTML=`BL-${Math.floor(cornerBL.x)}|${Math.floor(cornerBL.y)}, P8-${p8.x}|${p8.y}} ` 
+    const boxLoc = {
+      locTL: cornerTL,
+      locTR: cornerTR,
+      locBL: cornerBL,
+      locBR: cornerBR,
     }
-    
+    return boxLoc
+  }
+
+captureMarkerVideo(boxLoc) {
+    const { locTL, locTR, locBL, locBR } = boxLoc;
+
+    // Calculate the width and height of the square
+    const width = Math.sqrt((locTL.x - locTR.x) ** 2 + (locTL.y - locTR.y) ** 2);
+    const height = width;
+
+    // Calculate the center point of the square
+    const centerX = (locTL.x + locTR.x + locBL.x + locBR.x) / 4;
+    const centerY = (locTL.y + locTR.y + locBL.y + locBR.y)  / 4;
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width = width
+    newCanvas.height = width
+    const newCtx =  newCanvas.getContext('2d');
+    newCtx.clearRect(0, 0, width, width);
+    const angle = -Math.atan2(-locTL.y + locTR.y, -locTL.x + locTR.x)
+
+    // Rotate and draw the square
+    newCtx.translate(width / 2, height / 2);
+    newCtx.rotate(angle);
+    newCtx.drawImage(this.videoElement, -centerX, -centerY);
+
+    // Get the ImageData object from the canvas
+    const imageData = newCtx.getImageData(0, 0, width, height);
+
+    const timestamp = Date.now();
+    const filename = `img${timestamp}.png`;
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = newCanvas.toDataURL('image/png');
+    downloadLink.download = filename; // Set the filename
+    downloadLink.click();    
+
+  // return imageData;
+}
+
 
 
   }
