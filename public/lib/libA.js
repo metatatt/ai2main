@@ -43,7 +43,7 @@ export async function joinAgoraRoom() {
       this.angleDeg = 8;  // Threshold angle spray for act of "aiming"
       this.latestActiveTime =0;
       this.handLandmarker=undefined;
-      this.fingersMatrices =[];
+      this.landMarkers =[];
     }
 
     async initiateCamera(){
@@ -93,7 +93,7 @@ export async function joinAgoraRoom() {
     const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
 
     this.ctx.save();
-    this.ctx.clearRect(0, 0, this.videoWidth, this.videoHeight);
+    this.ctx.clearRect(0, 0, vWidth, vHeight);
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
           drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
@@ -102,15 +102,17 @@ export async function joinAgoraRoom() {
           });
           drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
           console.log(`index- ${landmarks[8]}`)
-          const isAiming = this.isAiming(landmarks)
-          console.log(`aiming- ${isAiming}`)
+          const marker = this.decodeLandmarks(landmarks)
+          this.landMarkers.push(marker); 
+          let isAiming = false
+          if (this.landMarkers.length > 4) {
+            this.landMarkers.shift(); // Remove the first element to keep the array size to 4
+            isAiming = this.landMarkers.every(marker => marker.isFingersClosed);
+          }
           if (isAiming){
-            const latestMatrix = this.fingersMatrices[this.fingersMatrices.length-1];
-            const zoneLT = latestMatrix.zoneLT;// Corrected the syntax and usage
-            const zoneLB = latestMatrix.zoneLB; // Corrected the syntax and usage
-            const zoneRT = latestMatrix.zoneRT; // Corrected the syntax and usage
-            const zoneRB = latestMatrix.zoneRB; // Corrected the syntax and usage
-            const imageData = this.captureZoneVideo(zoneLT,zoneRT,zoneRB,zoneLB)
+            const latestMarker = this.landMarkers[this.landMarkers.length-1];
+            this.captureMarkerVideo(latestMarker,vWidth,vHeight)
+            console.log('latest ',latestMarker)
           };
       }
     }
@@ -140,23 +142,12 @@ averageXY(coordinatesArray) {
     const canvasY = landmarks.y*canvasHeight
     return ({x: canvasX, y: canvasY})
   }
-  isAiming(landmarks){
-    const matrix = this.fingersMatrix(landmarks);
-    console.log('matrix added ',matrix)
-    this.fingersMatrices.push(matrix); 
-    if (this.fingersMatrices.length > 4) {
-      this.fingersMatrices.shift(); // Remove the first element to keep the array size to 4
-    } 
-    const aimingCounts = this.fingersMatrices.filter(matrix => matrix.isFingersClosed).length; // Added missing filtering and length calculation
-    return aimingCounts >= 4; // confirm as aiming when closing in index and middle fingers 
-  }
-
-fingersMatrix(landmarks) {
+  decodeLandmarks(landmarks){
     const p5 = landmarks[5];
     const p8 = landmarks[8];
     const p9 = landmarks[9];
     const p12 = landmarks[12];
-  
+
     // Calculate vectors A and B
     const vectorA = { x: p8.x - p5.x, y: p8.y - p5.y }; //index finger
     const vectorB = { x: p12.x - p9.x, y: p12.y - p9.y }; // middle finger
@@ -169,46 +160,56 @@ fingersMatrix(landmarks) {
     const angleRad = Math.acos(cosAngle);
     const angleDeg = (angleRad * 180) / Math.PI;
 
-    // Calculate location of pCenter, the virtual center for the target zone
-    const extendedVectorA = { x: p8.x + vectorA.x, y: p8.y + vectorA.y };
-    const scaleFactor = 50 / Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
-    const pCenter = { x: extendedVectorA.x + vectorA.x * scaleFactor, y: extendedVectorA.y + vectorA.y * scaleFactor };
+    // Calculate the orientation per p5 - p8
+    const deltaX = p5.x - p8.x;
+    const deltaY = p5.y - p8.y;
+    const orienRotate = Math.atan2(deltaY, deltaX); //usage newCtx.rotate(orienRotate)
+    console.log(`spray ${angleDeg} index ${p8.x}|${p8.y} orient ${orienRotate}`) 
+    const angle_degrees = orienRotate * (180 / Math.PI);
+    const info1 = document.querySelector('.text-header1');
+    info1.innerHTML=`orient ${orienRotate} angle ${angle_degrees} `
+    return { isFingersClosed: angleDeg <= this.angleDeg, indexFinger : p8, orienRotate: orienRotate};
+}
 
-    // Calculate orientation of pSquare, the zone
-    const orientationVector = vectorA;
+captureMarkerVideo(marker, canvasWidth, canvasHeight) {
+  const loc = marker.indexFinger;
+  const rotation = marker.orienRotate;
+  const newCanvas = document.createElement('canvas');
+  newCanvas.width = 224;
+  newCanvas.height = 224;
+  const offset = 50;
+  const canvsLocX = loc.x * canvasWidth;
+  const canvsLocY = loc.y * canvasHeight;
+  const newCtx = newCanvas.getContext('2d');
+  
+  const newCenter = {
+    x: canvsLocX + 50 * Math.cos(rotation * (Math.PI / 180)),
+    y: canvsLocY + offset + 50 * Math.sin(rotation * (Math.PI / 180)),
+  };
 
-    // Calculate the four corners of pSquare
-    const squareSize = 100; // Change this to your desired square size
-    const halfSquareSize = squareSize / 2;
-    let locLT = { x: pCenter.x - halfSquareSize, y: pCenter.y - halfSquareSize };
-    let locRT = { x: pCenter.x + halfSquareSize, y: pCenter.y - halfSquareSize };
-    let locRB = { x: pCenter.x + halfSquareSize, y: pCenter.y + halfSquareSize };
-    let locLB = { x: pCenter.x - halfSquareSize, y: pCenter.y + halfSquareSize };
+  console.log(`newCenter ${newCenter.x}|${newCenter.y}`)
+  console.log(`canvasLoc ${canvsLocX}|${canvsLocY}`)
 
-    //convert to actuals
-    locLT = { x: locLT.x*this.videoWidth, y: locLT.y*this.videoHeight }
-    locRT = { x: locRT.x*this.videoWidth, y: locRT.y*this.videoHeight }
-    locRB = { x: locRB.x*this.videoWidth, y: locRB.y*this.videoHeight }
-    locLB = { x: locLB.x*this.videoWidth, y: locLB.y*this.videoHeight }
-
-    return { isFingersClosed: angleDeg <= this.angleDeg, zoneLT: locLT, zoneRT: locRT, zoneRB: locRB, zoneLB: locLB };
+  // Use newCenter.x and newCenter.y for your calculations or drawing
 }
 
 
-    
-  captureZoneVideo(topLeft, topRight, bottomRight, bottomLeft) {
-      const width = Math.sqrt((topLeft.x - topRight.x) ** 2 + (topLeft.y - topRight.y) ** 2);
-      const height = Math.sqrt((topLeft.x - bottomLeft.x) ** 2 + (topLeft.y - bottomLeft.y) ** 2);
-    
-      const centerX = (topLeft.x + topRight.x + bottomLeft.x + bottomRight.x) / 4;
-      const centerY = (topLeft.y + topRight.y + bottomLeft.y + bottomRight.y) / 4;
-      const newCanvas = document.createElement('canvas');
-      newCanvas.width = width;
-      newCanvas.height = height;
-      const newCtx =  newCanvas.getContext('2d');
-      
-      newCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
-      const angle = -Math.atan2(-topLeft.y + topRight.y, -topLeft.x + topRight.x);    
+captureOld(marker,width,height) {
+    const loc = marker.indexFinger
+    const rotation = marker.orienRotate
+
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width = 224;
+    newCanvas.height = 224;
+    const offset = 50
+    const newCtx =  newCanvas.getContext('2d');
+    const centerX = loc.x*width
+    const centerY = loc.y*height + offset
+    console.log(`index XY: ${loc.x}, ${loc.y}`)
+    console.log(`CenterXY: ${centerX}, ${centerY}`)
+
+    newCtx.clearRect(0, 0, newCanvas.width, newCanvas.height);
+
       newCtx.translate(width / 2, height / 2);
       newCtx.rotate(angle);
       console.log(`CenterXY: ${-centerX}, ${-centerY}`)
@@ -225,21 +226,11 @@ fingersMatrix(landmarks) {
       // Generate a dynamic filename based on the current timestamp
       const timestamp = Date.now();
       const filename = `img${timestamp}.png`;
-      const filename2 = `im2${timestamp}.png`;
 
       const downloadLink = document.createElement('a');
       downloadLink.href = newCanvas.toDataURL('image/png');
       downloadLink.download = filename; // Set the filename
-      downloadLink.click();
-    
-      // Add console.log statements for debugging
-      // console.log('Width:', width);
-      // console.log('Height:', height);
-      // console.log('CenterX:', centerX);
-      // console.log('CenterY:', centerY);
-      // console.log('Angle:', angle);
-      // console.log('Image Data:', imageData);
-    
+      downloadLink.click();    
       return imageData;
     }
     
