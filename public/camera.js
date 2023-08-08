@@ -28,9 +28,12 @@ var ojoapp = new Vue({
     userId: null,
     videoElement: null,
     handLandmarker:undefined,
+    markerSize:224,
     imageDataBatch:[],
     landMarkers:[],
     predictionWorker: null,
+    predictionEndpoint:"",
+    predictionKey:"",
   },
 
   mounted() {
@@ -94,6 +97,11 @@ var ojoapp = new Vue({
         runningMode: runningMode,
         numHands: 2
       });
+
+      const azdata = await fetch('/azenv').then(response => response.json());
+      this.predictionKey = azdata.predictionKey;
+      this.predictionEndpoint = azdata.predictionEndpoint;
+
       console.log('handLM ',this.handLandmarker)
   },
   
@@ -150,11 +158,13 @@ var ojoapp = new Vue({
           if (isAiming){
             const latestMarker = this.landMarkers[this.landMarkers.length-1];
             const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
-            const imageData = this.batonCam.captureMarkerVideo(boxLoc)
-
-            this.imageDataBatch.push(imageData)
-            
-            this.predictionWorker.postMessage(imageData);
+            const imageBlob = await this.batonCam.captureMarkerVideo(boxLoc)
+            console.log('imgD', imageBlob)
+            this.predictionWorker.postMessage({
+              imageBlob: imageBlob,
+              predictionKey: this.predictionKey,
+              predictionEndpoint: this.predictionEndpoint
+            });
           };
       }
     }

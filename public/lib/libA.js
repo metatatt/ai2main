@@ -165,17 +165,21 @@ captureMarkerVideo(boxLoc) {
     newCtx.drawImage(this.videoElement, -centerX, -centerY);
 
     // Get the ImageData object from the canvas
-    const imageData = newCtx.getImageData(0, 0, width, height);
+    const imageUnit8Data = newCtx.getImageData(0, 0, width, height);
 
-    // const timestamp = Date.now();
-    // const filename = `img${timestamp}.png`;
+    // Convert ImageData to Blob
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.putImageData(imageUnit8Data, 0, 0);
+    const imageBlobPromise = new Promise(resolve => {
+      canvas.toBlob(blob => {
+        resolve(blob);
+      }, 'image/png'); // Change to 'image/jpeg' if needed
+    });
 
-    // const downloadLink = document.createElement('a');
-    // downloadLink.href = newCanvas.toDataURL('image/png');
-    // downloadLink.download = filename; // Set the filename
-    // downloadLink.click();    
-
-  return imageData;
+    return imageBlobPromise;
 }
 
 
