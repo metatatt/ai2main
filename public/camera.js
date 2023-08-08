@@ -6,6 +6,7 @@ import {
   FilesetResolver
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
+
 var ojoapp = new Vue({
   el: '#batonApp',
   data: {
@@ -27,9 +28,10 @@ var ojoapp = new Vue({
     userId: null,
     videoElement: null,
     handLandmarker:undefined,
+    imageDataBatch:[],
     landMarkers:[],
+    predictionWorker: null,
   },
-  
 
   mounted() {
     this.socket = io(); // Initialize socket connection
@@ -66,6 +68,11 @@ var ojoapp = new Vue({
         });
       }
     }.bind(this));
+    this.predictionWorker = new Worker('./lib/prediction-worker.js'); // Adjust the path
+
+    console.log('pred worker ', this.predictionWorker)
+    this.predictionWorker.addEventListener('message', this.handlePredictionResult.bind(this));
+
     this.batonCam = new batonCam(this.canvasElement,this.videoElement);
     this.batonUI = new batonUI(this.role, this.socket);
     this.batonCam.initiateCamera();
@@ -115,12 +122,17 @@ var ojoapp = new Vue({
   async predictHand(){
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
-    this.canvasElement.width=vWidth
-    this.canvasElement.height=vHeight
+
+    // Only resize canvas when dimensions change
+    if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
+      this.canvasElement.width = vWidth;
+      this.canvasElement.height = vHeight;
+    }
     let startTimeMs = performance.now();
     const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
+
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
           drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
@@ -139,12 +151,21 @@ var ojoapp = new Vue({
             const latestMarker = this.landMarkers[this.landMarkers.length-1];
             const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
             const imageData = this.batonCam.captureMarkerVideo(boxLoc)
-            this.cloudPredict(imageData)
+
+            this.imageDataBatch.push(imageData)
+            
+            this.predictionWorker.postMessage(imageData);
           };
       }
     }
     this.ctx.restore();
-    window.requestAnimationFrame(this.predictHand);
+    window.requestAnimationFrame(this.predictHand.bind(this));
+  },
+  
+  handlePredictionResult(event) {
+    const predictionResult = event.data;
+    console.log('handle Prediction result', predictionResult);
+    // Process prediction result as needed
   },
   
   cloudPredict(imageData) {
@@ -224,4 +245,12 @@ var ojoapp = new Vue({
       });
     },
 
-  }});
+  },
+
+  beforeDestroy() {
+    // Remove the event listener and terminate the worker
+    this.predictionWorker.removeEventListener('message', this.handlePredictionResult.bind(this));
+    this.predictionWorker.terminate();
+  },
+
+});
