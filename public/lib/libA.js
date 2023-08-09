@@ -167,14 +167,8 @@ captureMarkerVideo(boxLoc) {
     // Get the ImageData object from the canvas
     const imageUnit8Data = newCtx.getImageData(0, 0, width, height);
 
-    // Convert ImageData to Blob
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx.putImageData(imageUnit8Data, 0, 0);
     const imageBlobPromise = new Promise(resolve => {
-      canvas.toBlob(blob => {
+      newCanvas.toBlob(blob => {
         resolve(blob);
       }, 'image/png'); // Change to 'image/jpeg' if needed
     });
