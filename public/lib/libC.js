@@ -64,6 +64,14 @@ export class batonUI {
       message: msg
     });
   }
+
+  greeting(){
+    const currentHour = new Date().getHours();
+    const greetings = ["Good evening!", "Good morning!", "Good afternoon!"];
+    const greetingIndex = Math.floor(((currentHour + 6) % 24) / 6);
+    return greetings[greetingIndex];
+  }
+
 }
 
 export function populatePage(factorValue) {

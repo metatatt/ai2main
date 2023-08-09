@@ -84,8 +84,6 @@ export async function joinAgoraRoom() {
     const deltaY = p5.y - p8.y;
     const orienRotate = Math.atan2(deltaY, deltaX); //usage newCtx.rotate(orienRotate)
     const angle_degrees = orienRotate * (180 / Math.PI);
-    const info1 = document.querySelector('.text-header1');
-    info1.innerHTML=`orient ${orienRotate} angle ${angle_degrees} `
     return { isFingersClosed: angleDeg <= this.angleDeg, p5: p5, p8 : p8, orienRotate: orienRotate};
 }
 
@@ -129,10 +127,6 @@ export async function joinAgoraRoom() {
         x: cornerTR.x + normalizedDirection.x * squareSideLength,
         y: cornerTR.y + normalizedDirection.y * squareSideLength
       };
-
-    
-    const info1 = document.querySelector('.text-header1');
-    info1.innerHTML=`BL-${Math.floor(cornerBL.x)}|${Math.floor(cornerBL.y)}, P8-${p8.x}|${p8.y}} ` 
     const boxLoc = {
       locTL: cornerTL,
       locTR: cornerTR,

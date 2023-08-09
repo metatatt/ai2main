@@ -1,5 +1,4 @@
 import { joinAgoraRoom, batonCam} from './lib/libA.js';
-import { getEachResult} from './lib/libB.js';
 import { populateFindings, populatePage, playSlide, batonUI} from './lib/libC.js';
 import {
   HandLandmarker,
@@ -71,7 +70,7 @@ var ojoapp = new Vue({
         });
       }
     }.bind(this));
-    this.predictionWorker = new Worker('./lib/prediction-worker.js'); // Adjust the path
+    this.predictionWorker = new Worker('./lib/prediction-worker.js'); // not importable, therefore here
 
     console.log('pred worker ', this.predictionWorker)
     this.predictionWorker.addEventListener('message', this.handlePredictionResult.bind(this));
@@ -113,9 +112,9 @@ var ojoapp = new Vue({
         this.stopSlide();
       }
       this.isScanEnabled = true;
-      const msg = "camera is on..."
-      this.batonUI.messageBox(msg)
-      this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
+      const videoMsg = this.batonUI.greeting()
+      this.batonUI.messageBox(videoMsg)
+      this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
       
       // Play scan icon animation
       this.batonUI.graphicsBox('s','batonApp');
@@ -140,6 +139,7 @@ var ojoapp = new Vue({
     const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
+    let videoMsg = this.batonUI.greeting()
 
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
@@ -149,13 +149,15 @@ var ojoapp = new Vue({
           });
           drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
           const marker = this.batonCam.decodeLandmarks(landmarks)
-          this.landMarkers.push(marker); 
+          this.landMarkers.push(marker);
+          videoMsg = 'tracking now...' 
           let isAiming = false
           if (this.landMarkers.length > 4) {
             this.landMarkers.shift(); // Remove the first element to keep the array size to 4
             isAiming = this.landMarkers.every(marker => marker.isFingersClosed);
           }
           if (isAiming){
+            videoMsg = 'examining target now...'
             const latestMarker = this.landMarkers[this.landMarkers.length-1];
             const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
             const imageBlob = await this.batonCam.captureMarkerVideo(boxLoc)
@@ -168,6 +170,9 @@ var ojoapp = new Vue({
           };
       }
     }
+    this.batonUI.messageBox(videoMsg)
+    this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
+
     this.ctx.restore();
     window.requestAnimationFrame(this.predictHand.bind(this));
   },
@@ -176,37 +181,6 @@ var ojoapp = new Vue({
     const predictionResult = event.data;
     console.log('handle Prediction result', predictionResult);
     // Process prediction result as needed
-  },
-  
-  cloudPredict(imageData) {
-    let msg = "inspect images...";
-    this.batonUI.messageBox(msg);
-    this.batonUI.socketEvent("#messageBox#", msg, this.gridId);
-    this.batonUI.graphicsBox('t', 'batonApp'); // Play Tee logo animation
-    this.batonUI.socketEvent("#graphicsBox#", 't', this.gridId);
-    // this.videoElement.style.zIndex = -1;
-    // this.canvasElement.style.zIndex = -2;
-    let result = '';
-    const header = { header1: "WIP 3200 (xxxx)", header2: "obtain info from PDF" };
-  
-    getEachResult(imageData)
-      .then((result) => {
-  
-        // Display the Findings with the header and sorted results
-        // this.findingsDOM = populateFindings(header, result);
-        // this.renderSlide(this.findingsDOM);
-        // this.batonUI.socketEvent("#slide#", this.findingsDOM, this.gridId);
-        console.log('getEachR ', result)
-        // return playSlide.call(this);
-      })
-      .then((isScanEnabled) => {
-        // this.isScanEnabled = isScanEnabled;
-        // this.startScanning();
-      })
-      .catch((error) => {
-        console.error(error);
-        // Handle errors if the Promises get rejected
-      });
   },
   
 
