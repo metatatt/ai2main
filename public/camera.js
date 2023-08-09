@@ -28,11 +28,12 @@ var ojoapp = new Vue({
     videoElement: null,
     handLandmarker:undefined,
     markerSize:224,
-    imageDataBatch:[],
     landMarkers:[],
     predictionWorker: null,
     predictionEndpoint:"",
     predictionKey:"",
+    predictionData:null,
+    probabilityThreshold: 70,
   },
 
   mounted() {
@@ -70,11 +71,13 @@ var ojoapp = new Vue({
         });
       }
     }.bind(this));
-    this.predictionWorker = new Worker('./lib/prediction-worker.js'); // not importable, therefore here
-
-    console.log('pred worker ', this.predictionWorker)
-    this.predictionWorker.addEventListener('message', this.handlePredictionResult.bind(this));
-
+    this.predictionWorker = new Worker('./lib/prediction-worker.js'); // Web Worker not importable, therefor put here
+    this.predictionWorker.addEventListener('message', event => {
+      const newPredictionData = event.data;
+      this.predictionData.push(newPredictionData); // Update this.predictionData with the received predictionData
+      console.log('Received prediction data:', predictionData);
+    });
+    
     this.batonCam = new batonCam(this.canvasElement,this.videoElement);
     this.batonUI = new batonUI(this.role, this.socket);
     this.batonCam.initiateCamera();
@@ -170,6 +173,17 @@ var ojoapp = new Vue({
           };
       }
     }
+
+    const checkResult = this.checkData()
+
+    if (checkResult.hasAMatch){
+      videoMsg = `${checkResult.predictionData.tag} found (${checkResult.predictionData.probability}% confidence)  `
+      console.log('thisData ',checkResult.predictionData)
+    }
+    if (checkResult.isTimeOut){
+      videoMsg = "time out"
+      this.predictionData=[];
+    }    
     this.batonUI.messageBox(videoMsg)
     this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
 
@@ -177,6 +191,42 @@ var ojoapp = new Vue({
     window.requestAnimationFrame(this.predictHand.bind(this));
   },
   
+checkData(){
+
+  if (!this.predictionData || this.predictionData.length === 0) {
+    // If predictionData is null or empty, consider it as timed out
+    const result = {
+      hasAMatch: false,
+      isTimeOut: true,
+      predictionData: null,
+    };
+    
+    return result;
+  }
+  
+  let isMatched1 = false
+  let isMatched2 = false
+
+  const nowTime = new Date().getTime()
+  const beginTime = this.predictionData[0].time
+  const isTimeOut = nowTime - beginTime > 3000
+  const m = this.predictionData.length-1
+
+  if (m >1){
+    isMatched1 = this.predictionData[m].probability >= this.probabilityThreshold
+    isMatched2 = this.predictionData[m-1].probability >= this.probabilityThreshold
+  }
+
+  const predictionData = this.predictionData[m]
+
+  const result = {
+    hasAMatch: isMatched1 && isMatched2,
+    isTimeOut: isTimeOut,
+    predictionData: predictionData,
+  }
+  return result
+  },
+
   handlePredictionResult(event) {
     const predictionResult = event.data;
     console.log('handle Prediction result', predictionResult);

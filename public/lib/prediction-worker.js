@@ -16,20 +16,21 @@ self.addEventListener('message', async event => {
   });
 
   let result = await response.json();
-  const mostLikelyPrediction = result.predictions
+  const mostLikely = result.predictions
     .sort((a, b) => b.probability - a.probability)
     .slice(0, 1)[0];
 
-  if (mostLikelyPrediction) {
+  if (mostLikely) {
     // Prepare the showTag object with the prediction details and image source
-    const mostLikely = {
-      tag: mostLikelyPrediction.tagName,
-      probability: Math.floor(mostLikelyPrediction.probability * 100),
-    //  image: imageDataSource, // Add the image source to the showTag output
-      boundingBox: mostLikelyPrediction.boundingBox
+    const most = {
+      time: new Date().getTime(),
+      tag: mostLikely.tagName,
+      probability: Math.floor(mostLikely.probability * 100),
+      imageBlob: imageBlob,
+      boundingBox: mostLikely.boundingBox
     };
-    console.log('worker-mostlikely ', mostLikely)
-    result = mostLikely
+    console.log('worker-mostlikely ', most)
+    result = most
   }
   self.postMessage(result);
 });
