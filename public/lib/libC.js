@@ -1,8 +1,14 @@
 export class batonUI {
   constructor(role, socket){
-    this.role = role,
-    this.socket = socket,
-    this.soundNow=''
+    this.role = role;
+    this.socket = socket;
+    this.soundNow='';
+    this.soundbeep = new Audio('./lib/beep.mp3');
+    this.sounddingding = new Audio('./lib/ding2.mp3');
+    this.soundding = new Audio('./lib/ding.mp3');
+    this.soundbeep.preload = 'auto';
+    this.sounddingding.preload = 'auto';
+    this.soundding.preload = 'auto';
   }
 
   layout(mode) {
@@ -44,14 +50,16 @@ export class batonUI {
   });
   }
 
-  messageBox(message, sound) {
-    if (sound !== this.soundNow) {
+sound(sound){
+  if(sound){
       console.log('changed to ', sound)
-      const soundSrc = `./lib/${sound}.m4a`;
-      const audio = new Audio(soundSrc);
-      audio.play(); // Play the audio
+      this[`sound${sound}`].play();
       this.soundNow = sound
     }
+  }
+
+  messageBox(message) {
+
     const info1 = document.querySelector('.text-header1');
     const info2 = document.querySelector('.text-header2');
     const currentDate = new Date().toLocaleDateString('en-US', {

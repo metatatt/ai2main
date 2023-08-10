@@ -102,6 +102,9 @@ var ojoapp = new Vue({
       const azdata = await fetch('/azenv').then(response => response.json());
       this.predictionKey = azdata.predictionKey;
       this.predictionEndpoint = azdata.predictionEndpoint;
+      const videoMsg = this.batonUI.greeting()
+      this.batonUI.messageBox(videoMsg)
+      this.batonUI.sound('ding')
   },
   
   startScanning() {
@@ -112,9 +115,7 @@ var ojoapp = new Vue({
         this.stopSlide();
       }
       this.isScanEnabled = true;
-      const videoMsg = this.batonUI.greeting()
-      this.batonUI.messageBox(videoMsg)
-      this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
+      // this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
       
       // Play scan icon animation
       this.batonUI.graphicsBox('s','batonApp');
@@ -122,6 +123,7 @@ var ojoapp = new Vue({
     
       // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
      // this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
+     this.batonUI.sound('dingding')
      this.predictHand();
   },
   
@@ -129,7 +131,8 @@ var ojoapp = new Vue({
   async predictHand(){
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
-
+    let videoMsg=''
+    let sound=''
     // Only resize canvas when dimensions change
     if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
       this.canvasElement.width = vWidth;
@@ -139,8 +142,8 @@ var ojoapp = new Vue({
     const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
-    let videoMsg = this.batonUI.greeting()
-    let sound = ''
+    console.log('land results ',results)
+    let isAiming = false
 
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
@@ -152,15 +155,13 @@ var ojoapp = new Vue({
           const marker = this.batonCam.decodeLandmarks(landmarks)
           this.landMarkers.push(marker);
           videoMsg = 'tracking now...' 
-          sound = 'beep'
-          let isAiming = false
+
           if (this.landMarkers.length > 4) {
             this.landMarkers.shift(); // Remove the first element to keep the array size to 4
-            isAiming = this.landMarkers.every(marker => marker.isFingersClosed);
+            isAiming = this.landMarkers.every(marker => marker.isAiming);
           }
           if (isAiming){
             videoMsg = 'examining target now...'
-            sound = 'beepbeep'
             const latestMarker = this.landMarkers[this.landMarkers.length-1];
             const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
             const imageBlob = await this.batonCam.captureMarkerVideo(boxLoc)
@@ -169,23 +170,23 @@ var ojoapp = new Vue({
               predictionKey: this.predictionKey,
               predictionEndpoint: this.predictionEndpoint
             });
-          };
+          }
+          
+          sound = isAiming ? 'beep' : '';
       }
     }
-
     const checkResult = this.checkData()
 
     if (checkResult.hasAMatch){
       videoMsg = `${checkResult.predictionData.tag} found (${checkResult.predictionData.probability}% confidence)  `
-      sound='dingding'
       console.log('thisData ',checkResult.predictionData)
     }
     if (checkResult.isTimeOut){
       videoMsg = "time out"
-      sound='ding'
       this.predictionData=[];
-    }    
-    this.batonUI.messageBox(videoMsg,sound)
+    }
+    this.batonUI.sound(sound);     
+    this.batonUI.messageBox(videoMsg)
     this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
 
     this.ctx.restore();
