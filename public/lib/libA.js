@@ -61,31 +61,49 @@ export async function joinAgoraRoom() {
       }
     }
 
-  decodeLandmarks(landmarks){
-    const p5 = landmarks[5];
-    const p8 = landmarks[8];
-    const p9 = landmarks[9];
-    const p12 = landmarks[12];
+decodeLandmarks(landmarks) {
+      const p5 = landmarks[5];
+      const p8 = landmarks[8];
+      const p9 = landmarks[9];
+      const p12 = landmarks[12];
+      const p4 = landmarks[4];
+      const p16 = landmarks[16];
+    
+      // Calculate vectors A and B
+      const vectorA = { x: p8.x - p5.x, y: p8.y - p5.y }; // index finger
+      const vectorB = { x: p12.x - p9.x, y: p12.y - p9.y }; // middle finger
+    
+      // Calculate the angle spray between vectors A and B
+      const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
+      const magnitudeA = Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
+      const magnitudeB = Math.sqrt(vectorB.x * vectorB.x + vectorB.y * vectorB.y);
+      const cosAngle = dotProduct / (magnitudeA * magnitudeB);
+      const angleRad = Math.acos(cosAngle);
+      const angleDeg = (angleRad * 180) / Math.PI;
+    
+      // Calculate the orientation per p5 - p8
+      const deltaX = p5.x - p8.x;
+      const deltaY = p5.y - p8.y;
+      const orienRotate = Math.atan2(deltaY, deltaX); // usage newCtx.rotate(orienRotate)
+      const angle_degrees = orienRotate * (180 / Math.PI);
+    
+      // Calculate the distance between p4-p8 and p4-p16
+      const dist48 = Math.sqrt((p4.x - p8.x) ** 2 + (p4.y - p8.y) ** 2);
+      const dist416 = Math.sqrt((p4.x - p16.x) ** 2 + (p4.y - p16.y) ** 2);
+    
+      const ifDeg = angleDeg <= this.angleDeg; // assuming you have 'this.angleDeg' defined elsewhere
+      const ifHoldPalm = dist416 < dist48;
+    
+      const markers = {
+        isAiming: ifDeg && ifHoldPalm,
+        p5: p5,
+        p8: p8,
+        orienRotate: orienRotate,
+      };
 
-    // Calculate vectors A and B
-    const vectorA = { x: p8.x - p5.x, y: p8.y - p5.y }; //index finger
-    const vectorB = { x: p12.x - p9.x, y: p12.y - p9.y }; // middle finger
-  
-    // Calculate the angle spray between vectors A and B
-    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y;
-    const magnitudeA = Math.sqrt(vectorA.x * vectorA.x + vectorA.y * vectorA.y);
-    const magnitudeB = Math.sqrt(vectorB.x * vectorB.x + vectorB.y * vectorB.y);
-    const cosAngle = dotProduct / (magnitudeA * magnitudeB);
-    const angleRad = Math.acos(cosAngle);
-    const angleDeg = (angleRad * 180) / Math.PI;
-
-    // Calculate the orientation per p5 - p8
-    const deltaX = p5.x - p8.x;
-    const deltaY = p5.y - p8.y;
-    const orienRotate = Math.atan2(deltaY, deltaX); //usage newCtx.rotate(orienRotate)
-    const angle_degrees = orienRotate * (180 / Math.PI);
-    return { isFingersClosed: angleDeg <= this.angleDeg, p5: p5, p8 : p8, orienRotate: orienRotate};
-}
+      return markers
+    }
+    
 
   virtualBoxLoc(marker, canvasWidth, canvasHeight) {
       const p5 = marker.p5;
@@ -168,8 +186,6 @@ captureMarkerVideo(boxLoc) {
     });
 
     return imageBlobPromise;
+    }
+
 }
-
-
-
-  }
