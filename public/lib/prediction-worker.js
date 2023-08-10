@@ -5,8 +5,6 @@ self.addEventListener('message', async event => {
 
   const formData = new FormData();
   formData.append('image', imageBlob, 'image.png'); // Adjust filename and type as needed
-  console.log('formD ', formData)
-  console.log('predKey ', predictionKey)
   const response = await fetch(predictionEndpoint, {
     method: 'POST',
     body: formData,
@@ -29,7 +27,6 @@ self.addEventListener('message', async event => {
       imageBlob: imageBlob,
       boundingBox: mostLikely.boundingBox
     };
-    console.log('worker-mostlikely ', most)
     result = most
   }
   self.postMessage(result);

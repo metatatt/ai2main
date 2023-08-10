@@ -42,7 +42,6 @@ var ojoapp = new Vue({
     populatePage.call(this,1);
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('userId');
-    console.log(userId);
     
     // 06-14 to mask userId for dev Ngrok test on iPad
     // this.userId = userId;    
@@ -103,8 +102,6 @@ var ojoapp = new Vue({
       const azdata = await fetch('/azenv').then(response => response.json());
       this.predictionKey = azdata.predictionKey;
       this.predictionEndpoint = azdata.predictionEndpoint;
-
-      console.log('handLM ',this.handLandmarker)
   },
   
   startScanning() {
@@ -143,6 +140,7 @@ var ojoapp = new Vue({
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
     let videoMsg = this.batonUI.greeting()
+    let sound = ''
 
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
@@ -154,6 +152,7 @@ var ojoapp = new Vue({
           const marker = this.batonCam.decodeLandmarks(landmarks)
           this.landMarkers.push(marker);
           videoMsg = 'tracking now...' 
+          sound = 'beep'
           let isAiming = false
           if (this.landMarkers.length > 4) {
             this.landMarkers.shift(); // Remove the first element to keep the array size to 4
@@ -161,10 +160,10 @@ var ojoapp = new Vue({
           }
           if (isAiming){
             videoMsg = 'examining target now...'
+            sound = 'beepbeep'
             const latestMarker = this.landMarkers[this.landMarkers.length-1];
             const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
             const imageBlob = await this.batonCam.captureMarkerVideo(boxLoc)
-            console.log('imgD', imageBlob)
             this.predictionWorker.postMessage({
               imageBlob: imageBlob,
               predictionKey: this.predictionKey,
@@ -178,13 +177,15 @@ var ojoapp = new Vue({
 
     if (checkResult.hasAMatch){
       videoMsg = `${checkResult.predictionData.tag} found (${checkResult.predictionData.probability}% confidence)  `
+      sound='dingding'
       console.log('thisData ',checkResult.predictionData)
     }
     if (checkResult.isTimeOut){
       videoMsg = "time out"
+      sound='ding'
       this.predictionData=[];
     }    
-    this.batonUI.messageBox(videoMsg)
+    this.batonUI.messageBox(videoMsg,sound)
     this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
 
     this.ctx.restore();
@@ -229,14 +230,12 @@ checkData(){
 
   handlePredictionResult(event) {
     const predictionResult = event.data;
-    console.log('handle Prediction result', predictionResult);
     // Process prediction result as needed
   },
   
 
   async viewFindings() {
     this.isScanEnabled=false;
-    console.log("isEnabled? ",this.isScanEnabled)
     if (this.findingsDOM !== null) {
       this.isScanEnabled = await this.renderSlide(this.findingsDOM);
       if (typeof this.stopSlide === 'function') {
@@ -248,7 +247,6 @@ checkData(){
   async renderSlide(findingsDOM){
     this.batonUI.layout('slide')
     const slide=document.querySelector('.slide')
-    console.log(`slide ${slide} style.display-- ${slide.style.display}`)
     slide.innerHTML = findingsDOM; 
 
     return true
@@ -267,7 +265,6 @@ checkData(){
         this.statusAgora = 'published';
         await this.localTrack.setEnabled(true);
         await this.client.publish(this.localTrack);
-        console.log('第：publish');
       } else {
         this.batonUI.messageBox("Stop camera sharing...");
         this.statusAgora = 'mute';

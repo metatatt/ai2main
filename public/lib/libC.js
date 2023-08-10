@@ -1,7 +1,8 @@
 export class batonUI {
   constructor(role, socket){
     this.role = role,
-    this.socket = socket
+    this.socket = socket,
+    this.soundNow=''
   }
 
   layout(mode) {
@@ -43,7 +44,14 @@ export class batonUI {
   });
   }
 
-  messageBox(message) {
+  messageBox(message, sound) {
+    if (sound !== this.soundNow) {
+      console.log('changed to ', sound)
+      const soundSrc = `./lib/${sound}.m4a`;
+      const audio = new Audio(soundSrc);
+      audio.play(); // Play the audio
+      this.soundNow = sound
+    }
     const info1 = document.querySelector('.text-header1');
     const info2 = document.querySelector('.text-header2');
     const currentDate = new Date().toLocaleDateString('en-US', {
