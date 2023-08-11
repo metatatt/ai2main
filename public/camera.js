@@ -34,6 +34,7 @@ var ojoapp = new Vue({
     predictionKey:"",
     predictionData:null,
     probabilityThreshold: 70,
+    pipStartTime:0,
   },
 
   mounted() {
@@ -173,6 +174,12 @@ var ojoapp = new Vue({
           }
           
           sound = isAiming ? 'beep' : '';
+          const shouldClose = Date.now() - this.pipStartTime > 5000; //if elapse time over 5 second, make pip invisible
+          if (shouldClose){
+            const graphicsBox = document.querySelector('.graphics-box');
+            graphicsBox.innerHTML=""
+          }
+
       }
     }
     const checkResult = this.checkData()
@@ -230,6 +237,7 @@ checkData(){
   }
   return result
   },
+
 
   pipShow(predictionData) {
     const boundingBox = predictionData.boundingBox;
@@ -290,8 +298,12 @@ checkData(){
       graphicsBox.innerHTML = ''; // Clear the graphicsBox
       graphicsBox.appendChild(canvas);
     };
+
+    setTimeout(() => {
+      // You can add any post-delay code here if needed
+      // This block will be executed after the 2-second delay
+    }, 2000);
   }
-  
   ,
   
 
