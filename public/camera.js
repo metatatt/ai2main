@@ -178,8 +178,10 @@ var ojoapp = new Vue({
     const checkResult = this.checkData()
 
     if (checkResult.hasAMatch){
+      sound = ''
       videoMsg = `${checkResult.predictionData.tag} found (${checkResult.predictionData.probability}% confidence)  `
       console.log('thisData ',checkResult.predictionData)
+      this.pipShow(checkResult.predictionData)
     }
     if (checkResult.isTimeOut){
       videoMsg = "time out"
@@ -229,10 +231,68 @@ checkData(){
   return result
   },
 
-  handlePredictionResult(event) {
-    const predictionResult = event.data;
-    // Process prediction result as needed
-  },
+  pipShow(predictionData) {
+    const boundingBox = predictionData.boundingBox;
+    const tag = predictionData.tag;
+    const imageBlob = predictionData.imageBlob;
+    const graphicsBox = document.querySelector('.graphics-box');
+  
+    // 1. Obtain boundBox XY info
+    const boxLeft = boundingBox.left * 100; // Convert to percentage
+    const boxTop = boundingBox.top * 100; // Convert to percentage
+    const boxWidth = boundingBox.width * 100; // Convert to percentage
+    const boxHeight = boundingBox.height * 100; // Convert to percentage
+  
+    // 2. Draw bounding box on the image
+    const resultImage = new Image();
+    resultImage.src = URL.createObjectURL(imageBlob);
+  
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    resultImage.onload = () => {
+      canvas.width = resultImage.width * 2; // Set canvas width twice the resultImage width
+      canvas.height = resultImage.height * 2; // Set canvas height twice the resultImage height
+  
+    // Fill the canvas background with a solid white color
+    ctx.fillStyle = '#959eba';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Calculate the position to center the resultImage within the canvas
+      const offsetX = (canvas.width - resultImage.width) / 2;
+      const offsetY = (canvas.height - resultImage.height) / 2;
+  
+      // Draw the resultImage centered within the canvas
+      ctx.drawImage(resultImage, offsetX, offsetY, resultImage.width, resultImage.height);
+  
+      // Draw the bounding box on the canvas
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 5; // Set the border width
+      ctx.beginPath();
+      ctx.rect(boxLeft + offsetX, boxTop + offsetY, boxWidth, boxHeight);
+      ctx.stroke();
+  
+      // Calculate the center position for the tag text
+      const centerX = boxLeft + offsetX + boxWidth / 2;
+      const centerY = boxTop + offsetY + boxHeight / 2;
+  
+      // Add the tag text at the center of the bounding box
+      ctx.fillStyle = 'red';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center'; // Center the text horizontally
+      ctx.textBaseline = 'middle'; // Center the text vertically
+      ctx.fillText(tag, centerX, centerY);
+  
+        // Apply border radius and drop shadow to the canvas
+      canvas.style.borderRadius = '20px'; // Set the border radius
+      canvas.style.boxShadow = '20px 20px 25px black'; // Set the drop shadow
+
+      // Display the canvas with the resultImage and bounding box in the graphicsBox
+      graphicsBox.innerHTML = ''; // Clear the graphicsBox
+      graphicsBox.appendChild(canvas);
+    };
+  }
+  
+  ,
   
 
   async viewFindings() {
