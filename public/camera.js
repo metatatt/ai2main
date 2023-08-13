@@ -75,7 +75,6 @@ var ojoapp = new Vue({
     this.predictionWorker.addEventListener('message', event => {
       const newPredictionData = event.data;
       this.predictionData.push(newPredictionData); // Update this.predictionData with the received predictionData
-      console.log('Received prediction data:', predictionData);
     });
     
     this.batonCam = new batonCam(this.canvasElement,this.videoElement);
@@ -140,10 +139,10 @@ var ojoapp = new Vue({
       this.canvasElement.height = vHeight;
     }
     let startTimeMs = performance.now();
-    const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
+   const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
+
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
-    console.log('land results ',results)
     let isAiming = false
 
     if (results.landmarks) {
@@ -166,6 +165,9 @@ var ojoapp = new Vue({
             const latestMarker = this.landMarkers[this.landMarkers.length-1];
             const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
             const imageBlob = await this.batonCam.captureMarkerVideo(boxLoc)
+
+            this.batonCam.decodeQR(imageBlob)
+            
             this.predictionWorker.postMessage({
               imageBlob: imageBlob,
               predictionKey: this.predictionKey,
@@ -174,12 +176,11 @@ var ojoapp = new Vue({
           }
           
           sound = isAiming ? 'beep' : '';
-          const shouldClose = Date.now() - this.pipStartTime > 5000; //if elapse time over 5 second, make pip invisible
+          const shouldClose = performance.now() - this.pipStartTime > 5000; //if elapse time over 5 second, make pip invisible
           if (shouldClose){
             const graphicsBox = document.querySelector('.graphics-box');
-            graphicsBox.innerHTML=""
+            graphicsBox.innerHTML="XXXXXXXX"
           }
-
       }
     }
     const checkResult = this.checkData()
@@ -187,7 +188,6 @@ var ojoapp = new Vue({
     if (checkResult.hasAMatch){
       sound = ''
       videoMsg = `${checkResult.predictionData.tag} found (${checkResult.predictionData.probability}% confidence)  `
-      console.log('thisData ',checkResult.predictionData)
       this.pipShow(checkResult.predictionData)
     }
     if (checkResult.isTimeOut){
@@ -240,6 +240,8 @@ checkData(){
 
 
   pipShow(predictionData) {
+    this.pipStartTime = performance.now();
+    console.log('pipStar 2-', this.pipStartTime)
     const boundingBox = predictionData.boundingBox;
     const tag = predictionData.tag;
     const imageBlob = predictionData.imageBlob;

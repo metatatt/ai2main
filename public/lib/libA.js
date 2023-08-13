@@ -188,4 +188,40 @@ captureMarkerVideo(boxLoc) {
     return imageBlobPromise;
     }
 
+    async decodeQR(imageBlob) {
+        const width = 224;
+        const height = 224;
+        
+        // Create an image element and load the imageBlob
+        const resultImage = new Image();
+        resultImage.src = URL.createObjectURL(imageBlob);
+    
+        // Wait for the image to load
+        await new Promise(resolve => {
+          resultImage.onload = resolve;
+        });
+    
+        // Create a canvas and draw the loaded image
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(resultImage, 0, 0, width, height);
+    
+        // Get the image data from the canvas
+        const imageData = ctx.getImageData(0, 0, width, height);
+    
+        // Decode QR code using jsQR
+        const qrCode = jsQR(imageData.data, width, height, {
+          inversionAttempts: 'dontInvert',
+        });
+    
+        if (qrCode && qrCode.data.startsWith('@pr-')) {
+          console.log('QR code found:', qrCode.data);
+        } else {
+          console.log('QR code not found or decoding failed.');
+        }
+    }
+    
+
 }
