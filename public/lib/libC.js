@@ -1,4 +1,4 @@
-export class batonUI {
+export class handUI {
   constructor(role, socket){
     this.role = role;
     this.socket = socket;
@@ -67,7 +67,7 @@ sound(sound){
       month: '2-digit',
       day: '2-digit',
     });
-    info2.innerHTML = currentDate;
+    info2.innerHTML = currentDate+' @HandCheckr';
     info1.innerHTML = message;
   }
 

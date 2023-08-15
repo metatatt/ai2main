@@ -1,39 +1,32 @@
-import { joinAgoraRoom, batonCam} from './lib/libA.js';
-import { populateFindings, populatePage, playSlide, batonUI} from './lib/libC.js';
+import { joinAgoraRoom, handCheck} from './lib/libA.js';
+import { populateFindings, populatePage, playSlide, handUI} from './lib/libC.js';
 import {
   HandLandmarker,
   FilesetResolver
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
-
 var ojoapp = new Vue({
-  el: '#batonApp',
+  el: '#handCheckr',
   data: {
     agoraUid: "",
     canvasElement: null,
     canvasHeight: 768,
     canvasWidth: 1024,
-    client: null,
-    findingsDOM: null,
+    webRtc: null,
     gridId: "",
-    isScanEnabled: false,
     isShareOn: false,
     isUserActive: false,
     localTrack: null,
     role: "",
-    scanRequestId: null,
     socket: null,
-    statusAgora: "",
     userId: null,
     videoElement: null,
     handLandmarker:undefined,
-    markerSize:224,
-    landMarkers:[],
-    predictionWorker: null,
+    nailTarget:[],
+    checkWorker: null,
+    checkResults:null,
     predictionEndpoint:"",
     predictionKey:"",
-    predictionData:null,
-    probabilityThreshold: 70,
     pipStartTime:0,
   },
 
@@ -54,7 +47,7 @@ var ojoapp = new Vue({
     this.canvasElement = document.getElementById("canvas");
     this.ctx = this.canvasElement.getContext("2d", { willReadFrequently: true });
     
-    this.client = AgoraRTC.createClient({ mode: 'rtc', codec: 'h264' });
+    this.webRtc = AgoraRTC.createClient({ mode: 'rtc', codec: 'h264' });
 
     this.joinAgoraRoom();
     
@@ -65,21 +58,20 @@ var ojoapp = new Vue({
           gridId: this.gridId,
           agoraUid: this.agoraUid,
           userId: this.userId,
-          statusAgora: this.statusAgora,
           messageClass: "#updateMyInfo#",
           message:``
         });
       }
     }.bind(this));
-    this.predictionWorker = new Worker('./lib/prediction-worker.js'); // Web Worker not importable, therefor put here
-    this.predictionWorker.addEventListener('message', event => {
-      const newPredictionData = event.data;
-      this.predictionData.push(newPredictionData); // Update this.predictionData with the received predictionData
+    this.checkWorker = new Worker('./lib/cvchecker-worker.js'); // Web Worker not importable, therefor put here
+    this.checkWorker.addEventListener('message', event => {
+      const newResult = event.data;
+      this.checkResults.push(newResult); // Update this.predictionData with the received predictionData
     });
     
-    this.batonCam = new batonCam(this.canvasElement,this.videoElement);
-    this.batonUI = new batonUI(this.role, this.socket);
-    this.batonCam.initiateCamera();
+    this.handCheck = new handCheck(this.canvasElement,this.videoElement);
+    this.handUI = new handUI(this.role, this.socket);
+    this.handCheck.initiateCamera();
     this.initiateHand();
   },
   
@@ -102,33 +94,26 @@ var ojoapp = new Vue({
       const azdata = await fetch('/azenv').then(response => response.json());
       this.predictionKey = azdata.predictionKey;
       this.predictionEndpoint = azdata.predictionEndpoint;
-      const videoMsg = this.batonUI.greeting()
-      this.batonUI.messageBox(videoMsg)
-      this.batonUI.sound('ding')
+      const videoMsg = this.handUI.greeting()
+      this.handUI.messageBox(videoMsg)
+      this.handUI.sound('ding')
   },
   
   startScanning() {
       // Setup screen layout
-      this.batonUI.layout('scan')
+      this.handUI.layout('scan')
       // Disable the setAutoPlay timer if it exists
       if (typeof this.stopSlide === 'function') {
         this.stopSlide();
-      }
-      this.isScanEnabled = true;
-      // this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
-      
-      // Play scan icon animation
-      this.batonUI.graphicsBox('s','batonApp');
-      this.batonUI.socketEvent("#graphicsBox#", 's', this.gridId);
+      }   
     
       // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
-     // this.scanRequestId = requestAnimationFrame(() => this.scanQRCode());
-     this.batonUI.sound('dingding')
-     this.predictHand();
+     this.handUI.sound('dingding')
+     this.detectHand();
   },
   
 
-  async predictHand(){
+  async detectHand(){
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
     let videoMsg=''
@@ -139,8 +124,7 @@ var ojoapp = new Vue({
       this.canvasElement.height = vHeight;
     }
     let startTimeMs = performance.now();
-   const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
-
+    const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
     let isAiming = false
@@ -152,29 +136,19 @@ var ojoapp = new Vue({
             lineWidth: 1.5
           });
           drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
-          const marker = this.batonCam.decodeLandmarks(landmarks)
-          this.landMarkers.push(marker);
-          videoMsg = 'tracking now...' 
-
-          if (this.landMarkers.length > 4) {
-            this.landMarkers.shift(); // Remove the first element to keep the array size to 4
-            isAiming = this.landMarkers.every(marker => marker.isAiming);
-          }
+          isAiming = this.handCheck.checkAiming(landmarks)
           if (isAiming){
             videoMsg = 'examining target now...'
-            const latestMarker = this.landMarkers[this.landMarkers.length-1];
-            const boxLoc = this.batonCam.virtualBoxLoc(latestMarker,vWidth,vHeight)
-            const imageBlob = await this.batonCam.captureMarkerVideo(boxLoc)
-
-            this.batonCam.decodeQR(imageBlob)
-            
-            this.predictionWorker.postMessage({
+            const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
+            this.handCheck.detectNailQR(imageBlob)
+            this.checkWorker.postMessage({
               imageBlob: imageBlob,
               predictionKey: this.predictionKey,
               predictionEndpoint: this.predictionEndpoint
             });
           }
-          
+
+
           sound = isAiming ? 'beep' : '';
           const shouldClose = performance.now() - this.pipStartTime > 5000; //if elapse time over 5 second, make pip invisible
           if (shouldClose){
@@ -194,12 +168,12 @@ var ojoapp = new Vue({
       videoMsg = "time out"
       this.predictionData=[];
     }
-    this.batonUI.sound(sound);     
-    this.batonUI.messageBox(videoMsg)
-    this.batonUI.socketEvent("#messageBox#", videoMsg, this.gridId);
+    this.handUI.sound(sound);     
+    this.handUI.messageBox(videoMsg)
+    this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
 
     this.ctx.restore();
-    window.requestAnimationFrame(this.predictHand.bind(this));
+    window.requestAnimationFrame(this.detectHand.bind(this));
   },
   
 checkData(){
@@ -320,7 +294,7 @@ checkData(){
   },
   
   async renderSlide(findingsDOM){
-    this.batonUI.layout('slide')
+    this.handUI.layout('slide')
     const slide=document.querySelector('.slide')
     slide.innerHTML = findingsDOM; 
 
@@ -335,13 +309,13 @@ checkData(){
   async shareCamera() {
       this.isShareOn = !this.isShareOn
       if (this.statusAgora === 'mute') {
-        this.batonUI.messageBox("Enable camera sharing...");
+        this.handUI.messageBox("Enable camera sharing...");
         
         this.statusAgora = 'published';
         await this.localTrack.setEnabled(true);
-        await this.client.publish(this.localTrack);
+        await this.webRtc.publish(this.localTrack);
       } else {
-        this.batonUI.messageBox("Stop camera sharing...");
+        this.handUI.messageBox("Stop camera sharing...");
         this.statusAgora = 'mute';
         await this.localTrack.setEnabled(false);
       }

@@ -14,19 +14,27 @@ self.addEventListener('message', async event => {
   });
 
   let result = await response.json();
-  const mostLikely = result.predictions
+  let mostLikely=null;
+  if (result && result.predictions && result.predictions.length > 0) {
+  mostLikely = result.predictions
     .sort((a, b) => b.probability - a.probability)
     .slice(0, 1)[0];
+  }
 
-  if (mostLikely) {
+  if (mostLikely ) {
     // Prepare the showTag object with the prediction details and image source
-    const result = {
-      time: new Date().getTime(),
+    const predictCV = {
       tag: mostLikely.tagName,
-      url: '',
       probability: Math.floor(mostLikely.probability * 100),
       imageBlob: imageBlob,
       boundingBox: mostLikely.boundingBox
+    }
+
+    const result = {
+      time: new Date().getTime(),
+      readyFor:'pip',
+      cv: predictCV,
+      qr:'',
     };
   }
   self.postMessage(result);

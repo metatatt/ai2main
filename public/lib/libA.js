@@ -8,7 +8,7 @@ export async function joinAgoraRoom() {
     });
     
     const data = await response.json();
-    this.agoraUid = await this.client.join(data.APP_ID, data.CHANNEL, data.TOKEN, null);
+    this.agoraUid = await this.webRtc.join(data.APP_ID, data.CHANNEL, data.TOKEN, null);
     this.gridId = data.GRIDID;
     const cameraOptions = {
       facingMode: "environment",
@@ -21,21 +21,20 @@ export async function joinAgoraRoom() {
         gridId: this.gridId,
         agoraUid: this.agoraUid,
         userId: this.userId,
-        statusAgora: this.statusAgora,
         message:  "#updateMyInfo#"
       });
   }
 
-  export class batonCam {
+  export class handCheck {
     constructor(canvasElement, videoElement) {
       this.videoElement = videoElement;
       this.canvasElement = canvasElement;
       this.ctx = canvasElement.getContext("2d", { willReadFrequently: true });
-
       this.frames = [];
       this.intervalDuration = 1000;
       this.angleDeg = 8;  // Threshold angle spray for act of "aiming"
       this.latestActiveTime =0;
+      this.nailMarkers=[];
     }
 
     async initiateCamera(){
@@ -53,15 +52,15 @@ export async function joinAgoraRoom() {
         this.videoElement.play();
         
         const msg = "camera is on..."
-        this.batonUI.messageBox(msg)
-        this.batonUI.socketEvent("#messageBox#", msg);
+        this.handUI.messageBox(msg)
+        this.handUI.socketEvent("#messageBox#", msg);
 
       } catch (error) {
         console.log("#setUpVideo -Unable to access video stream:", error);
       }
     }
 
-decodeLandmarks(landmarks) {
+checkAiming(landmarks) {
       const p5 = landmarks[5];
       const p8 = landmarks[8];
       const p9 = landmarks[9];
@@ -94,18 +93,25 @@ decodeLandmarks(landmarks) {
       const ifDeg = angleDeg <= this.angleDeg; // assuming you have 'this.angleDeg' defined elsewhere
       const ifHoldPalm = dist416 < dist48;
     
-      const markers = {
+      const marker = {
         isAiming: ifDeg && ifHoldPalm,
         p5: p5,
         p8: p8,
         orienRotate: orienRotate,
       };
-
-      return markers
+      this.nailMarkers.push(marker)
+      let isAiming = false;
+      if (this.nailMarkers.length > 4) {
+        this.nailMarkers.shift(); // Remove the first element to keep the array size to 4
+        isAiming = this.nailMarkers.every(marker => marker.isAiming);
+      }
+      console.log('a1 isAiming' , isAiming)
+      return isAiming
     }
     
 
-  virtualBoxLoc(marker, canvasWidth, canvasHeight) {
+nailTargetLoc(canvasWidth, canvasHeight) {
+      const marker = this.nailMarkers[this.nailMarkers.length-1]
       const p5 = marker.p5;
       const p8 = marker.p8;
       p5.x = p5.x * canvasWidth;
@@ -151,10 +157,13 @@ decodeLandmarks(landmarks) {
       locBL: cornerBL,
       locBR: cornerBR,
     }
+    console.log('a2 boxLoc' , boxLoc)
     return boxLoc
   }
 
-captureMarkerVideo(boxLoc) {
+captureNailTarget(canvasWidth, canvasHeight) {
+   
+   const boxLoc =  this.nailTargetLoc(canvasWidth, canvasHeight);
     const { locTL, locTR, locBL, locBR } = boxLoc;
 
     // Calculate the width and height of the square
@@ -176,22 +185,20 @@ captureMarkerVideo(boxLoc) {
     newCtx.rotate(angle);
     newCtx.drawImage(this.videoElement, -centerX, -centerY);
 
-    // Get the ImageData object from the canvas
-    const imageUnit8Data = newCtx.getImageData(0, 0, width, height);
-
+    // Get the ImageData object from the canvas = image Unit8Data 
+    newCtx.getImageData(0, 0, width, height);
     const imageBlobPromise = new Promise(resolve => {
       newCanvas.toBlob(blob => {
         resolve(blob);
       }, 'image/png'); // Change to 'image/jpeg' if needed
     });
-
     return imageBlobPromise;
     }
 
-    async decodeQR(imageBlob) {
+
+  async detectNailQR(imageBlob) {
         const width = 224;
         const height = 224;
-        
         // Create an image element and load the imageBlob
         const resultImage = new Image();
         resultImage.src = URL.createObjectURL(imageBlob);
@@ -217,7 +224,15 @@ captureMarkerVideo(boxLoc) {
         });
     
         if (qrCode && qrCode.data.startsWith('@pr-')) {
-          console.log('QR code found:', qrCode.data);
+          const result = {
+            time: new Date().getTime(),
+            tag: '@pr-',
+            url: qrCode,
+            probability: '',
+            imageBlob: '',
+            boundingBox: ''
+          };
+
         } else {
           console.log('QR code not found or decoding failed.');
         }
