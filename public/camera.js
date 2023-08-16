@@ -131,10 +131,10 @@ var HandCheckrApp = new Vue({
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
           drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
-            color: "#00FF00",
+            color: "#FFFFFF",
             lineWidth: 1.5
           });
-          drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
+          drawLandmarks(this.ctx, landmarks, { color: "#5065A8", lineWidth: 0.4 });
           const isAiming = this.handCheck.extractGesture(landmarks)
 
           if (isAiming){
@@ -261,7 +261,7 @@ pipShow(show, target, timeDelay) {
       ctx.fillText(tag, centerX, centerY);
   
         // Apply border radius and drop shadow to the canvas
-      canvas.style.borderRadius = '20px'; // Set the border radius
+      canvas.style.borderRadius = '224px'; // Set the border radius
       canvas.style.boxShadow = '20px 20px 25px black'; // Set the drop shadow
 
       // Display the canvas with the resultImage and bounding box in the graphicsBox
@@ -270,10 +270,9 @@ pipShow(show, target, timeDelay) {
     };
 
     setTimeout(() => {
+      this.checkResults=[]
       const closePip = true
       return closePip
-      console.log('5-check ',this.checkResults)
-      requestAnimationFrame(this.detectHand.bind(this));
     }, timeDelay);
   }
   ,
