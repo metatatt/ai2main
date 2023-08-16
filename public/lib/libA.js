@@ -60,7 +60,7 @@ export async function joinAgoraRoom() {
       }
     }
 
-checkAiming(landmarks) {
+extractGesture(landmarks) {
       const p5 = landmarks[5];
       const p8 = landmarks[8];
       const p9 = landmarks[9];
@@ -105,7 +105,6 @@ checkAiming(landmarks) {
         this.nailMarkers.shift(); // Remove the first element to keep the array size to 4
         isAiming = this.nailMarkers.every(marker => marker.isAiming);
       }
-      console.log('a1 isAiming' , isAiming)
       return isAiming
     }
     
@@ -196,7 +195,7 @@ captureNailTarget(canvasWidth, canvasHeight) {
     }
 
 
-  async detectNailQR(imageBlob) {
+  async detectCard(imageBlob) {
         const width = 224;
         const height = 224;
         // Create an image element and load the imageBlob
@@ -224,17 +223,9 @@ captureNailTarget(canvasWidth, canvasHeight) {
         });
     
         if (qrCode && qrCode.data.startsWith('@pr-')) {
-          const result = {
-            time: new Date().getTime(),
-            tag: '@pr-',
-            url: qrCode,
-            probability: '',
-            imageBlob: '',
-            boundingBox: ''
-          };
-
+          const cardID = qrCode.data
+          return cardID
         } else {
-          console.log('QR code not found or decoding failed.');
         }
     }
     

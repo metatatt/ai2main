@@ -72,7 +72,6 @@ sound(sound){
   }
 
   socketEvent(msgClass, msg, gridId){
-    console.log('debug gridId ', gridId)
     this.socket.emit('sessionMessage', {
       role: this.role,
       gridId: gridId,

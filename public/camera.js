@@ -5,7 +5,7 @@ import {
   FilesetResolver
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
-var ojoapp = new Vue({
+var HandCheckrApp = new Vue({
   el: '#handCheckr',
   data: {
     agoraUid: "",
@@ -22,12 +22,12 @@ var ojoapp = new Vue({
     userId: null,
     videoElement: null,
     handLandmarker:undefined,
-    nailTarget:[],
     checkWorker: null,
-    checkResults:null,
+    checkResults:[],
     predictionEndpoint:"",
     predictionKey:"",
     pipStartTime:0,
+    probabilityThreshold: 0.5,
   },
 
   mounted() {
@@ -63,7 +63,7 @@ var ojoapp = new Vue({
         });
       }
     }.bind(this));
-    this.checkWorker = new Worker('./lib/cvchecker-worker.js'); // Web Worker not importable, therefor put here
+    this.checkWorker = new Worker('./lib/check-worker.js'); // Web Worker not importable, therefor put here
     this.checkWorker.addEventListener('message', event => {
       const newResult = event.data;
       this.checkResults.push(newResult); // Update this.predictionData with the received predictionData
@@ -106,9 +106,7 @@ var ojoapp = new Vue({
       if (typeof this.stopSlide === 'function') {
         this.stopSlide();
       }   
-    
-      // Initiate the scanning process by calling scanQRCode() recursively using requestAnimationFrame
-     this.handUI.sound('dingding')
+         this.handUI.sound('dingding')
      this.detectHand();
   },
   
@@ -118,6 +116,7 @@ var ojoapp = new Vue({
     const vHeight = this.videoElement.videoHeight
     let videoMsg=''
     let sound=''
+    let closePip = false
     // Only resize canvas when dimensions change
     if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
       this.canvasElement.width = vWidth;
@@ -127,7 +126,7 @@ var ojoapp = new Vue({
     const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
-    let isAiming = false
+    let gesture = 0;
 
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
@@ -136,97 +135,92 @@ var ojoapp = new Vue({
             lineWidth: 1.5
           });
           drawLandmarks(this.ctx, landmarks, { color: "#FF0000", lineWidth: 0.4 });
-          isAiming = this.handCheck.checkAiming(landmarks)
+          const isAiming = this.handCheck.extractGesture(landmarks)
+
           if (isAiming){
             videoMsg = 'examining target now...'
             const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
-            this.handCheck.detectNailQR(imageBlob)
-            this.checkWorker.postMessage({
-              imageBlob: imageBlob,
-              predictionKey: this.predictionKey,
-              predictionEndpoint: this.predictionEndpoint
+            console.log('1 blob ', imageBlob)
+            const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
+            console.log('2 id ', cardID)
+            this.checkWorker.postMessage({ //check classification of nailTarget
+                cardID:cardID,
+                imageBlob: imageBlob,
+                predictionKey: this.predictionKey,
+                predictionEndpoint: this.predictionEndpoint,
+                probabilityThreshold: this.probabilityThreshold
             });
-          }
-
-
-          sound = isAiming ? 'beep' : '';
-          const shouldClose = performance.now() - this.pipStartTime > 5000; //if elapse time over 5 second, make pip invisible
-          if (shouldClose){
-            const graphicsBox = document.querySelector('.graphics-box');
-            graphicsBox.innerHTML="XXXXXXXX"
+          }else {
+              const gestureMetrics= {
+                time: new Date().getTime(),
+                isAiming: false,
+                }
+            this.checkResults.push(gestureMetrics)
           }
       }
     }
-    const checkResult = this.checkData()
-
-    if (checkResult.hasAMatch){
-      sound = ''
-      videoMsg = `${checkResult.predictionData.tag} found (${checkResult.predictionData.probability}% confidence)  `
-      this.pipShow(checkResult.predictionData)
-    }
-    if (checkResult.isTimeOut){
-      videoMsg = "time out"
-      this.predictionData=[];
+    const pipContent = this.prepForPip(this.checkResults) 
+    if (pipContent && pipContent.isAiming){
+      sound = 'dingding'
+      console.log('1 pipContent ', pipContent)
+      closePip = this.pipShow(true, pipContent, 3000)
     }
     this.handUI.sound(sound);     
     this.handUI.messageBox(videoMsg)
     this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
-
     this.ctx.restore();
+    console.log('2 closePip', closePip)
+    if (pipContent && closePip) {
+      closePip2 = this.pipShow(false,pipContent,)
+    }
     window.requestAnimationFrame(this.detectHand.bind(this));
   },
   
-checkData(){
+ prepForPip() {
+    if (this.checkResults.length > 2) {
+      this.checkResults.shift();
+    }
+    let pipContent =''
+    const countCard = this.checkResults.filter(result => result.isACard).length
+    const countTarget = this.checkResults.filter(result => result.isATarget).length
 
-  if (!this.predictionData || this.predictionData.length === 0) {
-    // If predictionData is null or empty, consider it as timed out
-    const result = {
-      hasAMatch: false,
-      isTimeOut: true,
-      predictionData: null,
-    };
+    if (countCard> 0 || countTarget > 1){
     
-    return result;
+    const mostLikely = this.checkResults.reduce((maxResult, result) => {
+      return result.probability > maxResult.probability ? result : maxResult;
+    }, this.checkResults[this.checkResults.length-1]);
+
+    pipContent = mostLikely
+    } else {
+    pipContent = this.checkResults[this.checkResults.length-1]
+    } 
+    console.log('3 closePip-mostLikely', pipContent)
+    return pipContent
+}
+  ,
+
+pipShow(show, target, timeDelay) {
+  console.log('5 pipShow')
+  const graphicsBox = document.querySelector('.graphics-box');
+  graphicsBox.style.display = show ? 'block' : 'none';
+  if (!show){
+    return false
   }
-  
-  let isMatched1 = false
-  let isMatched2 = false
-
-  const nowTime = new Date().getTime()
-  const beginTime = this.predictionData[0].time
-  const isTimeOut = nowTime - beginTime > 3000
-  const m = this.predictionData.length-1
-
-  if (m >1){
-    isMatched1 = this.predictionData[m].probability >= this.probabilityThreshold
-    isMatched2 = this.predictionData[m-1].probability >= this.probabilityThreshold
-  }
-
-  const predictionData = this.predictionData[m]
-
-  const result = {
-    hasAMatch: isMatched1 && isMatched2,
-    isTimeOut: isTimeOut,
-    predictionData: predictionData,
-  }
-  return result
-  },
-
-
-  pipShow(predictionData) {
-    this.pipStartTime = performance.now();
-    console.log('pipStar 2-', this.pipStartTime)
-    const boundingBox = predictionData.boundingBox;
-    const tag = predictionData.tag;
-    const imageBlob = predictionData.imageBlob;
-    const graphicsBox = document.querySelector('.graphics-box');
+    const boundingBox = target.boundingBox;
+    const tag = target.tag;
+    const imageBlob = target.imageBlob;
+    let boxLeft =0
+    let boxTop = 0
+    let boxWidth = 224
+    let boxHeight = 224
   
     // 1. Obtain boundBox XY info
-    const boxLeft = boundingBox.left * 100; // Convert to percentage
-    const boxTop = boundingBox.top * 100; // Convert to percentage
-    const boxWidth = boundingBox.width * 100; // Convert to percentage
-    const boxHeight = boundingBox.height * 100; // Convert to percentage
-  
+    if(target.isATarget){
+    boxLeft = boundingBox.left * 100; // Convert to percentage
+    boxTop = boundingBox.top * 100; // Convert to percentage
+    boxWidth = boundingBox.width * 100; // Convert to percentage
+    boxHeight = boundingBox.height * 100; // Convert to percentage
+    } 
     // 2. Draw bounding box on the image
     const resultImage = new Image();
     resultImage.src = URL.createObjectURL(imageBlob);
@@ -276,9 +270,11 @@ checkData(){
     };
 
     setTimeout(() => {
-      // You can add any post-delay code here if needed
-      // This block will be executed after the 2-second delay
-    }, 2000);
+      const closePip = true
+      return closePip
+      console.log('5-check ',this.checkResults)
+      requestAnimationFrame(this.detectHand.bind(this));
+    }, timeDelay);
   }
   ,
   
