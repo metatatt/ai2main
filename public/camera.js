@@ -23,10 +23,10 @@ var HandCheckrApp = new Vue({
     videoElement: null,
     handLandmarker:undefined,
     checkWorker: null,
-    checkResults:[],
+    checkResults:'',
     predictionEndpoint:"",
     predictionKey:"",
-    pipStartTime:0,
+    pipContent: null,
     probabilityThreshold: 0.5,
   },
 
@@ -66,8 +66,25 @@ var HandCheckrApp = new Vue({
     this.checkWorker = new Worker('./lib/check-worker.js'); // Web Worker not importable, therefor put here
     this.checkWorker.addEventListener('message', event => {
       const newResult = event.data;
-      this.checkResults.push(newResult); // Update this.predictionData with the received predictionData
-    });
+      const oldTag = this.checkResults.tag || "" 
+      // Check if the received tag is different from the existing checkResults tag
+      if (oldTag !== newResult.tag) {
+        // Update checkResults with the new result if the tags are different
+        this.checkResults = newResult;
+      } else {
+        const incidentCount = this.checkResults.incidentCount || 0;
+    
+        // Check if the new result's probability is higher than the existing one
+        if (newResult.probability > this.checkResults.probability) {
+          // Update checkResults with the new result and increment incidentCount
+          this.checkResults = newResult;
+          this.checkResults.incidentCount = incidentCount + 1;
+        } else {
+          // Increment incidentCounts of the existing checkResults
+          this.checkResults.incidentCount = incidentCount + 1;
+        }
+      }
+    });    
     
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this.role, this.socket);
@@ -91,6 +108,16 @@ var HandCheckrApp = new Vue({
         numHands: 2
       });
 
+      const emptyResult = {
+        time: new Date().getTime(),
+        isAiming:false,
+        isACard:false,
+        isATarget:false,
+        incidentCount:0,
+        hasMoved: false,
+      };
+      this.checkResults=emptyResult
+      this.pipContent=emptyResult
       const azdata = await fetch('/azenv').then(response => response.json());
       this.predictionKey = azdata.predictionKey;
       this.predictionEndpoint = azdata.predictionEndpoint;
@@ -140,9 +167,7 @@ var HandCheckrApp = new Vue({
           if (isAiming){
             videoMsg = 'examining target now...'
             const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
-            console.log('1 blob ', imageBlob)
             const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
-            console.log('2 id ', cardID)
             this.checkWorker.postMessage({ //check classification of nailTarget
                 cardID:cardID,
                 imageBlob: imageBlob,
@@ -153,62 +178,56 @@ var HandCheckrApp = new Vue({
           }else {
               const gestureMetrics= {
                 time: new Date().getTime(),
+                handMoved: true,
                 isAiming: false,
                 }
-            this.checkResults.push(gestureMetrics)
+            this.checkResults = gestureMetrics
           }
       }
     }
-    const pipContent = this.prepForPip(this.checkResults) 
-    if (pipContent && pipContent.isAiming){
-      sound = 'dingding'
-      console.log('1 pipContent ', pipContent)
-      closePip = this.pipShow(true, pipContent, 3000)
+    const oldContent = this.pipContent
+    this.pipContent = await this.updatePip(this.checkResults, oldContent) 
+    if(this.pipContent != oldContent ){
+        this.renderPip(this.pipContent)
     }
     this.handUI.sound(sound);     
     this.handUI.messageBox(videoMsg)
     this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
     this.ctx.restore();
-    console.log('2 closePip', closePip)
-    if (pipContent && closePip) {
-      closePip2 = this.pipShow(false,pipContent,)
-    }
     window.requestAnimationFrame(this.detectHand.bind(this));
   },
   
- prepForPip() {
-    if (this.checkResults.length > 2) {
-      this.checkResults.shift();
+async updatePip(checkResult, oldContent) {
+    const recentMotion = new Date().getTime()
+    const recentAiming = this.pipContent ? this.pipContent.time : 0;
+    if (recentMotion - recentAiming > 4000 && checkResult.hasMoved) {//elapsed 4 second
+      console.log('hasMoved ')
+      const closePip = {
+        time: new Date().getTime(),
+        handleDisplay: 'none', //to close PIP , display style = none
+      };
+      return closePip //intend to close PIP
     }
-    let pipContent =''
-    const countCard = this.checkResults.filter(result => result.isACard).length
-    const countTarget = this.checkResults.filter(result => result.isATarget).length
-
-    if (countCard> 0 || countTarget > 1){
-    
-    const mostLikely = this.checkResults.reduce((maxResult, result) => {
-      return result.probability > maxResult.probability ? result : maxResult;
-    }, this.checkResults[this.checkResults.length-1]);
-
-    pipContent = mostLikely
+    if (checkResult.isAiming && checkResult.incidentCount > 1){
+      checkResult.handleDisplay = 'block';
+      return checkResult  //intend to display CheckResult in PIP
     } else {
-    pipContent = this.checkResults[this.checkResults.length-1]
-    } 
-    console.log('3 closePip-mostLikely', pipContent)
-    return pipContent
-}
-  ,
+      return oldContent  //intend for no action
+    }
+},
 
-pipShow(show, target, timeDelay) {
-  console.log('5 pipShow')
+
+renderPip(target) {
   const graphicsBox = document.querySelector('.graphics-box');
-  graphicsBox.style.display = show ? 'block' : 'none';
-  if (!show){
-    return false
+  const display = target.handleDisplay
+  graphicsBox.style.display = display // block vs none
+  if(display == "none"){
+    return
   }
     const boundingBox = target.boundingBox;
     const tag = target.tag;
     const imageBlob = target.imageBlob;
+  
     let boxLeft =0
     let boxTop = 0
     let boxWidth = 224
@@ -216,10 +235,10 @@ pipShow(show, target, timeDelay) {
   
     // 1. Obtain boundBox XY info
     if(target.isATarget){
-    boxLeft = boundingBox.left * 100; // Convert to percentage
-    boxTop = boundingBox.top * 100; // Convert to percentage
-    boxWidth = boundingBox.width * 100; // Convert to percentage
-    boxHeight = boundingBox.height * 100; // Convert to percentage
+        boxLeft = boundingBox.left * 100; // Convert to percentage
+        boxTop = boundingBox.top * 100; // Convert to percentage
+        boxWidth = boundingBox.width * 100; // Convert to percentage
+        boxHeight = boundingBox.height * 100; // Convert to percentage
     } 
     // 2. Draw bounding box on the image
     const resultImage = new Image();
@@ -268,12 +287,6 @@ pipShow(show, target, timeDelay) {
       graphicsBox.innerHTML = ''; // Clear the graphicsBox
       graphicsBox.appendChild(canvas);
     };
-
-    setTimeout(() => {
-      this.checkResults=[]
-      const closePip = true
-      return closePip
-    }, timeDelay);
   }
   ,
   

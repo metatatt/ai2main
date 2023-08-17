@@ -4,7 +4,7 @@ self.addEventListener('message', async event => {
   const cardID = event.data.cardID;
   const imageBlob = event.data.imageBlob;
   if (cardID) {
-    response = {
+    const cardResponse = {
       time: new Date().getTime(),
       isAiming: true,
       isACard: true,
@@ -14,6 +14,7 @@ self.addEventListener('message', async event => {
       probability: '',
       boundingBox: ''
     };
+    self.postMessage(cardResponse);
   } else {
     const predictionKey = event.data.predictionKey;
     const predictionEndpoint = event.data.predictionEndpoint;
@@ -31,13 +32,16 @@ self.addEventListener('message', async event => {
     });
 
     const result = await checkResponse.json();
-    const mostLikely = result.predictions
-      .sort((a, b) => b.probability - a.probability)
-      .find(prediction => prediction.probability > threshold);
+    if (result.predictions && Array.isArray(result.predictions)) {
+      // Filter and sort predictions
+      const sortedPredictions = result.predictions
+        .filter(prediction => prediction.probability > threshold)
+        .sort((a, b) => b.probability - a.probability);
 
+      const mostLikely = sortedPredictions[0];
     if (mostLikely) {
       // Prepare the response object with the prediction details and image source
-      response = {
+      const checkResponse = {
         time: new Date().getTime(),
         isAiming:true,
         isACard:false,
@@ -47,7 +51,7 @@ self.addEventListener('message', async event => {
         probability: Math.floor(mostLikely.probability * 100),
         boundingBox: mostLikely.boundingBox
       };
+      self.postMessage(checkResponse);
     }
-  }
-  self.postMessage(response);
+  }}
 });

@@ -156,7 +156,6 @@ nailTargetLoc(canvasWidth, canvasHeight) {
       locBL: cornerBL,
       locBR: cornerBR,
     }
-    console.log('a2 boxLoc' , boxLoc)
     return boxLoc
   }
 
