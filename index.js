@@ -34,8 +34,6 @@ if (!fs.existsSync(imgDir)) {
   fs.mkdirSync(imgDir);
 }
 
-// const { addBoxToImage } = require('./public/lib/addbox'); // Import the addBoxToImage function from addboximage.js
-
 
 let iterationName = "";
 let cameraStatus = null;
@@ -59,20 +57,7 @@ const connectionString = blobConnectionString;
 const containerName = blobContainerName;
 const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
 const containerClient = blobServiceClient.getContainerClient(containerName);
-const sessionTableFile = "ojoly-sessionTable.json";
-
-async function downloadIteration() {
-  try {
-    let blobClient = containerClient.getBlobClient("ojolyCV-getPublishedName.json");
-    let downloadedResponse = await blobClient.download();
-    let downloadedContent = await streamToString(downloadedResponse.readableStreamBody);
-    iterationName = JSON.parse(downloadedContent);
-    return sessionTable;
-  } catch (error) {
-    console.error("An error occurred while downloading the iteration:", error);
-    process.exit(1);
-  }
-}
+const sessionTableFile = "sessionTable.json";
 
 async function downloadSessionTable() {
   try {
@@ -254,17 +239,6 @@ function generateImageFileName() {
 }
 
 
-// get IternationName (Azure CV Prediction)
-app.get('/iter', async (req, res) => {
-  try {
-    const key = req.query.key; // Assuming the key is passed as a query parameter
-    res.send(iterationName[key]);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'An error occurred while retrieving the published name.' });
-  }
-});
-
 // Helper function to convert a ReadableStream to a string
 async function streamToString(readableStream) {
   const chunks = [];
@@ -307,45 +281,6 @@ io.on('connection', (socket) => {
   });
 });
 
-app.post('/capture', (req, res) => {
-
-  const predictionEndpoint = req.body.prediction.endpoint;
-  const predictionKey = req.body.prediction.key;
-  console.log('capture reqBody ', req.body)
-
-  // Retrieve the base64-encoded image data from the request body
-  const imageData = req.body.imageData;
-
-  // Decode the base64 image data into a Buffer
-  //const imageBuffer = Buffer.from(imageData, 'base64');
-  const imageBuffer = imageData
-  // Generate a unique filename for the image (e.g., using a timestamp)
-
-  const imagePath = './public/img/picture.png';
-
-  const imageBuffer2 = fs.readFileSync(imagePath);
-  const timestamp = Date.now();
-  const filename = `image_${timestamp}.png`;
-
-  // Specify the directory where you want to save the image
-  const saveDirectory = './public/img';
-
-  // Create the directory if it doesn't exist
-  if (!fs.existsSync(saveDirectory)) {
-    fs.mkdirSync(saveDirectory);
-  }
-
-  // Save the image to the specified directory
-  fs.writeFile(`${saveDirectory}/${filename}`, imageBuffer2, (err) => {
-    if (err) {
-      console.error('Error saving image:', err);
-      res.status(500).json({ message: 'Error saving image.' });
-    } else {
-      // Image saved successfully
-      res.status(200).json({ message: 'Image saved successfully.' });
-    }
-  });
-});
 
 http.listen(port, function () {
   console.log(`Server listening on port ${port}`);
