@@ -7,7 +7,7 @@
 		"deviceName":"",
 		"deviceStatus": "idle",
 		"deviceLocation":"",
-		"recentWIP" : "WIP-20"
+		"cardId" : "001"
 	},
 	"grid-2": {
 		"userId": "2XXX9-SIXDI%20Chen",
@@ -17,7 +17,7 @@
 		"deviceName":"",
 		"deviceStatus": "idle",
 		"deviceLocation":"",
-		"recentWIP" : "WIP-320"
+		"cardId" : "002"
 	},
 	"grid-3": {
 		"userId": "xxx",
@@ -27,6 +27,6 @@
 		"deviceName":"",
 		"deviceStatus": "idle",
 		"deviceLocation":"",
-		"recentWIP" : "WIP-320"
+		"cardId" : "002"
 	}
 }

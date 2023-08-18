@@ -1,4 +1,16 @@
 {
+    "c001":
+    {"key":"a19a2f3fcf784222a2af267179de9125",
+    "endpoint": "https://linecam2023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f98392ca-b533-4966-b222-d5054dfbe357/detect/iterations/model0413/image",
+    "color":"#FFFFFF",
+    "info1":"WI302",
+    "info2":"xxxx"},
+    "c002":
+    {"key":"a19a2f3fcf784222a2af267179de9125",
+    "endpoint": "https://linecam2023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f98392ca-b533-4966-b222-d5054dfbe357/detect/iterations/model0413/image",
+    "color":"#FFFFFF",
+    "info1":"WI302",
+    "info2":"xxxx"},
     "predictionKey": "a19a2f3fcf784222a2af267179de9125",
     "publishedIterationName": "Iter 2(to be renamed)",
     "projectId": "3232c73c-9994-4aec-969d-0521954e1531",
@@ -8,4 +20,4 @@
     "CHANNEL" : "baton",
     "blobConnectionString":"DefaultEndpointsProtocol=https;AccountName=practiz2023public;AccountKey=HvAcrsIQOyisNpFvo6VIwsVipEewUcymqjZtHIye/Yn4LSiy4BuYRe7FD3+IHz//OJOkPfXcqMe3+AStYfqoNA==;EndpointSuffix=core.windows.net",
     "blobContainerName":"lcam"
-}
+    }

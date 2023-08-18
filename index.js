@@ -40,6 +40,8 @@ let cameraStatus = null;
 let sessionTable = {};
 
 const {
+  c001,
+  c002,
   APP_ID,
   APP_CERTIFICATE,
   CHANNEL,
@@ -105,6 +107,25 @@ app.post('/env', async (req, res) => {
     predictionEndpoint,
     predictionKey,
     GRIDID: gridId
+  });
+});
+
+app.post('/card', async (req, res) => {
+  const userId = req.body.userId;
+  const sessionTable = await downloadSessionTable();
+  let cardId = "";
+  for (const key in sessionTable) {
+    if (sessionTable[key].userId.slice(0, 5) === userId.slice(0, 5)) {
+      cardId = sessionTable[key].cardId;
+    }
+  }
+  const data =  PredictionConfig[`c${cardId}`]
+  const key=data.key
+  const endpoint=data.endpoint
+  res.json({
+    key: key,
+    endPoint: endpoint,
+    cardId: cardId,
   });
 });
 

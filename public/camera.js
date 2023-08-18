@@ -118,9 +118,22 @@ var HandCheckrApp = new Vue({
       };
       this.checkResults=emptyResult
       this.pipContent=emptyResult
-      const azdata = await fetch('/azenv').then(response => response.json());
-      this.predictionKey = azdata.predictionKey;
-      this.predictionEndpoint = azdata.predictionEndpoint;
+
+      const response = await fetch('/card', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: this.userId })
+      });
+      
+      const azdata = await response.json();
+
+      this.predictionKey = azdata.key;
+      this.predictionEndpoint = azdata.endpoint;
+      this.cardId = azdata.cardId;
+      console.log('2a - cardId',this.cardId)
+      console.log('2a - key',this.predictionKey)
       const videoMsg = this.handUI.greeting()
       this.handUI.messageBox(videoMsg)
       this.handUI.sound('ding')
