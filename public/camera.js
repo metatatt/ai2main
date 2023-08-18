@@ -9,6 +9,7 @@ var HandCheckrApp = new Vue({
   el: '#handCheckr',
   data: {
     agoraUid: "",
+    cardId:'',
     canvasElement: null,
     canvasHeight: 768,
     canvasWidth: 1024,
@@ -65,25 +66,7 @@ var HandCheckrApp = new Vue({
     }.bind(this));
     this.checkWorker = new Worker('./lib/check-worker.js'); // Web Worker not importable, therefor put here
     this.checkWorker.addEventListener('message', event => {
-      const newResult = event.data;
-      const oldTag = this.checkResults.tag || "" 
-      // Check if the received tag is different from the existing checkResults tag
-      if (oldTag !== newResult.tag) {
-        // Update checkResults with the new result if the tags are different
-        this.checkResults = newResult;
-      } else {
-        const incidentCount = this.checkResults.incidentCount || 0;
-    
-        // Check if the new result's probability is higher than the existing one
-        if (newResult.probability > this.checkResults.probability) {
-          // Update checkResults with the new result and increment incidentCount
-          this.checkResults = newResult;
-          this.checkResults.incidentCount = incidentCount + 1;
-        } else {
-          // Increment incidentCounts of the existing checkResults
-          this.checkResults.incidentCount = incidentCount + 1;
-        }
-      }
+      this.targetData(event.data)
     });    
     
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
@@ -119,27 +102,44 @@ var HandCheckrApp = new Vue({
       this.checkResults=emptyResult
       this.pipContent=emptyResult
 
-      const response = await fetch('/card', {
+      const lastSaved = await fetch('/card', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId: this.userId })
       });
-      
-      const azdata = await response.json();
-
-      this.predictionKey = azdata.key;
-      this.predictionEndpoint = azdata.endpoint;
-      this.cardId = azdata.cardId;
-      console.log('2a - cardId',this.cardId)
-      console.log('2a - key',this.predictionKey)
-      console.log('2a - endP',this.predictionEndpoint)
+      const savedCard = await lastSaved.json();
+      this.predictionKey = savedCard.key;
+      this.predictionEndpoint = savedCard.endpoint;
+      this.cardId = savedCard.cardId;
       const videoMsg = this.handUI.greeting()
       this.handUI.messageBox(videoMsg)
       this.handUI.sound('ding')
   },
   
+  targetData(eventData){
+  const newResult = eventData;
+      const oldTag = this.checkResults.tag || "" 
+      // Check if the received tag is different from the existing checkResults tag
+      if (oldTag !== newResult.tag) {
+        // Update checkResults with the new result if the tags are different
+        this.checkResults = newResult;
+      } else {
+        const incidentCount = this.checkResults.incidentCount || 0;
+    
+        // Check if the new result's probability is higher than the existing one
+        if (newResult.probability > this.checkResults.probability) {
+          // Update checkResults with the new result and increment incidentCount
+          this.checkResults = newResult;
+          this.checkResults.incidentCount = incidentCount + 1;
+        } else {
+          // Increment incidentCounts of the existing checkResults
+          this.checkResults.incidentCount = incidentCount + 1;
+        }
+      }
+    },
+
   startScanning() {
       // Setup screen layout
       this.handUI.layout('scan')
