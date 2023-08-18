@@ -124,7 +124,7 @@ app.post('/card', async (req, res) => {
   const endpoint=data.endpoint
   res.json({
     key: key,
-    endPoint: endpoint,
+    endpoint: endpoint,
     cardId: cardId,
   });
 });

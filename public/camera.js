@@ -134,6 +134,7 @@ var HandCheckrApp = new Vue({
       this.cardId = azdata.cardId;
       console.log('2a - cardId',this.cardId)
       console.log('2a - key',this.predictionKey)
+      console.log('2a - endP',this.predictionEndpoint)
       const videoMsg = this.handUI.greeting()
       this.handUI.messageBox(videoMsg)
       this.handUI.sound('ding')
