@@ -9,7 +9,7 @@ var HandCheckrApp = new Vue({
   el: '#handCheckr',
   data: {
     agoraUid: "",
-    cardId:'',
+    card:{},
     canvasElement: null,
     canvasHeight: 768,
     canvasWidth: 1024,
@@ -25,8 +25,6 @@ var HandCheckrApp = new Vue({
     handLandmarker:undefined,
     checkWorker: null,
     checkResults:'',
-    predictionEndpoint:"",
-    predictionKey:"",
     pipContent: null,
     probabilityThreshold: 0.5,
   },
@@ -68,7 +66,10 @@ var HandCheckrApp = new Vue({
     this.checkWorker.addEventListener('message', event => {
       this.targetData(event.data)
     });    
-    
+    this.uploadWorker = new Worker('./lib/upload-worker.js'); // Web Worker not importable, therefor put here
+    this.uploadWorker.addEventListener('message', event => {
+      this.modelData(event.data)
+    });   
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this.role, this.socket);
     this.handCheck.initiateCamera();
@@ -102,17 +103,15 @@ var HandCheckrApp = new Vue({
       this.checkResults=emptyResult
       this.pipContent=emptyResult
 
-      const lastSaved = await fetch('/card', {
+      const last = await fetch('/card', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId: this.userId })
       });
-      const savedCard = await lastSaved.json();
-      this.predictionKey = savedCard.key;
-      this.predictionEndpoint = savedCard.endpoint;
-      this.cardId = savedCard.cardId;
+      const card = await last.json();
+      this.card = card.lastSaved
       const videoMsg = this.handUI.greeting()
       this.handUI.messageBox(videoMsg)
       this.handUI.sound('ding')
@@ -139,6 +138,28 @@ var HandCheckrApp = new Vue({
         }
       }
     },
+
+  modelData(eventData){
+      const newResult = eventData;
+          const oldTag = this.checkResults.tag || "" 
+          // Check if the received tag is different from the existing checkResults tag
+          if (oldTag !== newResult.tag) {
+            // Update checkResults with the new result if the tags are different
+            this.checkResults = newResult;
+          } else {
+            const incidentCount = this.checkResults.incidentCount || 0;
+        
+            // Check if the new result's probability is higher than the existing one
+            if (newResult.probability > this.checkResults.probability) {
+              // Update checkResults with the new result and increment incidentCount
+              this.checkResults = newResult;
+              this.checkResults.incidentCount = incidentCount + 1;
+            } else {
+              // Increment incidentCounts of the existing checkResults
+              this.checkResults.incidentCount = incidentCount + 1;
+            }
+          }
+        },
 
   startScanning() {
       // Setup screen layout
@@ -182,11 +203,18 @@ var HandCheckrApp = new Vue({
             videoMsg = 'examining target now...'
             const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
             const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
+            // this.uploadWorker.postMessage({
+            //   cardId: this.card.id,
+            //   imageBlob: imageBlob,
+            //   connectionString: this.card.blobConnection,
+            //   containerName: this.card.blobContainer
+            // });
+            
             this.checkWorker.postMessage({ //check classification of nailTarget
                 cardID:cardID,
                 imageBlob: imageBlob,
-                predictionKey: this.predictionKey,
-                predictionEndpoint: this.predictionEndpoint,
+                predictionKey: this.card.key,
+                predictionEndpoint: this.card.endpoint,
                 probabilityThreshold: this.probabilityThreshold
             });
           }else {

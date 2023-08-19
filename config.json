@@ -2,12 +2,16 @@
     "c001":
     {"key":"a19a2f3fcf784222a2af267179de9125",
     "endpoint": "https://linecam2023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f98392ca-b533-4966-b222-d5054dfbe357/detect/iterations/model0413/image",
+    "blobConnection":"DefaultEndpointsProtocol=https;AccountName=practiz2023public;AccountKey=HvAcrsIQOyisNpFvo6VIwsVipEewUcymqjZtHIye/Yn4LSiy4BuYRe7FD3+IHz//OJOkPfXcqMe3+AStYfqoNA==;EndpointSuffix=core.windows.net",
+    "blobContainer":"lcam",
     "color":"#FFFFFF",
     "info1":"WI302",
     "info2":"xxxx"},
     "c002":
     {"key":"a19a2f3fcf784222a2af267179de9125",
     "endpoint": "https://linecam2023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f98392ca-b533-4966-b222-d5054dfbe357/detect/iterations/model0413/image",
+    "blobConnection":"DefaultEndpointsProtocol=https;AccountName=practiz2023public;AccountKey=HvAcrsIQOyisNpFvo6VIwsVipEewUcymqjZtHIye/Yn4LSiy4BuYRe7FD3+IHz//OJOkPfXcqMe3+AStYfqoNA==;EndpointSuffix=core.windows.net",
+    "blobContainer":"lcam",
     "color":"#FFFFFF",
     "info1":"WI302",
     "info2":"xxxx"},

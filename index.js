@@ -119,22 +119,28 @@ app.post('/card', async (req, res) => {
       cardId = sessionTable[key].cardId;
     }
   }
-  const data =  PredictionConfig[`c${cardId}`]
-  const key=data.key
-  const endpoint=data.endpoint
+  const lastSaved =  PredictionConfig[`c${cardId}`]
   res.json({
-    key: key,
-    endpoint: endpoint,
-    cardId: cardId,
+    lastSaved
   });
 });
 
-app.get('/azenv', (req, res) => {
-//  addBoxToImage("-get-azenv");
-  res.json({
-    predictionEndpoint,
-    predictionKey
-  });
+app.post('/capture', async (req, res) => {
+  try {
+    const fileName = req.body.fileName;
+    const imageBlob = req.body.imageBlob;
+
+    const blockBlobClient = containerClient.getBlockBlobClient(fileName);
+    const uploadResponse = await blockBlobClient.uploadData(imageBlob, {
+      blobHTTPHeaders: { blobContentType: 'image/png' },
+    });
+
+    console.log('Uploaded image successfully:', uploadResponse.requestId);
+    res.status(200).send('Image uploaded successfully');
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).send('Error uploading image');
+  }
 });
 
 
