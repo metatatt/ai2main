@@ -141,25 +141,8 @@ var HandCheckrApp = new Vue({
 
   modelData(eventData){
       const newResult = eventData;
-          const oldTag = this.checkResults.tag || "" 
-          // Check if the received tag is different from the existing checkResults tag
-          if (oldTag !== newResult.tag) {
-            // Update checkResults with the new result if the tags are different
-            this.checkResults = newResult;
-          } else {
-            const incidentCount = this.checkResults.incidentCount || 0;
-        
-            // Check if the new result's probability is higher than the existing one
-            if (newResult.probability > this.checkResults.probability) {
-              // Update checkResults with the new result and increment incidentCount
-              this.checkResults = newResult;
-              this.checkResults.incidentCount = incidentCount + 1;
-            } else {
-              // Increment incidentCounts of the existing checkResults
-              this.checkResults.incidentCount = incidentCount + 1;
-            }
-          }
-        },
+      this.checkResults = newResult;
+   },
 
   startScanning() {
       // Setup screen layout
@@ -202,21 +185,24 @@ var HandCheckrApp = new Vue({
           if (isAiming){
             videoMsg = 'examining target now...'
             const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
+            console.log('**blob:', imageBlob);
             const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
-            // this.uploadWorker.postMessage({
-            //   cardId: this.card.id,
-            //   imageBlob: imageBlob,
-            //   connectionString: this.card.blobConnection,
-            //   containerName: this.card.blobContainer
-            // });
-            
-            this.checkWorker.postMessage({ //check classification of nailTarget
-                cardID:cardID,
-                imageBlob: imageBlob,
-                predictionKey: this.card.key,
-                predictionEndpoint: this.card.endpoint,
-                probabilityThreshold: this.probabilityThreshold
+            console.log("**this cardId", this.card.id)
+            const tempId = '320B' //need to adjust this
+            this.uploadWorker.postMessage({
+              cardId: tempId,
+              imageBlob: imageBlob,
+              connectionString: this.card.blobConnection,
+              containerName: this.card.blobContainer
             });
+            
+            // this.checkWorker.postMessage({ //check classification of nailTarget
+            //     cardID:cardID,
+            //     imageBlob: imageBlob,
+            //     predictionKey: this.card.key,
+            //     predictionEndpoint: this.card.endpoint,
+            //     probabilityThreshold: this.probabilityThreshold
+            // });
           }else {
               const gestureMetrics= {
                 time: new Date().getTime(),

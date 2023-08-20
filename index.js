@@ -125,22 +125,76 @@ app.post('/card', async (req, res) => {
   });
 });
 
-app.post('/capture', async (req, res) => {
+app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
   try {
-    const fileName = req.body.fileName;
-    const imageBlob = req.body.imageBlob;
+    console.log('Received POST request to /saveblob');
 
-    const blockBlobClient = containerClient.getBlockBlobClient(fileName);
-    const uploadResponse = await blockBlobClient.uploadData(imageBlob, {
-      blobHTTPHeaders: { blobContentType: 'image/png' },
+    // Access the uploaded file via req.file
+    if (!req.file) {
+      console.log('No image file received.');
+      return res.status(400).json({ error: 'No image file received.' });
+    }
+
+    // Get the original file name
+    const originalFileName = req.file.originalname;
+
+    // Create a unique file name for the image in Azure Blob Storage
+    const fileName = `${originalFileName}`;
+
+    // Create a BlobClient to upload the image to Azure Blob Storage
+    const blobClient = containerClient.getBlockBlobClient(fileName);
+
+    // Upload the file to Azure Blob Storage
+    const fileData = fs.readFileSync(req.file.path);
+    const saveRes = await blobClient.uploadData(fileData);
+    console.log("saveBlob Response ", saveRes)
+    res.json({
+      saveRes
     });
 
-    console.log('Uploaded image successfully:', uploadResponse.requestId);
-    res.status(200).send('Image uploaded successfully');
   } catch (error) {
-    console.error('Error uploading image:', error);
-    res.status(500).send('Error uploading image');
+    console.error('Error during image upload:', error.message);
+    res.status(500).json({ error: 'Error during image upload.' });
   }
+});
+
+app.post('/capture2', (req, res) => {
+
+
+  console.log('capture reqBody ', req.body)
+
+  // Retrieve the base64-encoded image data from the request body
+  const imageData = req.body.imageData;
+
+  // Decode the base64 image data into a Buffer
+  //const imageBuffer = Buffer.from(imageData, 'base64');
+  const imageBuffer = imageData
+  // Generate a unique filename for the image (e.g., using a timestamp)
+
+  const imagePath = './public/img/picture.png';
+
+  const imageBuffer2 = fs.readFileSync(imagePath);
+  const timestamp = Date.now();
+  const filename = `image_${timestamp}.png`;
+
+  // Specify the directory where you want to save the image
+  const saveDirectory = './public/img';
+
+  // Create the directory if it doesn't exist
+  if (!fs.existsSync(saveDirectory)) {
+    fs.mkdirSync(saveDirectory);
+  }
+
+  // Save the image to the specified directory
+  fs.writeFile(`${saveDirectory}/${filename}`, imageBuffer2, (err) => {
+    if (err) {
+      console.error('Error saving image:', err);
+      res.status(500).json({ message: 'Error saving image.' });
+    } else {
+      // Image saved successfully
+      res.status(200).json({ message: 'Image saved successfully.' });
+    }
+  });
 });
 
 
