@@ -10,14 +10,14 @@ var HandCheckrApp = new Vue({
   data: {
     agoraUid: "",
     card:{},
+    taskToekn:{},
+    billBoard:{},
+    target:{},
     canvasElement: null,
-    canvasHeight: 768,
-    canvasWidth: 1024,
     webRtc: null,
     gridId: "",
     isShareOn: false,
     isUserActive: false,
-    localTrack: null,
     role: "",
     socket: null,
     userId: null,
@@ -189,20 +189,20 @@ var HandCheckrApp = new Vue({
             const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
             console.log("**this cardId", this.card.id)
             const tempId = '320B' //need to adjust this
-            this.uploadWorker.postMessage({
-              cardId: tempId,
-              imageBlob: imageBlob,
-              connectionString: this.card.blobConnection,
-              containerName: this.card.blobContainer
-            });
-            
-            // this.checkWorker.postMessage({ //check classification of nailTarget
-            //     cardID:cardID,
-            //     imageBlob: imageBlob,
-            //     predictionKey: this.card.key,
-            //     predictionEndpoint: this.card.endpoint,
-            //     probabilityThreshold: this.probabilityThreshold
+            // this.uploadWorker.postMessage({
+            //   cardId: tempId,
+            //   imageBlob: imageBlob,
+            //   connectionString: this.card.blobConnection,
+            //   containerName: this.card.blobContainer
             // });
+            
+            this.checkWorker.postMessage({ //check classification of nailTarget
+                cardID:cardID,
+                imageBlob: imageBlob,
+                predictionKey: this.card.key,
+                predictionEndpoint: this.card.endpoint,
+                probabilityThreshold: this.probabilityThreshold
+            });
           }else {
               const gestureMetrics= {
                 time: new Date().getTime(),
