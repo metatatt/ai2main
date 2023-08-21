@@ -1,25 +1,9 @@
 self.addEventListener('message', async event => {
-  let response = null;
-  
-  const cardID = event.data.cardID;
   const imageBlob = event.data.imageBlob;
-  if (cardID) {
-    const cardResponse = {
-      time: new Date().getTime(),
-      isAiming: true,
-      isACard: true,
-      isATarget: false,
-      imageBlob: imageBlob,
-      tag: cardID,
-      probability: '',
-      boundingBox: ''
-    };
-    self.postMessage(cardResponse);
-  } else {
-    const predictionKey = event.data.predictionKey;
-    const predictionEndpoint = event.data.predictionEndpoint;
-    const threshold = event.data.probabilityThreshold;
 
+    const predictionKey = event.data.card.key;
+    const predictionEndpoint = event.data.card.endpoint;
+    const threshold = event.data.card.probability;
     const formData = new FormData();
     formData.append('image', imageBlob, 'image.png'); // Adjust filename and type as needed
 
@@ -30,7 +14,6 @@ self.addEventListener('message', async event => {
         'Prediction-Key': predictionKey,
       },
     });
-
     const result = await checkResponse.json();
     if (result.predictions && Array.isArray(result.predictions)) {
       // Filter and sort predictions
@@ -39,6 +22,7 @@ self.addEventListener('message', async event => {
         .sort((a, b) => b.probability - a.probability);
 
       const mostLikely = sortedPredictions[0];
+
     if (mostLikely) {
       // Prepare the response object with the prediction details and image source
       const checkResponse = {
@@ -53,5 +37,5 @@ self.addEventListener('message', async event => {
       };
       self.postMessage(checkResponse);
     }
-  }}
+  }
 });

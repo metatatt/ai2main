@@ -127,7 +127,6 @@ app.post('/card', async (req, res) => {
 
 app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
   try {
-    console.log('Received POST request to /saveblob');
 
     // Access the uploaded file via req.file
     if (!req.file) {

@@ -9,10 +9,43 @@ var HandCheckrApp = new Vue({
   el: '#handCheckr',
   data: {
     agoraUid: "",
-    card:{},
-    taskToekn:{},
+    billBoard:{
+      initTime:null,
+      info1:'',
+      info2:'',
+      image:null,
+    },
+    card:{
+     id: '',
+     key:'',
+     endpoint: '',
+     blobConnection:'',
+     blobContainer:'',
+     color:'',
+     info1:'',
+     info2:'',
+    },
+    target:{
+      initTime:'',
+      imageBlob: null,
+      tag:'',
+      probability: '',
+      boundingBox: null,
+      incidentCounter: 1
+    },
+    module:{
+      check: false,
+      upload: false
+    },
+    taskToken:{
+      initTime:'',
+      unsolved: true,
+      module:null,
+      card: null,
+      target: null,
+      billBoard:null,
+    },
     billBoard:{},
-    target:{},
     canvasElement: null,
     webRtc: null,
     gridId: "",
@@ -185,9 +218,7 @@ var HandCheckrApp = new Vue({
           if (isAiming){
             videoMsg = 'examining target now...'
             const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
-            console.log('**blob:', imageBlob);
             const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
-            console.log("**this cardId", this.card.id)
             const tempId = '320B' //need to adjust this
             // this.uploadWorker.postMessage({
             //   cardId: tempId,
@@ -197,11 +228,8 @@ var HandCheckrApp = new Vue({
             // });
             
             this.checkWorker.postMessage({ //check classification of nailTarget
-                cardID:cardID,
                 imageBlob: imageBlob,
-                predictionKey: this.card.key,
-                predictionEndpoint: this.card.endpoint,
-                probabilityThreshold: this.probabilityThreshold
+                card: this.card,
             });
           }else {
               const gestureMetrics= {
@@ -229,7 +257,6 @@ async updatePip(checkResult, oldContent) {
     const recentMotion = new Date().getTime()
     const recentAiming = this.pipContent ? this.pipContent.time : 0;
     if (recentMotion - recentAiming > 4000 && checkResult.hasMoved) {//elapsed 4 second
-      console.log('hasMoved ')
       const closePip = {
         time: new Date().getTime(),
         handleDisplay: 'none', //to close PIP , display style = none
