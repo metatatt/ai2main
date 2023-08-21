@@ -31,7 +31,7 @@ var HandCheckrApp = new Vue({
       tag:'',
       probability: '',
       boundingBox: null,
-      incidentCounter: 1
+      incidentCount: 0
     },
     module:{
       check: false,
@@ -39,7 +39,7 @@ var HandCheckrApp = new Vue({
     },
     taskToken:{
       initTime:'',
-      unsolved: true,
+      resolved: true,
       module:null,
       card: null,
       target: null,
@@ -57,7 +57,6 @@ var HandCheckrApp = new Vue({
     videoElement: null,
     handLandmarker:undefined,
     checkWorker: null,
-    checkResults:'',
     pipContent: null,
     probabilityThreshold: 0.5,
   },
@@ -133,7 +132,6 @@ var HandCheckrApp = new Vue({
         incidentCount:0,
         hasMoved: false,
       };
-      this.checkResults=emptyResult
       this.pipContent=emptyResult
 
       const last = await fetch('/card', {
@@ -143,38 +141,39 @@ var HandCheckrApp = new Vue({
         },
         body: JSON.stringify({ userId: this.userId })
       });
-      const card = await last.json();
-      this.card = card.lastSaved
+      const lastCard = await last.json();
+      this.card = lastCard.lastSaved
+
       const videoMsg = this.handUI.greeting()
       this.handUI.messageBox(videoMsg)
       this.handUI.sound('ding')
   },
   
   targetData(eventData){
-  const newResult = eventData;
-      const oldTag = this.checkResults.tag || "" 
-      // Check if the received tag is different from the existing checkResults tag
-      if (oldTag !== newResult.tag) {
-        // Update checkResults with the new result if the tags are different
-        this.checkResults = newResult;
+    const newResult = eventData;
+    const oldTag = this.target.tag || "" 
+      if (!newResult.tag && oldTag !== newResult.tag) {
+        // Update with the new result if new tag or blank tag
+        this.target = newResult;
       } else {
-        const incidentCount = this.checkResults.incidentCount || 0;
+        const incidentCount = this.target.incidentCount || 0;
     
         // Check if the new result's probability is higher than the existing one
-        if (newResult.probability > this.checkResults.probability) {
-          // Update checkResults with the new result and increment incidentCount
-          this.checkResults = newResult;
-          this.checkResults.incidentCount = incidentCount + 1;
+        if (newResult.probability > this.target.probability) {
+          // Update with the new result and increment incidentCount
+          this.target = newResult;
+          this.target.incidentCount = incidentCount + 1;
         } else {
-          // Increment incidentCounts of the existing checkResults
-          this.checkResults.incidentCount = incidentCount + 1;
+          // Update the count
+          this.target.incidentCount = incidentCount + 1;
         }
       }
-    },
+    this.taskToken.resolved = true;
+  },
 
   modelData(eventData){
       const newResult = eventData;
-      this.checkResults = newResult;
+      this.target = newResult;
    },
 
   startScanning() {
@@ -194,7 +193,6 @@ var HandCheckrApp = new Vue({
     const vHeight = this.videoElement.videoHeight
     let videoMsg=''
     let sound=''
-    let closePip = false
     // Only resize canvas when dimensions change
     if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
       this.canvasElement.width = vWidth;
@@ -204,45 +202,46 @@ var HandCheckrApp = new Vue({
     const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
-    let gesture = 0;
-
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
-          drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
-            color: "#FFFFFF",
-            lineWidth: 1.5
-          });
-          drawLandmarks(this.ctx, landmarks, { color: "#5065A8", lineWidth: 0.4 });
-          const isAiming = this.handCheck.extractGesture(landmarks)
 
-          if (isAiming){
-            videoMsg = 'examining target now...'
-            const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
-            const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
-            const tempId = '320B' //need to adjust this
-            // this.uploadWorker.postMessage({
-            //   cardId: tempId,
-            //   imageBlob: imageBlob,
-            //   connectionString: this.card.blobConnection,
-            //   containerName: this.card.blobContainer
-            // });
-            
-            this.checkWorker.postMessage({ //check classification of nailTarget
-                imageBlob: imageBlob,
-                card: this.card,
-            });
-          }else {
-              const gestureMetrics= {
-                time: new Date().getTime(),
-                handMoved: true,
-                isAiming: false,
-                }
-            this.checkResults = gestureMetrics
-          }
+        drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
+          color: this.taskToken.resolved ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
+          lineWidth: 1.5
+        });
+        
+        drawLandmarks(this.ctx, landmarks, { 
+          color: this.taskToken.resolved ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
+          lineWidth: 0.4 
+        });
+        console.log('**0 taskToken ', this.taskToken.resolved)
+        if (this.taskToken.resolved){
+          const isAiming = this.handCheck.extractGesture(landmarks)
+          console.log('**1 aiming ', isAiming)
+              if (isAiming){
+                this.taskToken.resolved = false 
+                console.log('**2 aiming ', isAiming)
+                videoMsg = 'examining target now...'
+                const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
+                const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
+                const tempId = '320B' //need to adjust this
+                // this.uploadWorker.postMessage({
+                //   cardId: tempId,
+                //   imageBlob: imageBlob,
+                //   connectionString: this.card.blobConnection,
+                //   containerName: this.card.blobContainer
+                // });
+                
+                this.checkWorker.postMessage({ //check classification of nailTarget
+                    imageBlob: imageBlob,
+                    card: this.card,
+                });
+              } //isAiming
+        } //this.taskToken.resolved
       }
     }
     const oldContent = this.pipContent
-    this.pipContent = await this.updatePip(this.checkResults, oldContent) 
+    this.pipContent = await this.updatePip(this.target, oldContent) 
     if(this.pipContent != oldContent ){
         this.renderPip(this.pipContent)
     }

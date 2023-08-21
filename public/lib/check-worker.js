@@ -23,19 +23,25 @@ self.addEventListener('message', async event => {
 
       const mostLikely = sortedPredictions[0];
 
+      let checkResponse ={}
     if (mostLikely) {
       // Prepare the response object with the prediction details and image source
-      const checkResponse = {
-        time: new Date().getTime(),
-        isAiming:true,
-        isACard:false,
-        isATarget:true,
+      checkResponse = {
+        initTime: new Date().getTime(),
         imageBlob: imageBlob,
         tag: mostLikely.tagName,
         probability: Math.floor(mostLikely.probability * 100),
         boundingBox: mostLikely.boundingBox
+      } 
+    } else {
+      checkResponse = {
+        initTime: new Date().getTime(),
+        imageBlob: null,
+        tag: '',
+        probability: 0,
+        boundingBox: null
+      } 
       };
       self.postMessage(checkResponse);
     }
-  }
-});
+  });
