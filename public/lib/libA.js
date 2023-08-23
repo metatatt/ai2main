@@ -195,16 +195,16 @@ captureNailTarget(canvasWidth, canvasHeight) {
 
 
   async detectCard(imageBlob) {
-        const width = 224;
-        const height = 224;
         // Create an image element and load the imageBlob
         const resultImage = new Image();
         resultImage.src = URL.createObjectURL(imageBlob);
-    
+ 
         // Wait for the image to load
         await new Promise(resolve => {
           resultImage.onload = resolve;
         });
+        const width = resultImage.width;
+        const height = resultImage.height;
     
         // Create a canvas and draw the loaded image
         const canvas = document.createElement('canvas');
@@ -217,16 +217,13 @@ captureNailTarget(canvasWidth, canvasHeight) {
         const imageData = ctx.getImageData(0, 0, width, height);
     
         // Decode QR code using jsQR
-        const qrCode = await jsQR(imageData.data, width, height, {
+        const qrCode = jsQR(imageData.data, width, height, {
           inversionAttempts: 'dontInvert',
         });
-        console.log('qrcode', qrCode.data)
-    
         if (qrCode && qrCode.data.startsWith('@pr-')) {
           const cardData = qrCode.data
-          return cardData.slice(5, 9)
-        } else {
-        }
+          return cardData.slice(4, 9)
+        } 
     }
     
 

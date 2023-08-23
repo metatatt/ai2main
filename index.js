@@ -76,6 +76,19 @@ async function downloadSessionTable() {
   }
 }
 
+async function uploadSessionTable() {
+  try {
+    const blobContent = JSON.stringify(sessionTable);
+    const blobClient = containerClient.getBlobClient(sessionTableFile);
+    const blockBlobClient = blobClient.getBlockBlobClient();
+    await blockBlobClient.upload(blobContent, blobContent.length);
+    console.log('Session table uploaded successfully.');
+  } catch (error) {
+    console.error('An error occurred while uploading the session table:', error);
+    process.exit(1);
+  }
+}
+
 // Middleware
 app.use(bodyParser.json());
 
@@ -127,7 +140,7 @@ app.post('/card', async (req, res) => {
   });
 });
 
-app.post('/card2', async (req, res) => {
+app.post('/updatecard', async (req, res) => {
   const cardId = req.body.cardId;
   const userId = req.body.userId;
   const sessionTable = await downloadSessionTable();
@@ -136,9 +149,10 @@ app.post('/card2', async (req, res) => {
       sessionTable[key].cardId = cardId;
     }
   }
-  console.log('saved ')
   const cardData =  PredictionConfig[`c${cardId}`]
-  console.log('cardData ', cardData)
+
+  await uploadSessionTable()
+
   res.json({
     cardData
   });
@@ -177,9 +191,6 @@ app.post('/saveblob', upload.single('imageFile'), async (req, res) => {
 });
 
 app.post('/capture2', (req, res) => {
-
-
-  console.log('capture reqBody ', req.body)
 
   // Retrieve the base64-encoded image data from the request body
   const imageData = req.body.imageData;
@@ -259,7 +270,6 @@ io.on('connection', (socket) => {
   // Receive userInfo from camera.html
   socket.on('sessionMessage', (sessionMessage) => {
     // Emit userInfo to console.html
-    // console.log("sessionMessage: ", sessionMessage);
     io.emit('sessionMessage', sessionMessage);
   });
 });

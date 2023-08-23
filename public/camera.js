@@ -28,6 +28,7 @@ var HandCheckrApp = new Vue({
     target:{
       initTime:'',
       imageBlob: null,
+      color:'',
       tag:'',
       info:'',
       probability: '',
@@ -54,7 +55,6 @@ var HandCheckrApp = new Vue({
     videoElement: null,
     handLandmarker:undefined,
     checkWorker: null,
-    pipContent: null,
     probabilityThreshold: 0.5,
   },
 
@@ -93,11 +93,11 @@ var HandCheckrApp = new Vue({
     }.bind(this));
     this.checkWorker = new Worker('./lib/check-worker.js'); // Web Worker not importable, therefor put here
     this.checkWorker.addEventListener('message', event => {
-      this.targetData(event.data)
+      if (this.taskToken.resolved) {this.targetData(event.data)}
     });    
     this.uploadWorker = new Worker('./lib/upload-worker.js'); // Web Worker not importable, therefor put here
     this.uploadWorker.addEventListener('message', event => {
-      this.modelData(event.data)
+      if (this.taskToken.resolved) {this.modelData(event.data)}
     });    
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this.role, this.socket);
@@ -121,16 +121,6 @@ var HandCheckrApp = new Vue({
         numHands: 2
       });
 
-      const emptyResult = {
-        time: new Date().getTime(),
-        isAiming:false,
-        isACard:false,
-        isATarget:false,
-        incidentCount:0,
-        hasMoved: false,
-      };
-      this.pipContent=emptyResult
-
       const last = await fetch('/card', {
         method: 'POST',
         headers: {
@@ -141,52 +131,44 @@ var HandCheckrApp = new Vue({
       const lastCard = await last.json();
       this.card = lastCard.lastSaved
 
-      const videoMsg = this.handUI.greeting()
-      this.handUI.messageBox(videoMsg)
+      const greeting = this.handUI.greeting()
+      this.handUI.messageBox(greeting)
       this.handUI.sound('ding')
   },
   
   targetData(eventData){
     const newResult = eventData;
-    const oldTag = this.target.tag || "" 
-      if (!newResult.tag && oldTag !== newResult.tag) {
-        // Update with the new result if new tag or blank tag
-        this.target = newResult;
-      } else {
-        const incidentCount = this.target.incidentCount || 0;
-    
-        // Check if the new result's probability is higher than the existing one
-        if (newResult.probability > this.target.probability) {
-          // Update with the new result and increment incidentCount
-          this.target = newResult;
-          this.target.incidentCount = incidentCount + 1;
-        } else {
-          // Update the count
-          this.target.incidentCount = incidentCount + 1;
-        }
-      }
-    console.log('**3 target -', this.target.tag)
+    const oldResult = this.target
+    const incidentCount = this.target.incidentCount
+    let defResult = newResult;
+    if (newResult.tag === oldResult.tag && oldResult.probability > newResult.probability) {
+      defResult = oldResult
+    }
+    Object.assign(this.target, defResult, { color: this.card.color },{ incidentCount: incidentCount + 1 });
+    if (this.target.incidentCount>1){
     this.renderPip(this.target)
+    }
   },
 
-  async cardData(eventData){
-    const newCardId = eventData;
+  async showCardData(cardData){
+    const newCardId = cardData;
     const oldId = this.card.id || "" 
-      if (!newCardId && newCardId !== oldId) {
+    const fillerBox={ top: 0, left: 0, width: 1, height: 1,}
+      if (newCardId !== oldId) {
         // Update with the new result if new tag or blank tag
-        const newC = await fetch('/card2', {
+        const response = await fetch('/updatecard', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ cardId: newCardId })
+          body: JSON.stringify({ cardId: newCardId, userId: this.userId })
         });
-        const newCard = await newC.json();
-        this.card = newCard.cardData
-        console.log('**4 card ', this.card)
-        this.renderPip(this.card)
-
+        const newCard = await response.json();
+        Object.assign(this.card, newCard.cardData,{info:"new"}, { boundingBox: fillerBox });
+      } else {
+        Object.assign(this.card, {info:"repeate"}, { boundingBox: fillerBox });
       }
+      this.renderPip(this.card)
   },
 
   modelData(eventData){
@@ -207,17 +189,17 @@ var HandCheckrApp = new Vue({
   
 
   async detectHand(){
+
+    let videoMsg=this.card.id
+    let sound=''
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
-    let videoMsg=''
-    let sound=''
     // Only resize canvas when dimensions change
     if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
-      this.canvasElement.width = vWidth;
-      this.canvasElement.height = vHeight;
+      Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
     }
     let startTimeMs = performance.now();
-    const results = this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
+    const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
     this.ctx.clearRect(0, 0, vWidth, vHeight);
     if (results.landmarks) {
@@ -235,31 +217,23 @@ var HandCheckrApp = new Vue({
         
         const isAiming = this.handCheck.extractGesture(landmarks) && this.taskToken.resolved
               if (isAiming){
-                this.taskToken.resolved = false 
                 videoMsg = 'examining target now...'
                 const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
-
-                const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
-                console.log('**2.5 cardID', cardID)
-                const tempId = '320B' //need to adjust this
-                // this.uploadWorker.postMessage({
-                //   cardId: tempId,
-                //   imageBlob: imageBlob,
-                //   connectionString: this.card.blobConnection,
-                //   containerName: this.card.blobContainer
-                // });
-                
-                this.checkWorker.postMessage({ //check classification of nailTarget
-                    imageBlob: imageBlob,
-                    card: this.card,
-                });
+                const cardId = await this.handCheck.detectCard(imageBlob) //check card presence
+                if (cardId) {
+                  this.showCardData(cardId)
+                } else if(this.card){
+                    const id = this.card.id.slice(3,5)
+                    console.log('** check or upload ', id)
+                    const worker = id ==='ML'? 'upload':'check';
+                    const par = {
+                      imageBlob: imageBlob,
+                      card: this.card,
+                    }
+                    this[`${worker}Worker`].postMessage(par)  
+                }
               } //isAiming
       }
-    }
-    const oldContent = this.pipContent
-    this.pipContent = await this.updatePip(this.target, oldContent) 
-    if(this.pipContent != oldContent ){
-        this.renderPip(this.pipContent)
     }
     this.handUI.sound(sound);     
     this.handUI.messageBox(videoMsg)
@@ -268,56 +242,45 @@ var HandCheckrApp = new Vue({
     window.requestAnimationFrame(this.detectHand.bind(this));
   },
   
-async updatePip(checkResult, oldContent) {
-    const recentMotion = new Date().getTime()
-    const recentAiming = this.pipContent ? this.pipContent.time : 0;
-    if (recentMotion - recentAiming > 4000 && checkResult.hasMoved) {//elapsed 4 second
-      const closePip = {
-        time: new Date().getTime(),
-        handleDisplay: 'none', //to close PIP , display style = none
-      };
-      return closePip //intend to close PIP
-    }
-    if (checkResult.isAiming && checkResult.incidentCount > 1){
-      checkResult.handleDisplay = 'block';
-      return checkResult  //intend to display CheckResult in PIP
-    } else {
-      return oldContent  //intend for no action
-    }
-},
-
 
 renderPip(target) {
+  console.log('target ',target)
+  this.taskToken.resolved=false
+  this.handUI.sound('dingding')
   const graphicsBox = document.querySelector('.graphics-box');
   graphicsBox.style.display = 'block';
   
   const boundingBox = target.boundingBox;
   const tag = target.tag;
+  const color = target.color
 
-  // Define bounding box dimensions
-  const boxLeft = 0;
-  const boxTop = 0;
-  const boxWidth = 224;
-  const boxHeight = 224;
 
   // Create an image element to load the imageBlob
   const resultImage = new Image();
-  resultImage.src = target.imageBlob ? URL.createObjectURL(target.imageBlob) : './img/target4.jpg';
+  resultImage.src = target.imageBlob ? URL.createObjectURL(target.imageBlob) : './img/iconCamera.svg';
 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   
   resultImage.onload = () => {
+    resultImage.width = 224
+    resultImage.height = 224
     canvas.width = resultImage.width * 2;
     canvas.height = resultImage.height * 2;
 
     // Fill canvas background with a solid color
-    ctx.fillStyle = '#959eba';
+    ctx.fillStyle = color;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const offsetX = (canvas.width - resultImage.width) / 2;
     const offsetY = (canvas.height - resultImage.height) / 2;
 
+      // Define bounding box dimensions
+    const boxLeft = boundingBox.left * resultImage.width || 0; // Convert to percentage
+    const boxTop = boundingBox.top * resultImage.height || 0; // Convert to percentage
+    const boxWidth = boundingBox.width * resultImage.width ||resultImage.width ; // Convert to percentage
+    const boxHeight = boundingBox.height * resultImage.height ||resultImage.height ; // Convert to percentage
+    
     // Draw resultImage centered within the canvas
     ctx.drawImage(resultImage, offsetX, offsetY, resultImage.width, resultImage.height);
 
@@ -350,11 +313,23 @@ renderPip(target) {
 
   setTimeout(() => {
     this.taskToken.resolved = true;
-    console.log('resolved true');
     graphicsBox.innerHTML = '';
-  }, 2000); // Delay for 2 seconds
+    this.flushMemory()
+  }, 5000); // Delay for 5 seconds
 } ,
-  
+
+flushMemory(){
+  this.target = {
+    initTime:'',
+    imageBlob: null,
+    color:'',
+    tag:'',
+    info:'',
+    probability: '',
+    boundingBox: null,
+    incidentCount: 0
+  }
+},
 
   async viewFindings() {
     this.isScanEnabled=false;

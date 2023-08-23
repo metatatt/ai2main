@@ -20,28 +20,19 @@ self.addEventListener('message', async event => {
       const sortedPredictions = result.predictions
         .filter(prediction => prediction.probability > threshold)
         .sort((a, b) => b.probability - a.probability);
-
       const mostLikely = sortedPredictions[0];
-
-      let checkResponse ={}
     if (mostLikely) {
       // Prepare the response object with the prediction details and image source
-      checkResponse = {
+      const checkResponse = {
         initTime: new Date().getTime(),
         imageBlob: imageBlob,
         tag: mostLikely.tagName,
+        incidentCount: 0,
+        color:'',
         probability: Math.floor(mostLikely.probability * 100),
         boundingBox: mostLikely.boundingBox
       } 
-    } else {
-      checkResponse = {
-        initTime: new Date().getTime(),
-        imageBlob: null,
-        tag: '',
-        probability: 0,
-        boundingBox: null
-      } 
-      };
       self.postMessage(checkResponse);
     }
+  }
   });

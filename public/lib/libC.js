@@ -83,7 +83,7 @@ sound(sound){
   greeting(){
     const currentHour = new Date().getHours();
     const greetings = ["Good evening!", "Good morning!", "Good afternoon!"];
-    const greetingIndex = Math.floor(((currentHour + 6) % 24) / 6);
+    const greetingIndex = Math.floor(((currentHour) % 24) / 6);
     return greetings[greetingIndex];
   }
 
