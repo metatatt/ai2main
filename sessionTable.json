@@ -7,7 +7,7 @@
 		"deviceName":"",
 		"deviceStatus": "idle",
 		"deviceLocation":"",
-		"cardId" : "001"
+		"cardId" : "001CK"
 	},
 	"grid-2": {
 		"userId": "2XXX9-SIXDI%20Chen",
@@ -17,7 +17,7 @@
 		"deviceName":"",
 		"deviceStatus": "idle",
 		"deviceLocation":"",
-		"cardId" : "002"
+		"cardId" : "002CK"
 	},
 	"grid-3": {
 		"userId": "xxx",
@@ -27,6 +27,6 @@
 		"deviceName":"",
 		"deviceStatus": "idle",
 		"deviceLocation":"",
-		"cardId" : "002"
+		"cardId" : "002ML"
 	}
 }

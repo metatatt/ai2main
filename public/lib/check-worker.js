@@ -1,8 +1,8 @@
 self.addEventListener('message', async event => {
   const imageBlob = event.data.imageBlob;
 
-    const predictionKey = event.data.card.key;
-    const predictionEndpoint = event.data.card.endpoint;
+    const predictionKey = event.data.card.keyContain;
+    const predictionEndpoint = event.data.card.endConnect;
     const threshold = event.data.card.probability;
     const formData = new FormData();
     formData.append('image', imageBlob, 'image.png'); // Adjust filename and type as needed

@@ -17,18 +17,19 @@ var HandCheckrApp = new Vue({
     },
     card:{
      id: '',
-     key:'',
-     endpoint: '',
-     blobConnection:'',
-     blobContainer:'',
+     keyContain:'',
+     endConnect: '',
      color:'',
-     info1:'',
-     info2:'',
+     tag:'',
+     info:'',
+     imageBlob: null,
+     boundingBox: null,
     },
     target:{
       initTime:'',
       imageBlob: null,
       tag:'',
+      info:'',
       probability: '',
       boundingBox: null,
       incidentCount: 0
@@ -40,12 +41,8 @@ var HandCheckrApp = new Vue({
     taskToken:{
       initTime:'',
       resolved: true,
-      module:null,
-      card: null,
-      target: null,
-      billBoard:null,
+      task:''
     },
-    billBoard:{},
     canvasElement: null,
     webRtc: null,
     gridId: "",
@@ -101,7 +98,7 @@ var HandCheckrApp = new Vue({
     this.uploadWorker = new Worker('./lib/upload-worker.js'); // Web Worker not importable, therefor put here
     this.uploadWorker.addEventListener('message', event => {
       this.modelData(event.data)
-    });   
+    });    
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this.role, this.socket);
     this.handCheck.initiateCamera();
@@ -168,7 +165,28 @@ var HandCheckrApp = new Vue({
           this.target.incidentCount = incidentCount + 1;
         }
       }
-    this.taskToken.resolved = true;
+    console.log('**3 target -', this.target.tag)
+    this.renderPip(this.target)
+  },
+
+  async cardData(eventData){
+    const newCardId = eventData;
+    const oldId = this.card.id || "" 
+      if (!newCardId && newCardId !== oldId) {
+        // Update with the new result if new tag or blank tag
+        const newC = await fetch('/card2', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ cardId: newCardId })
+        });
+        const newCard = await newC.json();
+        this.card = newCard.cardData
+        console.log('**4 card ', this.card)
+        this.renderPip(this.card)
+
+      }
   },
 
   modelData(eventData){
@@ -214,16 +232,15 @@ var HandCheckrApp = new Vue({
           color: this.taskToken.resolved ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
           lineWidth: 0.4 
         });
-        console.log('**0 taskToken ', this.taskToken.resolved)
-        if (this.taskToken.resolved){
-          const isAiming = this.handCheck.extractGesture(landmarks)
-          console.log('**1 aiming ', isAiming)
+        
+        const isAiming = this.handCheck.extractGesture(landmarks) && this.taskToken.resolved
               if (isAiming){
                 this.taskToken.resolved = false 
-                console.log('**2 aiming ', isAiming)
                 videoMsg = 'examining target now...'
                 const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
+
                 const cardID = await this.handCheck.detectCard(imageBlob) //check card presence
+                console.log('**2.5 cardID', cardID)
                 const tempId = '320B' //need to adjust this
                 // this.uploadWorker.postMessage({
                 //   cardId: tempId,
@@ -237,7 +254,6 @@ var HandCheckrApp = new Vue({
                     card: this.card,
                 });
               } //isAiming
-        } //this.taskToken.resolved
       }
     }
     const oldContent = this.pipContent
@@ -273,76 +289,71 @@ async updatePip(checkResult, oldContent) {
 
 renderPip(target) {
   const graphicsBox = document.querySelector('.graphics-box');
-  const display = target.handleDisplay
-  graphicsBox.style.display = display // block vs none
-  if(display == "none"){
-    return
-  }
-    const boundingBox = target.boundingBox;
-    const tag = target.tag;
-    const imageBlob = target.imageBlob;
+  graphicsBox.style.display = 'block';
   
-    let boxLeft =0
-    let boxTop = 0
-    let boxWidth = 224
-    let boxHeight = 224
+  const boundingBox = target.boundingBox;
+  const tag = target.tag;
+
+  // Define bounding box dimensions
+  const boxLeft = 0;
+  const boxTop = 0;
+  const boxWidth = 224;
+  const boxHeight = 224;
+
+  // Create an image element to load the imageBlob
+  const resultImage = new Image();
+  resultImage.src = target.imageBlob ? URL.createObjectURL(target.imageBlob) : './img/target4.jpg';
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
   
-    // 1. Obtain boundBox XY info
-    if(target.isATarget){
-        boxLeft = boundingBox.left * 100; // Convert to percentage
-        boxTop = boundingBox.top * 100; // Convert to percentage
-        boxWidth = boundingBox.width * 100; // Convert to percentage
-        boxHeight = boundingBox.height * 100; // Convert to percentage
-    } 
-    // 2. Draw bounding box on the image
-    const resultImage = new Image();
-    resultImage.src = URL.createObjectURL(imageBlob);
-  
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    resultImage.onload = () => {
-      canvas.width = resultImage.width * 2; // Set canvas width twice the resultImage width
-      canvas.height = resultImage.height * 2; // Set canvas height twice the resultImage height
-  
-    // Fill the canvas background with a solid white color
+  resultImage.onload = () => {
+    canvas.width = resultImage.width * 2;
+    canvas.height = resultImage.height * 2;
+
+    // Fill canvas background with a solid color
     ctx.fillStyle = '#959eba';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Calculate the position to center the resultImage within the canvas
-      const offsetX = (canvas.width - resultImage.width) / 2;
-      const offsetY = (canvas.height - resultImage.height) / 2;
-  
-      // Draw the resultImage centered within the canvas
-      ctx.drawImage(resultImage, offsetX, offsetY, resultImage.width, resultImage.height);
-  
-      // Draw the bounding box on the canvas
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 5; // Set the border width
-      ctx.beginPath();
-      ctx.rect(boxLeft + offsetX, boxTop + offsetY, boxWidth, boxHeight);
-      ctx.stroke();
-  
-      // Calculate the center position for the tag text
-      const centerX = boxLeft + offsetX + boxWidth / 2;
-      const centerY = boxTop + offsetY + boxHeight / 2;
-  
-      // Add the tag text at the center of the bounding box
-      ctx.fillStyle = 'red';
-      ctx.font = '16px Arial';
-      ctx.textAlign = 'center'; // Center the text horizontally
-      ctx.textBaseline = 'middle'; // Center the text vertically
-      ctx.fillText(tag, centerX, centerY);
-  
-        // Apply border radius and drop shadow to the canvas
-      canvas.style.borderRadius = '224px'; // Set the border radius
-      canvas.style.boxShadow = '20px 20px 25px black'; // Set the drop shadow
+    const offsetX = (canvas.width - resultImage.width) / 2;
+    const offsetY = (canvas.height - resultImage.height) / 2;
 
-      // Display the canvas with the resultImage and bounding box in the graphicsBox
-      graphicsBox.innerHTML = ''; // Clear the graphicsBox
-      graphicsBox.appendChild(canvas);
-    };
-  }
-  ,
+    // Draw resultImage centered within the canvas
+    ctx.drawImage(resultImage, offsetX, offsetY, resultImage.width, resultImage.height);
+
+    // Draw bounding box on the canvas
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.rect(boxLeft + offsetX, boxTop + offsetY, boxWidth, boxHeight);
+    ctx.stroke();
+
+    // Calculate center position for the tag text
+    const centerX = boxLeft + offsetX + boxWidth / 2;
+    const centerY = boxTop + offsetY + boxHeight / 2;
+
+    // Add tag text at the center of the bounding box
+    ctx.fillStyle = 'red';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tag, centerX, centerY);
+
+    // Apply border radius and drop shadow to the canvas
+    canvas.style.borderRadius = '224px';
+    canvas.style.boxShadow = '20px 20px 25px black';
+
+    // Display canvas with resultImage and bounding box in the graphicsBox
+    graphicsBox.innerHTML = '';
+    graphicsBox.appendChild(canvas);
+  };
+
+  setTimeout(() => {
+    this.taskToken.resolved = true;
+    console.log('resolved true');
+    graphicsBox.innerHTML = '';
+  }, 2000); // Delay for 2 seconds
+} ,
   
 
   async viewFindings() {

@@ -217,13 +217,14 @@ captureNailTarget(canvasWidth, canvasHeight) {
         const imageData = ctx.getImageData(0, 0, width, height);
     
         // Decode QR code using jsQR
-        const qrCode = jsQR(imageData.data, width, height, {
+        const qrCode = await jsQR(imageData.data, width, height, {
           inversionAttempts: 'dontInvert',
         });
+        console.log('qrcode', qrCode.data)
     
         if (qrCode && qrCode.data.startsWith('@pr-')) {
-          const cardID = qrCode.data
-          return cardID
+          const cardData = qrCode.data
+          return cardData.slice(5, 9)
         } else {
         }
     }

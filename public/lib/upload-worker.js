@@ -8,8 +8,8 @@ self.addEventListener('message', async event => {
   const now = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
   const fileName = 'WI' + cardId + now + '.png';
-  const connectionString = event.data.connectionString;
-  const containerName = event.data.containerName;
+  const connectionString = event.data.endConnect;
+  const containerName = event.data.keyContain;
   console.log('imageBlob ** ', imageBlob);
 
   const formData = new FormData();
