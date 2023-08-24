@@ -56,6 +56,7 @@ var HandCheckrApp = new Vue({
     handLandmarker:undefined,
     checkWorker: null,
     probabilityThreshold: 0.5,
+    speechAvailable: true,
   },
 
   mounted() {
@@ -154,7 +155,9 @@ var HandCheckrApp = new Vue({
     const newCardId = cardData;
     const oldId = this.card.id || "" 
     const fillerBox={ top: 0, left: 0, width: 1, height: 1,}
+    let sound =''
       if (newCardId !== oldId) {
+        this.handUI.speech('Loading dataset. Keep hand still to proceed.')
         // Update with the new result if new tag or blank tag
         const response = await fetch('/updatecard', {
           method: 'POST',
@@ -165,10 +168,13 @@ var HandCheckrApp = new Vue({
         });
         const newCard = await response.json();
         Object.assign(this.card, newCard.cardData,{info:"new"}, { boundingBox: fillerBox });
+        sound = 'beep'
       } else {
         Object.assign(this.card, {info:"repeate"}, { boundingBox: fillerBox });
+        sound = 'error'
       }
-      this.renderPip(this.card)
+
+      this.renderPip(this.card,sound)
   },
 
   modelData(eventData){
@@ -221,6 +227,7 @@ var HandCheckrApp = new Vue({
                 const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
                 const cardId = await this.handCheck.detectCard(imageBlob) //check card presence
                 if (cardId) {
+                  this.taskToken.resolved =false
                   this.showCardData(cardId)
                 } else if(this.card){
                     const id = this.card.id.slice(3,5)
@@ -234,8 +241,7 @@ var HandCheckrApp = new Vue({
                 }
               } //isAiming
       }
-    }
-    this.handUI.sound(sound);     
+    }   
     this.handUI.messageBox(videoMsg)
     this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
     this.ctx.restore();
@@ -243,10 +249,10 @@ var HandCheckrApp = new Vue({
   },
   
 
-renderPip(target) {
+renderPip(target,sound) {
   console.log('target ',target)
   this.taskToken.resolved=false
-  this.handUI.sound('dingding')
+  this.handUI.sound(sound)
   const graphicsBox = document.querySelector('.graphics-box');
   graphicsBox.style.display = 'block';
   

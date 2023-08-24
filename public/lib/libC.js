@@ -6,9 +6,12 @@ export class handUI {
     this.soundbeep = new Audio('./lib/beep.mp3');
     this.sounddingding = new Audio('./lib/ding2.mp3');
     this.soundding = new Audio('./lib/ding.mp3');
+    this.sounderror = new Audio('./lib/error.mp3');
     this.soundbeep.preload = 'auto';
     this.sounddingding.preload = 'auto';
     this.soundding.preload = 'auto';
+    this.isSpeaking=false;
+    this.counter=0;
   }
 
   layout(mode) {
@@ -85,6 +88,33 @@ sound(sound){
     const greetings = ["Good evening!", "Good morning!", "Good afternoon!"];
     const greetingIndex = Math.floor(((currentHour) % 24) / 6);
     return greetings[greetingIndex];
+  }
+
+  speech(text){
+    if (this.isSpeaking){
+      return 
+    }
+    this.counter++
+    console.log('voice** count:',this.counter)
+    this.isSpeaking = true;
+    var subscriptionKey, serviceRegion;
+    var SpeechSDK;
+    var synthesizer;
+    subscriptionKey = 'd2cd1d71cddb4eca9d85f151fe5906d5';
+    serviceRegion = 'eastus2';
+
+    if (!!window.SpeechSDK) {
+      SpeechSDK = window.SpeechSDK
+      var speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
+      synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+
+    synthesizer.speakTextAsync(text,
+      result => {
+      },
+      error => {
+      });
+    }
+    this.isSpeaking = false
   }
 
 }
