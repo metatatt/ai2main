@@ -134,7 +134,12 @@ var HandCheckrApp = new Vue({
 
       const greeting = this.handUI.greeting()
       this.handUI.messageBox(greeting)
-      this.handUI.sound('ding')
+      const start = await this.handUI.listen('hey computer')
+      console.log('start ** true or false:', start)
+      if (start) {
+        this.handUI.sound('dingding');
+        this.detectHand();
+      }
   },
   
   targetData(eventData){
@@ -183,13 +188,7 @@ var HandCheckrApp = new Vue({
    },
 
   startScanning() {
-      // Setup screen layout
-      this.handUI.layout('scan')
-      // Disable the setAutoPlay timer if it exists
-      if (typeof this.stopSlide === 'function') {
-        this.stopSlide();
-      }   
-         this.handUI.sound('dingding')
+     this.handUI.sound('dingding')
      this.detectHand();
   },
   

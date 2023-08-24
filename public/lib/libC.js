@@ -10,8 +10,19 @@ export class handUI {
     this.soundbeep.preload = 'auto';
     this.sounddingding.preload = 'auto';
     this.soundding.preload = 'auto';
-    this.isSpeaking=false;
     this.counter=0;
+    if (!!window.SpeechSDK) {
+      SpeechSDK = window.SpeechSDK
+      var speechConfig = SpeechSDK.SpeechConfig.fromSubscription('d2cd1d71cddb4eca9d85f151fe5906d5', 'eastus2');
+      this.synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      this.recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+      this.speechAllowed=true;
+    } else {
+      this.synthesizer = null;
+      this.recognizer = null;
+      this.speechAllowed=false;
+    }
   }
 
   layout(mode) {
@@ -87,34 +98,44 @@ sound(sound){
     const currentHour = new Date().getHours();
     const greetings = ["Good evening!", "Good morning!", "Good afternoon!"];
     const greetingIndex = Math.floor(((currentHour) % 24) / 6);
+    this.speech(greetings[greetingIndex]+' say hey computer to start...')
     return greetings[greetingIndex];
   }
 
   speech(text){
-    if (this.isSpeaking){
+    if (!this.speechAllowed){
       return 
     }
     this.counter++
     console.log('voice** count:',this.counter)
-    this.isSpeaking = true;
-    var subscriptionKey, serviceRegion;
-    var SpeechSDK;
-    var synthesizer;
-    subscriptionKey = 'd2cd1d71cddb4eca9d85f151fe5906d5';
-    serviceRegion = 'eastus2';
+    this.speechAllowed = false;
 
-    if (!!window.SpeechSDK) {
-      SpeechSDK = window.SpeechSDK
-      var speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
-      synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
-
-    synthesizer.speakTextAsync(text,
+    this.synthesizer.speakTextAsync(text,
       result => {
       },
       error => {
       });
-    }
-    this.isSpeaking = false
+    this.speechAllowed = true
+  }
+
+  async listen(text) {
+    return new Promise(resolve => {
+      this.recognizer.recognized = (s, e) => {
+        if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+          const recognizedText = e.result.text.toLowerCase();
+          console.log('Recognized:', recognizedText);
+  
+          if (recognizedText.includes('computer') && recognizedText.includes('hey')) {
+            console.log('Key phrase "hey computer" recognized!');
+            this.recognizer.stopContinuousRecognitionAsync();
+            resolve(true);
+          }
+        }
+      };
+  
+      this.recognizer.startContinuousRecognitionAsync();
+      console.log('Listening for key phrase...');
+    });
   }
 
 }
