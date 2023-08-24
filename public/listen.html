@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure Speech Recognition</title>
+  <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js">
+</script>
+</head>
+<body>
+  <button id="startListening">Start Listening</button>
+  
+  <script>
+    const subscriptionKey = 'd2cd1d71cddb4eca9d85f151fe5906d5';
+    const serviceRegion = 'eastus2';
+    var SpeechSDK;
+    var speechConfig = SpeechSDK.SpeechConfig.fromSubscription('d2cd1d71cddb4eca9d85f151fe5906d5', 'eastus2');
+    console.log('1 speechC', speechConfig)
+    var audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    console.log('2 audioC ', audioConfig)
+    const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+    console.log('3 recog ', recognizer)
+    document.getElementById("startListening").addEventListener("click", () => {
+      recognizer.recognized = (s, e) => {
+        if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+          const recognizedText = e.result.text.toLowerCase();
+          console.log('Recognized:', recognizedText);
+          
+          if (recognizedText.includes('hey computer')) {
+            console.log('Key phrase "hey computer" recognized!');
+          }
+        }
+      };
+
+      recognizer.startContinuousRecognitionAsync();
+      console.log('Listening for key phrase...');
+    });
+  </script>
+</body>
+</html>
