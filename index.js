@@ -262,10 +262,12 @@ app.get('/lead', function (req, res) {
   res.sendFile('console.html', { root: __dirname + '/public' });
 });
 
-app.get('/h', function (req, res) {
-  res.sendFile('hand.html', { root: __dirname + '/public' });
+app.get('/s', function (req, res) {
+  res.sendFile('speech.html', { root: __dirname + '/public' });
 });
-
+app.get('/listen', function (req, res) {
+  res.sendFile('listen.html', { root: __dirname + '/public' });
+});
 io.on('connection', (socket) => {
   // Receive userInfo from camera.html
   socket.on('sessionMessage', (sessionMessage) => {

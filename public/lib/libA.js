@@ -9,12 +9,15 @@ export async function joinAgoraRoom() {
     
     const data = await response.json();
     this.agoraUid = await this.webRtc.join(data.APP_ID, data.CHANNEL, data.TOKEN, null);
+    console.log('** agorUID ',this.agoraUid)
     this.gridId = data.GRIDID;
+    console.log('** agridId ',this.gridId)
     const cameraOptions = {
       facingMode: "environment",
       videoProfile: "1080p_2" 
     };
     this.localTrack = await AgoraRTC.createCameraVideoTrack(cameraOptions);
+    console.log('** localTrack ',this.localTrack)
     this.statusAgora = "mute";
       this.socket.emit('sessionMessage', {
         role: this.role,

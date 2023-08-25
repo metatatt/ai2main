@@ -98,7 +98,7 @@ var HandCheckrApp = new Vue({
     });    
     this.uploadWorker = new Worker('./lib/upload-worker.js'); // Web Worker not importable, therefor put here
     this.uploadWorker.addEventListener('message', event => {
-      if (this.taskToken.resolved) {this.modelData(event.data)}
+      if (this.taskToken.resolved) {this.targetData(event.data)}
     });    
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this.role, this.socket);
@@ -145,14 +145,14 @@ var HandCheckrApp = new Vue({
   targetData(eventData){
     const newResult = eventData;
     const oldResult = this.target
-    const incidentCount = this.target.incidentCount
+    let pendingCount = this.target.pendingCount || 2;
     let defResult = newResult;
     if (newResult.tag === oldResult.tag && oldResult.probability > newResult.probability) {
       defResult = oldResult
     }
-    Object.assign(this.target, defResult, { color: this.card.color },{ incidentCount: incidentCount + 1 });
-    if (this.target.incidentCount>1){
-    this.renderPip(this.target)
+    Object.assign(this.target, defResult, { pendingCount: pendingCount-1 });
+    if (this.target.pendingCount === 0 ){
+        this.renderPip(this.target,'beep')
     }
   },
 
@@ -175,17 +175,13 @@ var HandCheckrApp = new Vue({
         Object.assign(this.card, newCard.cardData,{info:"new"}, { boundingBox: fillerBox });
         sound = 'beep'
       } else {
-        Object.assign(this.card, {info:"repeate"}, { boundingBox: fillerBox });
+        Object.assign(this.card, {info:"repeat"}, { boundingBox: fillerBox });
         sound = 'error'
       }
 
       this.renderPip(this.card,sound)
   },
 
-  modelData(eventData){
-      const newResult = eventData;
-      this.target = newResult;
-   },
 
   startScanning() {
      this.handUI.sound('dingding')
@@ -236,7 +232,7 @@ var HandCheckrApp = new Vue({
                       imageBlob: imageBlob,
                       card: this.card,
                     }
-                    this[`${worker}Worker`].postMessage(par)  
+                  this[`${worker}Worker`].postMessage(par)  
                 }
               } //isAiming
       }
@@ -336,23 +332,6 @@ flushMemory(){
   }
 },
 
-  async viewFindings() {
-    this.isScanEnabled=false;
-    if (this.findingsDOM !== null) {
-      this.isScanEnabled = await this.renderSlide(this.findingsDOM);
-      if (typeof this.stopSlide === 'function') {
-        this.stopSlide();
-      }
-    }
-  },
-  
-  async renderSlide(findingsDOM){
-    this.handUI.layout('slide')
-    const slide=document.querySelector('.slide')
-    slide.innerHTML = findingsDOM; 
-
-    return true
-  },
 
   async joinAgoraRoom() {
     await joinAgoraRoom.call(this);

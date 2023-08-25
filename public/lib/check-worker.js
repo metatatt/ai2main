@@ -1,9 +1,11 @@
 self.addEventListener('message', async event => {
   const imageBlob = event.data.imageBlob;
+  const card = event.data.card
 
-    const predictionKey = event.data.card.keyContain;
-    const predictionEndpoint = event.data.card.endConnect;
-    const threshold = event.data.card.probability;
+    const predictionKey = card.keyContain;
+    const predictionEndpoint = card.endConnect;
+    const color = card.color;
+    const threshold = card.probability;
     const formData = new FormData();
     formData.append('image', imageBlob, 'image.png'); // Adjust filename and type as needed
 
@@ -27,8 +29,7 @@ self.addEventListener('message', async event => {
         initTime: new Date().getTime(),
         imageBlob: imageBlob,
         tag: mostLikely.tagName,
-        incidentCount: 0,
-        color:'',
+        color: color,
         probability: Math.floor(mostLikely.probability * 100),
         boundingBox: mostLikely.boundingBox
       } 

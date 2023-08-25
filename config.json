@@ -37,7 +37,7 @@
     "predictionEndpoint": "https://linecam2023-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/f98392ca-b533-4966-b222-d5054dfbe357/detect/iterations/model0413/image",
     "APP_ID": "c83421cd8569414a871f50c6a11c6239",
     "APP_CERTIFICATE" : "0da96e3f76324725b210d0f166c4b9c7",
-    "CHANNEL" : "baton",
+    "CHANNEL" : "p2",
     "blobConnectionString":"DefaultEndpointsProtocol=https;AccountName=practiz2023public;AccountKey=HvAcrsIQOyisNpFvo6VIwsVipEewUcymqjZtHIye/Yn4LSiy4BuYRe7FD3+IHz//OJOkPfXcqMe3+AStYfqoNA==;EndpointSuffix=core.windows.net",
     "blobContainerName":"lcam"
     }

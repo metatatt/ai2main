@@ -1,6 +1,9 @@
 # handCheckr 0824
 ## uploadCard, renderPip and resloved
 
+hey computer
+https://github.com/metatatt/baton/assets/100538673/952884ae-adc2-4f57-8b8f-65c3457f371d
+
 azure speech synth
 https://github.com/metatatt/baton/assets/100538673/27287a86-55cb-43f7-8392-30a07acf45f8
 
