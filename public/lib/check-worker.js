@@ -1,6 +1,7 @@
 self.addEventListener('message', async event => {
   const { imageBlob, card } = event.data;
   const { keyContain, endConnect, color, probability } = card;
+  console.log('check worker')
 
   const formData = new FormData();
   formData.append('image', imageBlob, 'image.png');

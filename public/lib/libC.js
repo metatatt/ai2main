@@ -1,7 +1,8 @@
 export class handUI {
-  constructor(role, socket){
-    this.role = role;
-    this.socket = socket;
+  constructor(vueComponent){
+    this.vueComponent = vueComponent;
+    this.role = vueComponent.role;
+    this.socket = vueComponent.socket;
     this.soundNow='';
     this.soundbeep = new Audio('./lib/beep.mp3');
     this.sounddingding = new Audio('./lib/ding2.mp3');
@@ -96,7 +97,7 @@ sound(sound){
 
   greeting(){
     const currentHour = new Date().getHours();
-    const greetings = ["Good evening!", "Good morning!", "Good afternoon!"];
+    const greetings = ["Good evening!", "Good morning!", "Good afternoon!","Hi!"];
     const greetingIndex = Math.floor(((currentHour) % 24) / 6);
     this.speech(greetings[greetingIndex]+' say hey computer to start...')
     return greetings[greetingIndex];
@@ -118,25 +119,50 @@ sound(sound){
     this.speechAllowed = true
   }
 
-  async listen(text) {
-    return new Promise(resolve => {
-      this.recognizer.recognized = (s, e) => {
+  async listen(text, timeoutDuration = 60000) {
+    const keywords = ['check', 'check again', 'please'];
+    let timeoutId;
+  
+    console.log('recognizer....');
+    
+    return new Promise((resolve) => {
+      const handleRecognition = (s, e) => {
+        clearTimeout(timeoutId); // Clear the timeout whenever speech is recognized
+  
         if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
           const recognizedText = e.result.text.toLowerCase();
           console.log('Recognized:', recognizedText);
   
-          if (recognizedText.includes('computer') && recognizedText.includes('hey')) {
-            console.log('Key phrase "hey computer" recognized!');
-            this.recognizer.stopContinuousRecognitionAsync();
+          if (recognizedText.includes(text)) {
+            this.vueComponent.taskToken.start = true;
             resolve(true);
+          } else {
+            for (const keyword of keywords) {
+              if (recognizedText.includes(keyword)) {
+                console.log('check**');
+                this.vueComponent.taskToken.check = true;
+                resolve(this.vueComponent);
+                break;
+              }
+            }
           }
         }
+  
+        // Set up a new timeout after handling recognition
+        timeoutId = setTimeout(() => {
+          console.log('Recognition timeout. Restarting...');
+          this.recognizer.stopContinuousRecognitionAsync();
+          this.recognizer.recognized = null; // Remove the previous event handler
+          this.recognizer.recognized = handleRecognition; // Set the event handler again
+          this.recognizer.startContinuousRecognitionAsync();
+        }, timeoutDuration);
       };
   
+      this.recognizer.recognized = handleRecognition;
       this.recognizer.startContinuousRecognitionAsync();
-      console.log('Listening for key phrase...');
     });
   }
+  
 
 }
 

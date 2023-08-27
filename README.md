@@ -1,27 +1,12 @@
 # handCheckr 0824
 ## uploadCard, renderPip and resloved
 
-hey computer
-https://github.com/metatatt/baton/assets/100538673/952884ae-adc2-4f57-8b8f-65c3457f371d
+hey computer + check on QR or Target
+https://github.com/metatatt/baton/assets/100538673/c67cd8b3-5af8-4cd0-8922-2a8708763b8d
 
-azure speech synth
-https://github.com/metatatt/baton/assets/100538673/27287a86-55cb-43f7-8392-30a07acf45f8
-
-memory profile
-![823memoryprofile](https://github.com/metatatt/baton/assets/100538673/94299cb9-f4ae-43b6-894e-482b020a330d)
-
-upload card (dataSet) to Azure Blob
-![823updateCard](https://github.com/metatatt/baton/assets/100538673/244e4ce9-0b08-4f3d-8838-b11d2dcc2eab)
-
-
-https://github.com/metatatt/baton/assets/100538673/0f287878-8b57-45fc-acf1-77fac7e51dd6
-
-
-
-youTube
-https://www.youtube.com/watch?v=qUJOQSmuvvs
-
-
+known issues:
+- 60-sec slience Restart, 
+- fail to launch when late or too early "hey computer" 
 
 switching workstations:
 

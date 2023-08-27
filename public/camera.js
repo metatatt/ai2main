@@ -1,5 +1,5 @@
 import { joinAgoraRoom, handCheck} from './lib/libA.js';
-import { populateFindings, populatePage, playSlide, handUI} from './lib/libC.js';
+import { populatePage, handUI} from './lib/libC.js';
 import {
   HandLandmarker,
   FilesetResolver
@@ -42,7 +42,8 @@ var HandCheckrApp = new Vue({
     taskToken:{
       initTime:'',
       resolved: true,
-      task:''
+      start:false,
+      check: false,
     },
     canvasElement: null,
     webRtc: null,
@@ -99,9 +100,10 @@ var HandCheckrApp = new Vue({
     this.uploadWorker = new Worker('./lib/upload-worker.js'); // Web Worker not importable, therefor put here
     this.uploadWorker.addEventListener('message', event => {
       if (this.taskToken.resolved) {this.targetData(event.data)}
-    });    
+    });
+    
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
-    this.handUI = new handUI(this.role, this.socket);
+    this.handUI = new handUI(this);
     this.handCheck.initiateCamera();
     this.initiateHand();
   },
@@ -134,12 +136,31 @@ var HandCheckrApp = new Vue({
 
       const greeting = this.handUI.greeting()
       this.handUI.messageBox(greeting)
-      const start = await this.handUI.listen('hey computer')
-      console.log('start ** true or false:', start)
-      if (start) {
-        this.handUI.sound('dingding');
-        this.detectHand();
+      const start = await this.handUI.listen('hey, computer', 60000)
+      if (start){
+      this.handUI.sound('dingding');
+      this.detectHand();
       }
+  },
+
+  taskManager(data){
+    let sound = ''
+    if (data === 'start'){
+        if(this.taskToken.start){
+          sound = 'error'
+        } else {
+          sound = 'dingding'
+          this.taskToken = {
+            check: false,
+            upload: false,
+            start: true
+          };
+        }
+      } else {
+        sound = 'error'
+      }
+
+    this.handUI.sound(sound)
   },
   
   targetData(eventData){
@@ -192,7 +213,6 @@ var HandCheckrApp = new Vue({
   async detectHand(){
 
     let videoMsg=this.card.id
-    let sound=''
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
     // Only resize canvas when dimensions change
@@ -215,14 +235,12 @@ var HandCheckrApp = new Vue({
           color: this.taskToken.resolved ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
           lineWidth: 0.4 
         });
-        
-        const isAiming = this.handCheck.extractGesture(landmarks) && this.taskToken.resolved
-              if (isAiming){
+        const isAiming = this.handCheck.extractGesture(landmarks)
+              if (isAiming && this.taskToken.check){
                 videoMsg = 'examining target now...'
                 const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
                 const cardId = await this.handCheck.detectCard(imageBlob) //check card presence
                 if (cardId) {
-                  this.taskToken.resolved =false
                   this.showCardData(cardId)
                 } else if(this.card){
                     const id = this.card.id.slice(3,5)
@@ -232,8 +250,9 @@ var HandCheckrApp = new Vue({
                       imageBlob: imageBlob,
                       card: this.card,
                     }
-                  this[`${worker}Worker`].postMessage(par)  
+                this[`${worker}Worker`].postMessage(par)  
                 }
+                this.taskToken.check = false
               } //isAiming
       }
     }   

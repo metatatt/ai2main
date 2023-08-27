@@ -18,6 +18,15 @@ export async function joinAgoraRoom() {
     };
     this.localTrack = await AgoraRTC.createCameraVideoTrack(cameraOptions);
     console.log('** localTrack ',this.localTrack)
+
+      // Set the audioEnabled option to false to prevent microphone access
+    const microphoneOptions = {
+      microphoneId: '', // Set the appropriate microphone ID if needed
+      audioEnabled: false
+    };
+    this.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack(microphoneOptions);
+    console.log('** localAudioTrack ', this.localAudioTrack);
+    
     this.statusAgora = "mute";
       this.socket.emit('sessionMessage', {
         role: this.role,
