@@ -42,8 +42,8 @@ var HandCheckrApp = new Vue({
     taskToken:{
       initTime:'',
       resolved: true,
-      start:false,
-      check: false,
+      enableHand: false,
+      enableCheck: false,
     },
     canvasElement: null,
     webRtc: null,
@@ -101,7 +101,11 @@ var HandCheckrApp = new Vue({
     this.uploadWorker.addEventListener('message', event => {
       if (this.taskToken.resolved) {this.targetData(event.data)}
     });
-    
+    this.listener = new Worker('./lib/listener.js'); 
+    this.listener.addEventListener('message', event => {
+      this.taskToken.enableHand = (event.data==='hand')? true: false;
+      this.taskToken.enableCheck = (event.data==='check')? true: false;
+    });
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this);
     this.handCheck.initiateCamera();
@@ -134,34 +138,31 @@ var HandCheckrApp = new Vue({
       const lastCard = await last.json();
       this.card = lastCard.lastSaved
 
+      if (!!window.SpeechSDK) {
+        SpeechSDK = window.SpeechSDK
+        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription('d2cd1d71cddb4eca9d85f151fe5906d5', 'eastus2');
+        this.synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+        this.recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, SpeechSDK.AudioConfig.fromDefaultMicrophoneInput());
+        console.log('*0- this windowSpeech SDK')
+      } else {
+        this.synthesizer = null;
+        this.recognizer = null;
+      }
+      this.recognizer.startContinuousRecognitionAsync();
+      console.log('*1- this recogn ', this.recognizer)
+      this.recognizer.recognized = async (s, e) => {
+        if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+          const recognizedText = e.result.text.toLowerCase();
+          this.listener.postMessage({text: recognizedText})
+        }
+      };
+      console.log('*1 start continuouseRecAsync')
+      
       const greeting = this.handUI.greeting()
       this.handUI.messageBox(greeting)
-      const start = await this.handUI.listen('hey, computer', 60000)
-      if (start){
-      this.handUI.sound('dingding');
-      this.detectHand();
-      }
+      this.detectHand
   },
 
-  taskManager(data){
-    let sound = ''
-    if (data === 'start'){
-        if(this.taskToken.start){
-          sound = 'error'
-        } else {
-          sound = 'dingding'
-          this.taskToken = {
-            check: false,
-            upload: false,
-            start: true
-          };
-        }
-      } else {
-        sound = 'error'
-      }
-
-    this.handUI.sound(sound)
-  },
   
   targetData(eventData){
     const newResult = eventData;
@@ -210,15 +211,16 @@ var HandCheckrApp = new Vue({
   },
   
 
-  async detectHand(){
+async detectHand(){
 
     let videoMsg=this.card.id
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
     // Only resize canvas when dimensions change
-    if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
-      Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
-    }
+      if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
+        Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
+      }
+  if (this.taskToken.enableHand){
     let startTimeMs = performance.now();
     const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();
@@ -226,17 +228,18 @@ var HandCheckrApp = new Vue({
     if (results.landmarks) {
       for (const landmarks of results.landmarks) {
 
-        drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
-          color: this.taskToken.resolved ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
-          lineWidth: 1.5
-        });
-        
-        drawLandmarks(this.ctx, landmarks, { 
-          color: this.taskToken.resolved ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
-          lineWidth: 0.4 
-        });
+          drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
+            color: this.taskToken.resolved ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
+            lineWidth: 1.5
+          });
+          
+          drawLandmarks(this.ctx, landmarks, { 
+            color: this.taskToken.resolved ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
+            lineWidth: 0.4 
+          });
         const isAiming = this.handCheck.extractGesture(landmarks)
-              if (isAiming && this.taskToken.check){
+        
+        if (isAiming && this.taskToken.enableCheck){
                 videoMsg = 'examining target now...'
                 const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
                 const cardId = await this.handCheck.detectCard(imageBlob) //check card presence
@@ -255,12 +258,13 @@ var HandCheckrApp = new Vue({
                 this.taskToken.check = false
               } //isAiming
       }
-    }   
+    } 
+  }  
     this.handUI.messageBox(videoMsg)
     this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
     this.ctx.restore();
     window.requestAnimationFrame(this.detectHand.bind(this));
-  },
+},
   
 
 renderPip(target,sound) {
