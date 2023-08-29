@@ -184,11 +184,19 @@ var HandCheckrApp = new Vue({
     recognition.onnomatch = function (event) {
       console.log( "I didn't recognize that command.")
     };
-    
+
+    recognition.soundend = function (event) {
+      console.log( "sound end...")
+    };
+
+    recognition.onend = function (event) {
+      console.log( "speech session end...restarting")
+      recognition.start();
+    };
     recognition.onerror = function (event) {
       console.log('Error occurred in recognition: ', event.error);
     };
-    console.log('taskToken 2,', this.taskToken);
+  
   },  
 
   targetData(eventData){
