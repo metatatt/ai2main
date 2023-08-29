@@ -137,33 +137,60 @@ var HandCheckrApp = new Vue({
       });
       const lastCard = await last.json();
       this.card = lastCard.lastSaved
-
-      if (!!window.SpeechSDK) {
-        SpeechSDK = window.SpeechSDK
-        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription('d2cd1d71cddb4eca9d85f151fe5906d5', 'eastus2');
-        this.synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
-        this.recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, SpeechSDK.AudioConfig.fromDefaultMicrophoneInput());
-        console.log('*0- this windowSpeech SDK')
-      } else {
-        this.synthesizer = null;
-        this.recognizer = null;
-      }
-      this.recognizer.startContinuousRecognitionAsync();
-      console.log('*1- this recogn ', this.recognizer)
-      this.recognizer.recognized = async (s, e) => {
-        if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-          const recognizedText = e.result.text.toLowerCase();
-          this.listener.postMessage({text: recognizedText})
-        }
-      };
-      console.log('*1 start continuouseRecAsync')
-      
       const greeting = this.handUI.greeting()
       this.handUI.messageBox(greeting)
-      this.detectHand
+      this.startListener();
+      this.detectHand()
   },
 
-  
+  startListener(){
+    var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
+    var SpeechGrammarList = SpeechGrammarList || window.webkitSpeechGrammarList;
+    var SpeechRecognitionEvent = SpeechRecognitionEvent || webkitSpeechRecognitionEvent;
+    var phrases = ['hey computer', 'check', 'check again'];
+    let check=false
+    let hand =false
+    var recognition = new SpeechRecognition();
+    if (SpeechGrammarList) {
+          var speechRecognitionList = new SpeechGrammarList();
+          var grammar = '#JSGF V1.0; grammar phrases; public <phrase> = ' + phrases.join(' | ') + ' ;';
+          speechRecognitionList.addFromString(grammar, 1);
+          recognition.grammars = speechRecognitionList;
+    }
+        recognition.continuous = true; // Change to continuous recognition upon window start
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+    recognition.onresult = function (event) {
+      var phrase = event.results[event.results.length - 1][0].transcript; // Get the latest result
+          console.log('listen->',phrase)
+          var msg1 = document.querySelector('.text-header1')
+          var msg2 = document.querySelector('.text-header2')
+          // Perform action based on recognized phrase
+          if (phrase.includes('hey computer')) {
+            msg1.style.display = 'none';
+            msg2.style.display = 'block';
+          } else if (phrase.includes('check')) {
+            msg2.style.display = 'none';
+            msg1.style.display = 'block';
+          } else if (phrase.includes('check again')) {
+            msg2.style.display = 'none';
+            msg1.style.display = 'block';
+          }
+          console.log('Confidence-> ' + event.results[event.results.length - 1][0].confidence);
+        };
+    recognition.start();
+
+    recognition.onnomatch = function (event) {
+      console.log( "I didn't recognize that command.")
+    };
+    
+    recognition.onerror = function (event) {
+      console.log('Error occurred in recognition: ', event.error);
+    };
+    console.log('taskToken 2,', this.taskToken);
+  },  
+
   targetData(eventData){
     const newResult = eventData;
     const oldResult = this.target
