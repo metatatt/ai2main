@@ -1,5 +1,5 @@
 import { joinAgoraRoom, handCheck} from './lib/libA.js';
-import { populatePage, handUI} from './lib/libC.js';
+import { handUI} from './lib/libC.js';
 import {
   HandLandmarker,
   FilesetResolver
@@ -62,8 +62,7 @@ var HandCheckrApp = new Vue({
 
   mounted() {
     this.socket = io(); // Initialize socket connection
-    
-    populatePage.call(this,1);
+
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('userId');
     
@@ -137,6 +136,8 @@ var HandCheckrApp = new Vue({
       });
       const lastCard = await last.json();
       this.card = lastCard.lastSaved
+      this.handUI.sidebar()
+
       const greeting = this.handUI.greeting()
       this.handUI.messageBox(greeting)
       this.startListener();
@@ -164,18 +165,18 @@ var HandCheckrApp = new Vue({
     recognition.onresult = function (event) {
       var phrase = event.results[event.results.length - 1][0].transcript; // Get the latest result
           console.log('listen->',phrase)
-          var msg1 = document.querySelector('.text-header1')
-          var msg2 = document.querySelector('.text-header2')
+          var videoText = document.querySelector('.videoText')
+          const sidebarPage1 = document.getElementById('sidebarPage1');
+          const sidebarPage2 = document.getElementById('sidebarPage2');
           // Perform action based on recognized phrase
           if (phrase.includes('hey computer')) {
-            msg1.style.display = 'none';
-            msg2.style.display = 'block';
+            videoText.style.animation = 'flashing 2s infinite';
+            sidebarPage1.style.display='none' 
+            sidebarPage2.style.display='block' 
           } else if (phrase.includes('check')) {
-            msg2.style.display = 'none';
-            msg1.style.display = 'block';
+            videoText.style.animation = '';
           } else if (phrase.includes('check again')) {
-            msg2.style.display = 'none';
-            msg1.style.display = 'block';
+            videoText.style.animation = '';
           }
           console.log('Confidence-> ' + event.results[event.results.length - 1][0].confidence);
         };
@@ -247,15 +248,16 @@ var HandCheckrApp = new Vue({
   
 
 async detectHand(){
-
-    let videoMsg=this.card.id
+  const videoText = document.querySelector('.videoText');
+  const handEnabled = videoText.style.animation ? true: false; // Corrected the ternary operator usage
+  let videoMsg = handEnabled? this.card.id : '*idle*';
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
     // Only resize canvas when dimensions change
       if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
         Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
       }
-  if (this.taskToken.enableHand){
+  if (handEnabled){
     let startTimeMs = performance.now();
     const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
     this.ctx.save();

@@ -15,6 +15,7 @@ export class handUI {
     if (!!window.SpeechSDK) {
       SpeechSDK = window.SpeechSDK
       var speechConfig = SpeechSDK.SpeechConfig.fromSubscription('d2cd1d71cddb4eca9d85f151fe5906d5', 'eastus2');
+      speechConfig.speechContinuousTimeout = 5000;
       this.synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
       const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
       this.recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
@@ -75,15 +76,13 @@ sound(sound){
 
   messageBox(message) {
 
-    const info1 = document.querySelector('.text-header1');
-    const info2 = document.querySelector('.text-header2');
+    const videoText = document.querySelector('.videoText');
     const currentDate = new Date().toLocaleDateString('en-US', {
       year: '2-digit',
       month: '2-digit',
       day: '2-digit',
     });
-    info2.innerHTML = currentDate+' @HandCheckr';
-    info1.innerHTML = message;
+    videoText.textContent = message+' '+currentDate+' @HandCheckr';
   }
 
   socketEvent(msgClass, msg, gridId){
@@ -119,109 +118,107 @@ sound(sound){
     this.speechAllowed = true
   }
 
-  async listen(text, timeoutDuration = 60000) {
-    const keywords = ['check', 'check again', 'please'];
-    let timeoutId;
-  
-    console.log('recognizer....');
-    
-    return new Promise((resolve) => {
-      const handleRecognition = (s, e) => {
-        clearTimeout(timeoutId); // Clear the timeout whenever speech is recognized
-  
-        if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-          const recognizedText = e.result.text.toLowerCase();
-          console.log('Recognized:', recognizedText);
-  
-          if (recognizedText.includes(text)) {
-            this.vueComponent.taskToken.start = true;
-            resolve(true);
-          } else {
-            for (const keyword of keywords) {
-              if (recognizedText.includes(keyword)) {
-                console.log('check**');
-                this.vueComponent.taskToken.check = true;
-                resolve(this.vueComponent);
-                break;
-              }
-            }
-          }
-        }
-  
-        // Set up a new timeout after handling recognition
-        timeoutId = setTimeout(() => {
-          console.log('Recognition timeout. Restarting...');
-          this.recognizer.stopContinuousRecognitionAsync();
-          this.recognizer.recognized = null; // Remove the previous event handler
-          this.recognizer.recognized = handleRecognition; // Set the event handler again
-          this.recognizer.startContinuousRecognitionAsync();
-        }, timeoutDuration);
-      };
-  
-      this.recognizer.recognized = handleRecognition;
-      this.recognizer.startContinuousRecognitionAsync();
-    });
+  sidebar() {
+    const launchPage = `
+<div class="stackedit">
+<div class="stackedit__html"><h1 id="hey-computer">say ‘<em>Hey Computer</em>’</h1>
+<p>To start, say the key word ,<br>
+.<br>
+.<br>
+.<br>
+.<br>
+.<br>
+.<br>
+.</p>
+<p>or click button below</p>
+<p><img src="https://practiz2023public.blob.core.windows.net/lcam/handStart.svg" alt="start"></p>
+<blockquote>
+<p>handCheckr: point, then AI verfied!</p>
+</blockquote>
+</div>
+</div>
+  `  
+  const resultPage = `
+  <div class="stackedit">
+    <div class="stackedit__html"><h2 id="point-and-say--check">Point and say  ‘<em>Check</em>’</h2>
+  <p>[ ] sending image    [ ] awaiting result</p>
+  <ul>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled="" checked> pass</li>
+  <li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled=""> no pass</li>
+  </ul>
+  <p><strong>analytics</strong></p>
+  <blockquote>
+  <p>tag:<br>
+  confidence:<br>
+  date &amp; time:<br>
+  dataset:</p>
+  </blockquote>
+  <p><img src="https://practiz2023public.blob.core.windows.net/lcam/WI32020230820.png" alt="enter image description here"></p>
+  <blockquote>
+  <p>handCheckr: point, then AI verfied!</p>
+  </blockquote>
+  </div>
+  </div>`
+    const htmlContent1 = marked(launchPage);
+    const htmlContent2 = marked(resultPage);
+    // Display the HTML content in the sidebar
+    const sidebarPage1 = document.getElementById('sidebarPage1');
+    const sidebarPage2 = document.getElementById('sidebarPage2');
+    sidebarPage1.innerHTML = htmlContent1;
+    sidebarPage2.innerHTML = htmlContent2;
+    sidebarPage1.style.display= "block"
+    sidebarPage2.style.display= "none"
   }
-  
 
 }
 
-export function populatePage(factorValue) {
-
-return new Promise((resolve, reject) => {
-if (!document.querySelector('.overlay')){
-  const overlay = document.createElement('div')
-  document.body.appendChild(overlay)
-}
-      // Set the --factor variable dynamically
- document.documentElement.style.setProperty('--factor', factorValue);
-
-  const overlay = document.querySelector('.overlay');
-  const elementDOMS = `
-    <nav>
-      <img src="./img/Baton-Icon-Blue.svg" width="100px" height="100px" alt="logo">
-      <ul>
-          <li id="share-btn">
-            <img src="https://i.postimg.cc/JnggC78Q/video.png">
-          </li>
-          <li id="scan-btn">
-            <img src="./img/i-checked.svg">
-          </li>
-          <li id="slide-btn">
-            <img src="https://i.postimg.cc/vmb3JgVy/message.png">
-          </li>
-          <li>
-            <img src="https://i.postimg.cc/k4DZH604/users.png">
-          </li>
-          <li>
-            <img src="https://i.postimg.cc/v84Fqkyz/setting.png">
-          </li>
-      </ul>
-    </nav>
-    <div class="message-box">
-        <div class="text-header1">--</div>
-        <img src="./img/Baton-Icon-Blue.svg">
-        <div class="text-header2"></div>
-    </div>
-    <div class="graphics-box">
-    </div>
-    <div class="slide" style="display: none">
-    </div>
-  `;
-
-  overlay.innerHTML = elementDOMS;
-
-  document.getElementById('share-btn').addEventListener('click', this.shareCamera);
-  document.getElementById('scan-btn').addEventListener('click', this.startScanning);
-  document.getElementById('slide-btn').addEventListener('click', this.viewFindings);
-
-  // Check if the content is successfully rendered and resolve the Promise
-  if (overlay.innerHTML === elementDOMS) {
-    resolve();
-  } else {
-    reject(new Error('Failed to render content.'));
-  }
-});
+export function sidebarPage(pageId) {
+  // Fetch your Markdown content (replace with your actual content source)
+  const pageContent1 = `
+  <body class="stackedit">
+  <div class="stackedit__html"><h1 id="hey-computer">say ‘<em>Hey Computer</em>’</h1>
+<p>To start, say the key word ,<br>
+.<br>
+.<br>
+.<br>
+.<br>
+.<br>
+.<br>
+.</p>
+<p>or click button below</p>
+<p><img src="https://practiz2023public.blob.core.windows.net/lcam/handStart.svg" alt="start"></p>
+<blockquote>
+<p>handCheckr: point, then AI verfied!</p>
+</blockquote>
+</div>
+</body>
+`  
+const pageContent2 = `
+<body class="stackedit">
+  <div class="stackedit__html"><h2 id="point-and-say--check">Point and say  ‘<em>Check</em>’</h2>
+<p>[ ] sending image    [ ] awaiting result</p>
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled=""> pass</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" disabled=""> no pass</li>
+</ul>
+<p><strong>analytics</strong></p>
+<blockquote>
+<p>tag:<br>
+confidence:<br>
+date &amp; time:<br>
+dataset:</p>
+</blockquote>
+<p><img src="https://practiz2023public.blob.core.windows.net/lcam/WI32020230820.png" alt="enter image description here"></p>
+<blockquote>
+<p>handCheckr: point, then AI verfied!</p>
+</blockquote>
+</div>
+</body>`
+  // Convert Markdown to HTML using marked
+  const htmlContent = marked(`pageContent${pageId}`);
+  // Display the HTML content in the sidebar
+  const sidebarContent = document.getElementById('sidebarContent');
+  sidebarContent.innerHTML = htmlContent;
 }
 
 export function populatePageConsole(factorValue,gridId) {
@@ -279,211 +276,4 @@ const overlay = videoGridEle.querySelector('.overlay');
 });
 }
 
-
-export async function playSlide() {
-    return new Promise((resolve) => {
-  
-      const prevNext = document.querySelector('.prevNext')
-      const bullets = document.querySelector('.bullets')
-      prevNext.style.display='none'
-      bullets.style.display='none'
-      
-      // Get the slide elements
-      var slides = document.getElementsByClassName("play-sequence");
-      console.log('autoPlayFindings')
-  
-      // Initialize the slide index
-      var currentSlide = 0;
-      var requestId;
-  
-      // Function to show the current slide
-      function showSlide() {
-        // Hide all slides
-        for (var i = 0; i < slides.length; i++) {
-          slides[i].style.display = "none";
-        }
-  
-        // Show the current slide
-        slides[currentSlide].style.display = "block";
-        console.log(`slides bug: #${currentSlide} object: ${slides[currentSlide]} .id ${slides[currentSlide].id}` )
-        // Update the URL hash to navigate to the next slide
-        window.location.hash = "#" + slides[currentSlide].id;
-  
-        // Increment the slide index
-        currentSlide++;
-  
-        // Resolve the promise when all slides have been shown
-        if (currentSlide >= slides.length) {
-          resolve();
-          return true;
-        }
-  
-        // Request the next animation frame after a delay of 2 seconds (0.5 frames per second)
-        setTimeout(() => {
-          requestId = requestAnimationFrame(showSlide);
-        }, 2500);
-      }
-  
-     // Start the slideshow
-      showSlide();
-  
-      // Assign the stopAutoplay function as a property of 'this'
-      this.stopSlide = () => {
-        cancelAnimationFrame(requestId);
-        resolve();
-      };
-    });
-  }
-
-  export async function playConsoleSlide() {
-    return new Promise((resolve) => {
-  
-      const prevNext = document.querySelector('.prevNext')
-      const bullets = document.querySelector('.bullets')
-      prevNext.style.display='none'
-      bullets.style.display='none'
-      
-      // Get the slide elements
-      var slides = document.getElementsByClassName("play-sequence");
-      console.log('autoPlayFindings')
-  
-      // Initialize the slide index
-      var currentSlide = 0;
-      var requestId;
-  
-      // Function to show the current slide
-      function showSlide() {
-        // Hide all slides
-        for (var i = 0; i < slides.length; i++) {
-          slides[i].style.display = "none";
-        }
-  
-        // Show the current slide
-        slides[currentSlide].style.display = "block";
-        console.log(`slides bug: #${currentSlide} object: ${slides[currentSlide]} .id ${slides[currentSlide].id}` )
-        // Update the URL hash to navigate to the next slide
-        window.location.hash = "#" + slides[currentSlide].id;
-  
-        // Increment the slide index
-        currentSlide++;
-  
-        // Resolve the promise when all slides have been shown
-        if (currentSlide >= slides.length) {
-          resolve();
-          return true;
-        }
-  
-        // Request the next animation frame after a delay of 2 seconds (0.5 frames per second)
-        setTimeout(() => {
-          requestId = requestAnimationFrame(showSlide);
-        }, 2500);
-      }
-  
-     // Start the slideshow
-      showSlide();
-  
-      // Assign the stopAutoplay function as a property of 'this'
-      this.stopSlide = () => {
-        resolve();
-      };
-    });
-  } 
-
-export function populateFindings(header, results) {
-    console.log('in Findings-results', results);
-    const auditData0 = results[0]; // Parse the JSON string into an object
-    const auditData1 = results[1]; 
-    const findingsDOM = `
-      <div class="container slide">
-        <div class="CSSgal">
-        <div id="s1" class="play-sequence"></div>
-        <div id="s2" class="play-sequence"></div>
-        <div id="s3" class="play-sequence"></div>
-        <div id="s4" class="play-sequence"></div>
-        
-          <div class="slider">
-            <div style="background:#5b8;">
-              <h2>${header.header1}: Visual Inspection Summary</h2>
-              <br>
-              <br>
-              <p> based on a total of ${results.length} Examined Visual(s)<br></p>
-              <p>- The Visual is Identified as ${auditData0.tag} Compliant.<br></p>
-              <p>- With a Confidence Level of ${auditData0.probability}%<br><br><br></p>
-              <p>- The perspective Dataset size is: ${header.header2}</p>      
-            </div>
-            <div style="background:#85b; position: relative;">
-              <h2>Examined Visual #1 of ${results.length}</h2>
-              <p>-marker map for ${auditData0.tag} (${auditData0.probability} confidence)<br></p>
-              <br>
-              <img src= "${auditData0.image}"/>
-            </div>
-            <div style="background:#e95; position: relative;">
-              <h2>Examined Visual #2 of ${results.length}</h2>
-              <p>-marker map for ${auditData1.tag} (${auditData1.probability} confidence)<br></p>
-              <br>
-              <img src= "${auditData1.image}"/>
-            </div>
-            <div style="background:#e59;">
-              <h2>About this Inspection....</h2>
-              <p>-1) need to write something here...<br></p>
-              <p>-2) here too...<br></p>
-            </div>
-          </div>
-
-          <div class="prevNext">
-            <div><a href="#s4"></a><a href="#s2"></a></div>
-            <div><a href="#s1"></a><a href="#s3"></a></div>
-            <div><a href="#s2"></a><a href="#s4"></a></div>
-            <div><a href="#s3"></a><a href="#s1"></a></div>
-          </div>
-          <div class="bullets">
-            <a href="#s1">1</a>
-            <a href="#s2">2</a>
-            <a href="#s3">3</a>
-            <a href="#s4">4</a>
-          </div>
-
-        </div>
-      </div>
-    `;
-    return findingsDOM
-  }
-
-  export function graphicsBox(iconSelection, parentId) {
-    const parent = document.querySelector(`#${parentId}`);
-    const overlay = parent.querySelector('.overlay'); // Fetch the .overlay container
-    const graphicsContainer = document.querySelector('.graphics-box');
-    let imgSrc = "";
-    if (iconSelection === "t") {
-      imgSrc = "./img/b&plogo.svg";
-    } else if (iconSelection === "r") {
-      imgSrc = "./img/i-camera.svg";
-    } else {
-      imgSrc = "./img/scanSignBlue380Ani.gif";
-    }
-    const icon = document.createElement('img');
-    icon.src = imgSrc;
-    icon.classList.add('animation');
-  
-    // Remove any existing content inside graphicsContainer
-    graphicsContainer.innerHTML = '';
-    
-    // Append the icon to graphicsContainer
-    graphicsContainer.appendChild(icon);
-    return new Promise((resolve) => {
-      resolve();
-    });
-    }
-  
- export function  messageBox(message) {
-      const info1 = document.querySelector('.text-header1');
-      const info2 = document.querySelector('.text-header2');
-      const currentDate = new Date().toLocaleDateString('en-US', {
-        year: '2-digit',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      info2.innerHTML = currentDate;
-      info1.innerHTML = message;
-    }
   

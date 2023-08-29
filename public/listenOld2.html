@@ -1,0 +1,161 @@
+<html>
+<head>
+  <title>Speech SDK</title>
+  <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+</head>
+<body>
+  <h1>startContRecog when SpeechEndDetected</h1>
+  <p>This example shows how to use the Azure Speech SDK for JavaScript to perform continuous speech recognition from a microphone input and display the results in a text area. It also has a stop button to stop the recognition.</p>
+  <div>
+    <button id="requestMicButton">Request Microphone Access</button>
+  </div>
+  <div>
+    <label for="subscriptionKey">Subscription Key:</label>
+    <input id="subscriptionKey" type="text" size="40" value="97654663a77347abb4e21c8798d6609b">
+  </div>
+  <div>
+    <label for="serviceRegion">Service Region:</label>
+    <input id="serviceRegion" type="text" size="40" value="eastus2">
+  </div>
+  <div>
+    <label for="language">Language:</label>
+    <input id="language" type="text" size="40" value="en-US">
+  </div>
+  <div>
+    <button id="startButton">Start Recognition</button>
+    <button id="stopButton" disabled>Stop Recognition</button>
+  </div>
+  <div>
+    <textarea id="resultTextArea" style="width:500px;height:200px"></textarea>
+  </div>
+
+  <script>
+
+    // Get the elements from the HTML page
+    var startButton = document.getElementById("startButton");
+    var stopButton = document.getElementById("stopButton");
+    var subscriptionKey = document.getElementById("subscriptionKey");
+    var serviceRegion = document.getElementById("serviceRegion");
+    var language = document.getElementById("language");
+    var resultTextArea = document.getElementById("resultTextArea");
+
+    // Get the microphone access button element from the HTML page
+var requestMicButton = document.getElementById("requestMicButton");
+
+// Define a function to request microphone access
+function requestMicrophoneAccess() {
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(function (stream) {
+      // Microphone access granted, enable start button
+      startButton.disabled = false;
+      // Disable the microphone access button
+      requestMicButton.disabled = true;
+    })
+    .catch(function (error) {
+      console.error("Error accessing microphone:", error);
+    });
+}
+
+// Add a click event listener to the microphone access button
+requestMicButton.addEventListener("click", requestMicrophoneAccess);
+
+
+
+    // Create a speech config object from the subscription key and region
+    var speechConfig;
+
+    // Create a speech recognizer object
+    var recognizer;
+
+    // Define a function to handle the start button click event
+    function startRecognition() {
+      // Disable the start button and enable the stop button
+      startButton.disabled = true;
+      stopButton.disabled = false;
+      console.log("*1 startRecogn");
+
+      // Get the values from the input elements
+      var key = subscriptionKey.value;
+      var region = serviceRegion.value;
+      var lang = language.value;
+
+      // Create a speech config object from the subscription key and region
+      speechConfig = SpeechSDK.SpeechConfig.fromSubscription(key, region);
+
+      // Set the recognition language
+      speechConfig.speechRecognitionLanguage = lang;
+
+      console.log('0.5--access mike*A...')
+      // Create an audio config object from the default microphone input
+      var audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+
+      // Create a speech recognizer object with the speech config and audio config
+      recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+      console.log('0.5--access mike*B...')
+      // Subscribe to the events for session started, speech started, speech ended, and session stopped
+      recognizer.sessionStarted = function (s, e) {
+        console.log("2 Session started");
+      };
+
+      recognizer.speechStartDetected = function (s, e) {
+        console.log("3 Speech started");
+      };
+
+      recognizer.speechEndDetected = function (s, e) {
+        console.log("4 Speech restart*a");
+        console.log("4 Speech restart*b");
+      };
+
+      recognizer.sessionStopped = function (s, e) {
+        console.log("5 Session stopped");
+        // Stop the recognition and dispose the recognizer
+        recognizer.stopContinuousRecognitionAsync();
+        recognizer.close();
+        recognizer = undefined;
+        startRecognition()
+        // Enable the start button and disable the stop button
+        // startButton.disabled = false;
+        // stopButton.disabled = true;
+      };
+
+      // Subscribe to the event for receiving recognition results
+      recognizer.recognized = function (s, e) {
+        // Check the result reason
+        if (e.result.reason == SpeechSDK.ResultReason.RecognizedSpeech) {
+          // Append the recognized text to the text area
+          resultTextArea.value += e.result.text + "\n";
+          console.log('recongized: ', e.result.text )
+        }
+        else if (e.result.reason == SpeechSDK.ResultReason.NoMatch) {
+          // No speech could be recognized
+          resultTextArea.value += "No speech could be recognized.\n";
+        }
+        else if (e.result.reason == SpeechSDK.ResultReason.Canceled) {
+          // The recognition was canceled
+          var cancellationDetails = SpeechSDK.CancellationDetails.fromResult(e.result);
+          resultTextArea.value += "Recognition canceled: " + cancellationDetails.reason + "\n";
+          if (cancellationDetails.reason == SpeechSDK.CancellationReason.Error) {
+            resultTextArea.value += "Error details: " + cancellationDetails.errorDetails + "\n";
+          }
+        }
+      };
+
+      // Start the continuous recognition
+      recognizer.startContinuousRecognitionAsync();
+    }
+
+    // Define a function to handle the stop button click event
+    function stopRecognition() {
+      // Stop the recognition if the recognizer is not undefined
+      if (recognizer) {
+        recognizer.stopContinuousRecognitionAsync();
+      }
+    }
+
+    // Add event listeners to the buttons
+    startButton.addEventListener("click", startRecognition);
+    stopButton.addEventListener("click", stopRecognition);
+
+  </script>
+</body>
+</html>
