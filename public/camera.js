@@ -191,7 +191,7 @@ var HandCheckrApp = new Vue({
     };
 
     recognition.onend = function (event) {
-      console.log( "speech session end...restarting")
+      console.log("SessionEnd restarting: ");
       recognition.start();
     };
     recognition.onerror = function (event) {
