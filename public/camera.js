@@ -1,5 +1,5 @@
-import { joinAgoraRoom, handCheck} from './lib/libA.js';
-import { handUI} from './lib/libC.js';
+import { joinAgoraRoom, handCheck} from './lib/handCheck.js';
+import { handUI, listener} from './lib/handUI.js';
 import {
   HandLandmarker,
   FilesetResolver
@@ -9,12 +9,6 @@ var HandCheckrApp = new Vue({
   el: '#handCheckr',
   data: {
     agoraUid: "",
-    billBoard:{
-      initTime:null,
-      info1:'',
-      info2:'',
-      image:null,
-    },
     card:{
      id: '',
      keyContain:'',
@@ -35,29 +29,20 @@ var HandCheckrApp = new Vue({
       boundingBox: null,
       incidentCount: 0
     },
-    module:{
-      check: false,
-      upload: false
-    },
-    taskToken:{
-      initTime:'',
-      resolved: true,
-      enableHand: false,
-      enableCheck: false,
+    flowFlag:{
+      num: 0,
+      ckeck: true,
+      upload: false,
     },
     canvasElement: null,
     webRtc: null,
     gridId: "",
     isShareOn: false,
-    isUserActive: false,
     role: "",
     socket: null,
     userId: null,
     videoElement: null,
-    handLandmarker:undefined,
-    checkWorker: null,
     probabilityThreshold: 0.5,
-    speechAvailable: true,
   },
 
   mounted() {
@@ -92,23 +77,20 @@ var HandCheckrApp = new Vue({
         });
       }
     }.bind(this));
-    this.checkWorker = new Worker('./lib/check-worker.js'); // Web Worker not importable, therefor put here
+    this.checkWorker = new Worker('./lib/handWorker-check.js'); // Web Worker not importable, therefor put here
     this.checkWorker.addEventListener('message', event => {
-      if (this.taskToken.resolved) {this.targetData(event.data)}
+      if (this.flowFlag.resolved) {this.targetData(event.data)}
     });    
-    this.uploadWorker = new Worker('./lib/upload-worker.js'); // Web Worker not importable, therefor put here
+    this.uploadWorker = new Worker('./lib/handWorker-upload.js'); // Web Worker not importable, therefor put here
     this.uploadWorker.addEventListener('message', event => {
-      if (this.taskToken.resolved) {this.targetData(event.data)}
-    });
-    this.listener = new Worker('./lib/listener.js'); 
-    this.listener.addEventListener('message', event => {
-      this.taskToken.enableHand = (event.data==='hand')? true: false;
-      this.taskToken.enableCheck = (event.data==='check')? true: false;
+      if (this.flowFlag.resolved) {this.targetData(event.data)}
     });
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this);
+    this.listener = new listener();
     this.handCheck.initiateCamera();
     this.initiateHand();
+    this.flag = document.querySelector('#numFlag')
   },
   
   methods: {
@@ -136,69 +118,12 @@ var HandCheckrApp = new Vue({
       });
       const lastCard = await last.json();
       this.card = lastCard.lastSaved
-      this.handUI.sidebar()
+      this.handUI.renderSidePage('./lib/sidePageLaunch.md')
 
       const greeting = this.handUI.greeting()
       this.handUI.messageBox(greeting)
-      this.startListener();
-      this.detectHand()
+      this.main()
   },
-
-  startListener(){
-    var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition;
-    var SpeechGrammarList = SpeechGrammarList || window.webkitSpeechGrammarList;
-    var SpeechRecognitionEvent = SpeechRecognitionEvent || webkitSpeechRecognitionEvent;
-    var phrases = ['hey computer', 'check', 'check again'];
-    let check=false
-    let hand =false
-    var recognition = new SpeechRecognition();
-    if (SpeechGrammarList) {
-          var speechRecognitionList = new SpeechGrammarList();
-          var grammar = '#JSGF V1.0; grammar phrases; public <phrase> = ' + phrases.join(' | ') + ' ;';
-          speechRecognitionList.addFromString(grammar, 1);
-          recognition.grammars = speechRecognitionList;
-    }
-        recognition.continuous = true; // Change to continuous recognition upon window start
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-    recognition.onresult = function (event) {
-      var phrase = event.results[event.results.length - 1][0].transcript; // Get the latest result
-          console.log('listen->',phrase)
-          var videoText = document.querySelector('.videoText')
-          const sidebarPage1 = document.getElementById('sidebarPage1');
-          const sidebarPage2 = document.getElementById('sidebarPage2');
-          // Perform action based on recognized phrase
-          if (phrase.includes('hey computer')) {
-            videoText.style.animation = 'flashing 2s infinite';
-            sidebarPage1.style.display='none' 
-            sidebarPage2.style.display='block' 
-          } else if (phrase.includes('check')) {
-            videoText.style.animation = '';
-          } else if (phrase.includes('check again')) {
-            videoText.style.animation = '';
-          }
-          console.log('Confidence-> ' + event.results[event.results.length - 1][0].confidence);
-        };
-    recognition.start();
-
-    recognition.onnomatch = function (event) {
-      console.log( "I didn't recognize that command.")
-    };
-
-    recognition.soundend = function (event) {
-      console.log( "sound end...")
-    };
-
-    recognition.onend = function (event) {
-      console.log("SessionEnd restarting: ");
-      recognition.start();
-    };
-    recognition.onerror = function (event) {
-      console.log('Error occurred in recognition: ', event.error);
-    };
-  
-  },  
 
   targetData(eventData){
     const newResult = eventData;
@@ -214,99 +139,64 @@ var HandCheckrApp = new Vue({
     }
   },
 
-  async showCardData(cardData){
-    const newCardId = cardData;
-    const oldId = this.card.id || "" 
-    const fillerBox={ top: 0, left: 0, width: 1, height: 1,}
-    let sound =''
-      if (newCardId !== oldId) {
-        this.handUI.speech('Loading dataset. Keep hand still to proceed.')
-        // Update with the new result if new tag or blank tag
-        const response = await fetch('/updatecard', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ cardId: newCardId, userId: this.userId })
-        });
-        const newCard = await response.json();
-        Object.assign(this.card, newCard.cardData,{info:"new"}, { boundingBox: fillerBox });
-        sound = 'beep'
-      } else {
-        Object.assign(this.card, {info:"repeat"}, { boundingBox: fillerBox });
-        sound = 'error'
-      }
 
-      this.renderPip(this.card,sound)
-  },
-
-
-  startScanning() {
-     this.handUI.sound('dingding')
-     this.detectHand();
-  },
-  
-
-async detectHand(){
-  const videoText = document.querySelector('.videoText');
-  const handEnabled = videoText.style.animation ? true: false; // Corrected the ternary operator usage
-  let videoMsg = handEnabled? this.card.id : '*idle*';
+async main(){
     const vWidth = this.videoElement.videoWidth
     const vHeight = this.videoElement.videoHeight
-    // Only resize canvas when dimensions change
-      if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
-        Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
-      }
-  if (handEnabled){
-    let startTimeMs = performance.now();
-    const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
-    this.ctx.save();
-    this.ctx.clearRect(0, 0, vWidth, vHeight);
-    if (results.landmarks) {
-      for (const landmarks of results.landmarks) {
-
-          drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
-            color: this.taskToken.resolved ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
+          if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
+            Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
+          }
+    const numFlag = this.flag.textContent
+    console.log(`numFl this ${numFlag} ` )
+    if (numFlag>0){
+      let startTimeMs = performance.now();
+      const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
+      this.ctx.save();
+      this.ctx.clearRect(0, 0, vWidth, vHeight);
+      
+      if (results.landmarks) {
+        for (const landmarks of results.landmarks) {
+            drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
+            color: this.numFlag > 3 ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
             lineWidth: 1.5
-          });
-          
-          drawLandmarks(this.ctx, landmarks, { 
-            color: this.taskToken.resolved ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
+            });
+                  
+            drawLandmarks(this.ctx, landmarks, { 
+            color: this.numFlag > 3 ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
             lineWidth: 0.4 
-          });
-        const isAiming = this.handCheck.extractGesture(landmarks)
+            });
         
-        if (isAiming && this.taskToken.enableCheck){
-                videoMsg = 'examining target now...'
-                const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
-                const cardId = await this.handCheck.detectCard(imageBlob) //check card presence
-                if (cardId) {
-                  this.showCardData(cardId)
-                } else if(this.card){
-                    const id = this.card.id.slice(3,5)
-                    console.log('** check or upload ', id)
-                    const worker = id ==='ML'? 'upload':'check';
-                    const par = {
-                      imageBlob: imageBlob,
-                      card: this.card,
-                    }
-                this[`${worker}Worker`].postMessage(par)  
-                }
-                this.taskToken.check = false
-              } //isAiming
-      }
-    } 
+        const isAiming = this.handCheck.extractGesture(landmarks)
+                
+                if (isAiming){
+                        const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
+                        const cardId = await this.handCheck.detectCard(imageBlob) //check card presence
+                        if (cardId) {
+                          this.showCardData(cardId)
+                        } else if(this.card){
+                            const id = this.card.id.slice(3,5)
+                            console.log('** check or upload ', id)
+                            const worker = id ==='ML'? 'upload':'check';
+                            const par = {
+                              imageBlob: imageBlob,
+                              card: this.card,
+                            }
+                        this[`${worker}Worker`].postMessage(par)  
+                        }
+                        this.flowFlag.check = false
+                      } //isAiming
+              }
+            } 
   }  
-    this.handUI.messageBox(videoMsg)
-    this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
+    // this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
     this.ctx.restore();
-    window.requestAnimationFrame(this.detectHand.bind(this));
+    window.requestAnimationFrame(this.main.bind(this));
 },
   
 
 renderPip(target,sound) {
   console.log('target ',target)
-  this.taskToken.resolved=false
+  this.flowFlag.resolved=false
   this.handUI.sound(sound)
   const graphicsBox = document.querySelector('.graphics-box');
   graphicsBox.style.display = 'block';
@@ -373,7 +263,7 @@ renderPip(target,sound) {
   };
 
   setTimeout(() => {
-    this.taskToken.resolved = true;
+    this.flowFlag.resolved = true;
     graphicsBox.innerHTML = '';
     this.flushMemory()
   }, 5000); // Delay for 5 seconds
@@ -392,13 +282,12 @@ flushMemory(){
   }
 },
 
-
-  async joinAgoraRoom() {
+async joinAgoraRoom() {
     await joinAgoraRoom.call(this);
-  },
+},
 
 
-  async shareCamera() {
+async shareCamera() {
       this.isShareOn = !this.isShareOn
       if (this.statusAgora === 'mute') {
         this.handUI.messageBox("Enable camera sharing...");
@@ -416,13 +305,12 @@ flushMemory(){
         message: `[${this.gridId}:]<br><br>share camera`
       });
     },
+},
 
-  },
-
-  beforeDestroy() {
-    // Remove the event listener and terminate the worker
+beforeDestroy() {
     this.predictionWorker.removeEventListener('message', this.handlePredictionResult.bind(this));
     this.predictionWorker.terminate();
-  },
+},
+
 
 });

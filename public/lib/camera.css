@@ -11,26 +11,11 @@ body {
     grid-template-areas:
       ". .";
   }
-  .videoText {
-    position: absolute;
-    z-index: 2;
-    width: 100%;
-    color: white;
-    font-weight: normal;
-    text-align: center;
-    margin-top: 20px;
-    font-size: 1.8rem; /* Set the font size to 2 rem */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    /* Add your overlay styles here */
-  }
-  
-  @keyframes flashing {
-    0%, 50% {
-      opacity: 1; /* Fully visible */
-    }
-    25%, 75% {
-      opacity: 0; /* Completely hidden */
-    }
+  .sidePage {
+    grid-column: 1 / span 1;
+    margin-left: 20%;
+    font-size: 150%; 
+    /* Add your sidebar styles here */
   }
 
   .media {
@@ -42,15 +27,63 @@ body {
     justify-content: top; /* Center items vertically */
   }
 
-  #video {
+  .videoText {
+    position: absolute;
+    z-index: 2;
+    width: 100%;
+    font-weight: normal;
+    color: white;
+    margin-top: 20px;
+    font-size: 1.8rem; /* Set the font size to 2 rem */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    /* Add your overlay styles here */
+     }
+
+      #state{
+        margin-left: 20px;
+        text-align: left;
+        color: rgba(246, 230, 10, 0.847);
+      }
+
+      #prompt{
+        text-align: center;
+      }
+  
+      @keyframes flashing {
+        0%, 50% {
+          opacity: 1; /* Fully visible */
+        }
+        25%, 75% {
+          opacity: 0; /* Completely hidden */
+        }
+      }
+
+  .dotBar {
+        z-index: 2;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end; /* Align dots to the bottom */
+        margin-top: auto; /* Push the dots to the bottom */
+        gap: 25px; /* Increase the vertical space between the dots */
+    }
+    .dot {
+        height: 35px;
+        width:35px;
+        display: inline-block;
+        background-color: #FAE089;
+        border-radius: 50%;
+        /* Add your overlay styles here */
+    }
+
+  #video, #canvas {
+    position: absolute;
     border-radius:50px;
-    z-index: -2;
+    top: 0;
+    left:0;
+    z-index: -1;
     width: 100%; /* Make sure the video takes up the full width */
 
   }
 
-  .sideBar {
-    grid-column: 1 / span 1;
-    /* Add your sidebar styles here */
-  }
   

@@ -17,18 +17,21 @@
 </head>
 <body>
   <div class="container">
-    <div class="sideBar">
-      <div id="sidebarPage1">
-        <!-- Markdown content will be rendered here -->
-      </div>
-      <div id="sidebarPage2">
-        <!-- Markdown content will be rendered here -->
-      </div>
+    <div class="sidePage">
     </div>
     <div class="media">
-
         <div class="videoText">
+          <div id = 'state'></div>
+          <div id = 'prompt'></div>
           <!-- Add overlay content here -->
+        </div>
+        <div class="dotBar">
+          <span class="dot" id="dot0"></span>
+          <span class="dot" id="dot1"></span>
+          <span class="dot" id="dot2"></span>
+          <span class="dot" id="dot3"></span>
+          <span class="dot" id="dot4"></span>
+          <span id="numFlag">0</span>
         </div>
         <video id="video" autoplay="autoplay" playsinline="true"></video>
         <canvas id="canvas" width="1024" height="768"></canvas>
