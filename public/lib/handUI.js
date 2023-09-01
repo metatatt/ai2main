@@ -149,18 +149,18 @@ export function listener(){
   recognition.onresult = function (event) {
     var phrase = event.results[event.results.length - 1][0].transcript; // Get the latest result
         console.log('listen->',phrase)
-        var numFlag = document.querySelector('#numFlag')
+        var seqRoute = document.querySelector('#seqRoute')
         const inputEvent = new Event('input', {bubbles:true, cancelable:true})
         // Perform action based on recognized phrase
         if (phrase.includes('hey computer')) {
-            numFlag.textContent = '1'
-            numFlag.dispatchEvent(inputEvent)
+          seqRoute.textContent = '1'
+          seqRoute.dispatchEvent(inputEvent)
         } else if (phrase.includes('check')) {
-          numFlag.textContent = '4'
-          numFlag.dispatchEvent(inputEvent)
+          seqRoute.textContent = '4'
+          seqRoute.dispatchEvent(inputEvent)
         } else if (phrase.includes('check again')) {
-          numFlag.textContent = '4'
-          numFlag.dispatchEvent(inputEvent)
+          seqRoute.textContent = '4'
+          seqRoute.dispatchEvent(inputEvent)
         }
         console.log('Confidence-> ' + event.results[event.results.length - 1][0].confidence);
       };

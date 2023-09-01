@@ -90,9 +90,9 @@ var HandCheckrApp = new Vue({
     this.listener = new listener();
     this.handCheck.initiateCamera();
     this.initiateHand();
-    this.numFlag = document.querySelector('#numFlag')
-    this.numFlag.addEventListener('input', ()=>{
-      console.log('flag.addEvent-input called')
+    this.seqRoute = document.querySelector('#seqRoute')
+    this.seqRoute.addEventListener('input', ()=>{
+      console.log('seqRoute.addEvent-input called')
     })
   },
   
@@ -149,9 +149,9 @@ async main(){
           if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
             Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
           }
-    const numFlag = this.numFlag.textContent
-    console.log(`numFl this ${numFlag} ` )
-    if (numFlag>0){
+    const seqRoute = this.seqRoute.textContent
+    console.log(`numFl this ${seqRoute} ` )
+    if (seqRoute>0){
       let startTimeMs = performance.now();
       const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
       this.ctx.save();
@@ -160,12 +160,12 @@ async main(){
       if (results.landmarks) {
         for (const landmarks of results.landmarks) {
             drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
-            color: this.numFlag > 3 ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
+            color: this.seqRoute > 3 ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
             lineWidth: 1.5
             });
                   
             drawLandmarks(this.ctx, landmarks, { 
-            color: this.numFlag > 3 ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
+            color: this.seqRoute > 3 ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
             lineWidth: 0.4 
             });
         
