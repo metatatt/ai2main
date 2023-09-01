@@ -42,9 +42,7 @@ export async function joinAgoraRoom() {
       this.videoElement = videoElement;
       this.canvasElement = canvasElement;
       this.ctx = canvasElement.getContext("2d", { willReadFrequently: true });
-      this.frames = [];
-      this.intervalDuration = 1000;
-      this.angleDeg = 8;  // Threshold angle spray for act of "aiming"
+      this.angleBetweenTwoFingers = 8;  // Threshold angle degree spray for act of "two-finger gesture"
       this.latestActiveTime =0;
       this.nailMarkers=[];
     }
@@ -72,7 +70,7 @@ export async function joinAgoraRoom() {
       }
     }
 
-extractGesture(landmarks) {
+detectGesture(landmarks) {
       const p5 = landmarks[5];
       const p8 = landmarks[8];
       const p9 = landmarks[9];
@@ -106,23 +104,23 @@ extractGesture(landmarks) {
       const ifHoldPalm = dist416 < dist48;
     
       const marker = {
-        isAiming: ifDeg && ifHoldPalm,
+        detected: ifDeg && ifHoldPalm,
         p5: p5,
         p8: p8,
         orienRotate: orienRotate,
       };
-      this.nailMarkers.push(marker)
-      let isAiming = false;
-      if (this.nailMarkers.length > 4) {
-        this.nailMarkers.shift(); // Remove the first element to keep the array size to 4
-        isAiming = this.nailMarkers.every(marker => marker.isAiming);
+      this.markerList.push(marker)
+      let twoFingerDetected = false;
+      if (this.markerList.length > 4) {
+        this.markerList.shift(); // Remove the first element to keep the array size to 4
+        twoFingerDetected = this.markerList.every(marker => marker.detected);
       }
-      return isAiming
+      return twoFingerDetected
     }
     
 
-nailTargetLoc(canvasWidth, canvasHeight) {
-      const marker = this.nailMarkers[this.nailMarkers.length-1]
+snapShotLoc(canvasWidth, canvasHeight) {
+      const marker = this.markerList[this.markerList.length-1]
       const p5 = marker.p5;
       const p8 = marker.p8;
       p5.x = p5.x * canvasWidth;
@@ -171,9 +169,9 @@ nailTargetLoc(canvasWidth, canvasHeight) {
     return boxLoc
   }
 
-captureNailTarget(canvasWidth, canvasHeight) {
+makeSnapShot(canvasWidth, canvasHeight) {
    
-   const boxLoc =  this.nailTargetLoc(canvasWidth, canvasHeight);
+   const boxLoc =  this.snapShotLoc(canvasWidth, canvasHeight);
     const { locTL, locTR, locBL, locBR } = boxLoc;
 
     // Calculate the width and height of the square
