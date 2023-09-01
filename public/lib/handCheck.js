@@ -44,7 +44,7 @@ export async function joinAgoraRoom() {
       this.ctx = canvasElement.getContext("2d", { willReadFrequently: true });
       this.angleBetweenTwoFingers = 8;  // Threshold angle degree spray for act of "two-finger gesture"
       this.latestActiveTime =0;
-      this.nailMarkers=[];
+      this.markerList=[];
     }
 
     async initiateCamera(){
@@ -204,7 +204,7 @@ makeSnapShot(canvasWidth, canvasHeight) {
     }
 
 
-  async detectCard(imageBlob) {
+  async identifyType(imageBlob) {
         // Create an image element and load the imageBlob
         const resultImage = new Image();
         resultImage.src = URL.createObjectURL(imageBlob);
@@ -225,15 +225,22 @@ makeSnapShot(canvasWidth, canvasHeight) {
     
         // Get the image data from the canvas
         const imageData = ctx.getImageData(0, 0, width, height);
-    
+        
         // Decode QR code using jsQR
         const qrCode = jsQR(imageData.data, width, height, {
           inversionAttempts: 'dontInvert',
         });
+
+        const type ={
+          tag: 'target',
+          id: ''
+        }
         if (qrCode && qrCode.data.startsWith('@pr-')) {
           const cardData = qrCode.data
-          return cardData.slice(4, 9)
+          type.tag = 'code',
+          type.id = cardData.slice(4, 9)
         } 
+      return type
     }
     
 

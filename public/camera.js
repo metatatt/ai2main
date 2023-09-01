@@ -9,6 +9,7 @@ var HandCheckrApp = new Vue({
   el: '#handCheckr',
   data: {
     agoraUid: "",
+
     card:{
      id: '',
      keyContain:'',
@@ -19,18 +20,35 @@ var HandCheckrApp = new Vue({
      imageBlob: null,
      boundingBox: null,
     },
-    target:{
-      initTime:'',
+    
+    varList:{
+      prompt:{
+        0:`say 'Hey Computer' to start`,
+        1: `awaiting hand gesture...`,
+        2: `point the target with two fingers...`,
+        3: `say 'check' to make snapshot...`,
+        4: `uploading now...`,
+        5: `showing result...`,
+      },
+    },
+    snapShot:{
       imageBlob: null,
-      color:'',
+      type: 
+          {
+            info: 'target',  // Indicates whether the item is a [target] or [code] ("QR code").
+            id: ''           // For QR codes, it typically starts with '@pr-'.
+                            // To extract useful information from the content, use .slice(4, 9).
+           },
+      inspectResult:'',
       tag:'',
       info:'',
       probability: '',
       boundingBox: null,
       incidentCount: 0
     },
+
     flowFlag:{
-      num: 0,
+      resloved: true,
       ckeck: true,
       upload: false,
     },
@@ -91,8 +109,8 @@ var HandCheckrApp = new Vue({
     this.handCheck.initiateCamera();
     this.initiateHand();
     this.seqRoute = document.querySelector('#seqRoute')
-    this.seqRoute.addEventListener('input', ()=>{
-      console.log('seqRoute.addEvent-input called')
+    this.seqRoute.addEventListener('input', (event)=>{
+     this.jumpToRoute(event.target.textContent)
     })
   },
   
@@ -144,58 +162,102 @@ var HandCheckrApp = new Vue({
 
 
 async main(){
-    const vWidth = this.videoElement.videoWidth
-    const vHeight = this.videoElement.videoHeight
-          if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
-            Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
-          }
     const seqRoute = this.seqRoute.textContent
     console.log(`numFl this ${seqRoute} ` )
     if (seqRoute>0){
       let startTimeMs = performance.now();
       const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
       this.ctx.save();
-      this.ctx.clearRect(0, 0, vWidth, vHeight);
+      this.ctx.clearRect(0, 0, this.canvasElement.width,this.canvasElement.height );
       
       if (results.landmarks) {
+        this.updateSeqRoute('2')
         for (const landmarks of results.landmarks) {
-            drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
-            color: this.seqRoute > 3 ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
-            lineWidth: 1.5
-            });
-                  
-            drawLandmarks(this.ctx, landmarks, { 
-            color: this.seqRoute > 3 ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
-            lineWidth: 0.4 
-            });
-        
-        const isAiming = this.handCheck.extractGesture(landmarks)
-                
-                if (isAiming){
-                        const imageBlob = await this.handCheck.captureNailTarget(vWidth,vHeight)
-                        const cardId = await this.handCheck.detectCard(imageBlob) //check card presence
-                        if (cardId) {
-                          this.showCardData(cardId)
-                        } else if(this.card){
-                            const id = this.card.id.slice(3,5)
-                            console.log('** check or upload ', id)
-                            const worker = id ==='ML'? 'upload':'check';
-                            const par = {
-                              imageBlob: imageBlob,
-                              card: this.card,
-                            }
-                        this[`${worker}Worker`].postMessage(par)  
-                        }
-                        this.flowFlag.check = false
-                      } //isAiming
-              }
-            } 
-  }  
-    // this.handUI.socketEvent("#messageBox#", videoMsg, this.gridId);
+          this.drawHand(seqRoute,landmarks, HAND_CONNECTIONS)
+          const twoFingerDetected = this.handCheck.detectGesture(landmarks)             
+                // if (twoFingerDetected){
+                //         this.updateSeqRoute('3')
+
+                //         if (cardId && seqRoute ==='4') {
+                //           this.showCardData(cardId)
+                //         } else if(this.card){
+                //             const id = this.card.id.slice(3,5)
+                //             console.log('** check or upload ', id)
+                //             const worker = id ==='ML'? 'upload':'check';
+                //             const par = {
+                //               imageBlob: imageBlob,
+                //               card: this.card,
+                //             }
+                //         this[`${worker}Worker`].postMessage(par)  
+                //         }
+                //         this.flowFlag.check = false
+                //       } //isAiming
+        } //for
+      } 
+    }  
+
     this.ctx.restore();
     window.requestAnimationFrame(this.main.bind(this));
 },
-  
+
+updateSeqRoute(num){
+  if (this.seqRoute.textContent !== num){
+    this.seqRoute.textContent=num
+    const inputEvent = new Event('input', {bubbles:true, cancelable:true})
+    this.seqRoute.dispatchEvent(inputEvent)
+  }
+},
+
+async jumpToRoute(routeNum){
+    switch(routeNum){
+    case 1:
+      break;
+    case 2:
+      break;
+    case 3: //get snapShot and identify as Code or Target (default)
+      const vWidth = this.canvasElement.width
+      const vHeight = this.canvasElement.height
+      this.snapShot.imageBlob = await this.handCheck.makeSnapShot(vWidth,vHeight)
+      this.snapShot.type = await this.handCheck.indentifyType(snapShot.imageBlob)
+      break;
+    case 4: 
+      if(this.snapShot.type="code"){
+        Object.assign(this.snapShot, {
+          inspectResult: 'QR code',
+          tag: 'QR',
+      });
+        this.updateSeqRoute(5)
+      }else{
+        const id = this.card.id.slice(3,5)
+        console.log('** check or upload ', id)
+        const worker = id ==='ML'? 'upload':'check';
+        const par = {
+          imageBlob: this.snapShot.imageBlob,
+          card: this.card,
+        }
+        this[`${worker}Worker`].postMessage(par)  
+      }
+
+    case 4: 
+
+
+    default:
+      break;
+    }
+
+},
+
+drawHand(seqRoute,landmarks, HAND_CONNECTIONS){
+  drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
+    color: seqRoute > 3 ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
+    lineWidth: 1.5
+    });
+          
+    drawLandmarks(this.ctx, landmarks, { 
+    color: seqRoute > 3 ? "#5065A8" : "#808080", // ternary blue or gray (unresolved)
+    lineWidth: 0.4 
+    });
+},
 
 renderPip(target,sound) {
   console.log('target ',target)

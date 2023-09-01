@@ -121,12 +121,6 @@ sound(sound){
       5: `showing result...`,
     }
   }
-  // renderStateText(){
-  //   const state = document.querySelector('#state')
-  //   const mode = this.flowFlag.check? 'check target' : 'upload image';
-  //   const content = `Dataset: ${this.dataset.id} || Operation Mode: ${mode}`
-  //   state.textContent=content
-  // }
 
 }
 
