@@ -90,7 +90,10 @@ var HandCheckrApp = new Vue({
     this.listener = new listener();
     this.handCheck.initiateCamera();
     this.initiateHand();
-    this.flag = document.querySelector('#numFlag')
+    this.numFlag = document.querySelector('#numFlag')
+    this.numFlag.addEventListener('input', ()=>{
+      console.log('flag.addEvent-input called')
+    })
   },
   
   methods: {
@@ -146,7 +149,7 @@ async main(){
           if (this.canvasElement.width !== vWidth || this.canvasElement.height !== vHeight) {
             Object.assign(this.canvasElement, { width: vWidth, height: vHeight });
           }
-    const numFlag = this.flag.textContent
+    const numFlag = this.numFlag.textContent
     console.log(`numFl this ${numFlag} ` )
     if (numFlag>0){
       let startTimeMs = performance.now();
