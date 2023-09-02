@@ -137,18 +137,19 @@ snapShotLoc(canvasWidth, canvasHeight) {
     
       // Calculate the midpoint of the bottom edge line
       const midBottom = {
-        x: (p5.x + p8.x) / 2,
-        y: (p5.y + p8.y) / 2
+        x: (p5.x + p8.x) /2+normalizedDirection.x*112,
+        y: (p5.y + p8.y) /2+normalizedDirection.y*112
       };
+      console.log(`mindPoint ${midBottom.x} | ${midBottom.y}`)
     
       // Calculate the corner coordinates
       const cornerTL = {
-        x: midBottom.x - (perpendicularVector.x * squareSideLength) / 2,
-        y: midBottom.y - (perpendicularVector.y * squareSideLength) / 2
+        x: (midBottom.x - (perpendicularVector.x * (squareSideLength))/2),
+        y: (midBottom.y - (perpendicularVector.y * squareSideLength) /2)
       };
       const cornerTR = {
-        x: midBottom.x + (perpendicularVector.x * squareSideLength) / 2,
-        y: midBottom.y + (perpendicularVector.y * squareSideLength) / 2
+        x: midBottom.x + (perpendicularVector.x * squareSideLength) /2,
+        y: midBottom.y + (perpendicularVector.y * squareSideLength) /2
       };
       const cornerBL = {
         x: cornerTL.x + normalizedDirection.x * squareSideLength,
@@ -236,7 +237,7 @@ makeSnapShot(canvasWidth, canvasHeight) {
           const cardData = qrCode.data
           resultPayload = {
             type: 'code',
-            id: cardData.slice(4, 9),
+            id: cardData.slice(4, 9),ma
           }
           console.log("resultPayload **",resultPayload)
           return resultPayload
