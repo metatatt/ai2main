@@ -177,7 +177,7 @@ makeSnapShot(boxLoc) {
 
     // Calculate the center point of the square
     const centerX = (locTL.x + locTR.x + locBL.x + locBR.x) / 4;
-    const centerY = (locBL.y + locBR.y) / 2;
+    const centerY = (locTL.y + locTR.y + locBL.y + locBR.y) / 4;
     const newCanvas = document.createElement('canvas');
     newCanvas.width = width
     newCanvas.height = width
