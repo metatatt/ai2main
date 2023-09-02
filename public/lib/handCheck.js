@@ -1,4 +1,5 @@
 export async function joinAgoraRoom() {
+
     const response = await fetch('/env', {
       method: 'POST',
       headers: {
@@ -29,9 +30,7 @@ export async function joinAgoraRoom() {
     
     this.statusAgora = "mute";
       this.socket.emit('sessionMessage', {
-        role: this.role,
         gridId: this.gridId,
-        agoraUid: this.agoraUid,
         userId: this.userId,
         message:  "#updateMyInfo#"
       });
@@ -42,7 +41,7 @@ export async function joinAgoraRoom() {
       this.videoElement = videoElement;
       this.canvasElement = canvasElement;
       this.ctx = canvasElement.getContext("2d", { willReadFrequently: true });
-      this.angleBetweenTwoFingers = 8;  // Threshold angle degree spray for act of "two-finger gesture"
+      this.angleDeg = 8;  // Threshold angle degree spray for act of "two-finger gesture"
       this.latestActiveTime =0;
       this.markerList=[];
     }
@@ -94,7 +93,6 @@ detectGesture(landmarks) {
       const deltaX = p5.x - p8.x;
       const deltaY = p5.y - p8.y;
       const orienRotate = Math.atan2(deltaY, deltaX); // usage newCtx.rotate(orienRotate)
-      const angle_degrees = orienRotate * (180 / Math.PI);
     
       // Calculate the distance between p4-p8 and p4-p16
       const dist48 = Math.sqrt((p4.x - p8.x) ** 2 + (p4.y - p8.y) ** 2);
@@ -204,7 +202,7 @@ makeSnapShot(canvasWidth, canvasHeight) {
     }
 
 
-  async identifyType(imageBlob) {
+  async checkType(imageBlob) {
         // Create an image element and load the imageBlob
         const resultImage = new Image();
         resultImage.src = URL.createObjectURL(imageBlob);
@@ -230,17 +228,19 @@ makeSnapShot(canvasWidth, canvasHeight) {
         const qrCode = jsQR(imageData.data, width, height, {
           inversionAttempts: 'dontInvert',
         });
-
-        const type ={
-          tag: 'target',
-          id: ''
+        var resultPayload = {
+          type: 'target',
+          id: '',
         }
         if (qrCode && qrCode.data.startsWith('@pr-')) {
           const cardData = qrCode.data
-          type.tag = 'code',
-          type.id = cardData.slice(4, 9)
+          resultPayload = {
+            type: 'code',
+            id: cardData.slice(4, 9),
+          }
+          console.log("resultPayload **",resultPayload)
+          return resultPayload
         } 
-      return type
     }
     
 

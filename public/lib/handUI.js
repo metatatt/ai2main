@@ -29,31 +29,6 @@ export class handUI {
     }
   }
   
-  graphicsBox(iconSelection, parentId) {
-  const parent = document.querySelector(`#${parentId}`);
-  const overlay = parent.querySelector('.overlay'); // Fetch the .overlay container
-  const graphicsContainer = document.querySelector('.graphics-box');
-  let imgSrc = "";
-  if (iconSelection === "t") {
-    imgSrc = "./img/b&plogo.svg";
-  } else if (iconSelection === "r") {
-    imgSrc = "./img/i-camera.svg";
-  } else {
-    imgSrc = "./img/scanSignBlue380Ani.gif";
-  }
-  const icon = document.createElement('img');
-  icon.src = imgSrc;
-  icon.classList.add('animation');
-
-  // Remove any existing content inside graphicsContainer
-  graphicsContainer.innerHTML = '';
-  
-  // Append the icon to graphicsContainer
-  graphicsContainer.appendChild(icon);
-  return new Promise((resolve) => {
-    resolve();
-  });
-  }
 
 sound(sound){
   if(sound){
@@ -63,16 +38,6 @@ sound(sound){
     }
   }
 
-  messageBox(message) {
-
-    const videoText = document.querySelector('.videoText');
-    const currentDate = new Date().toLocaleDateString('en-US', {
-      year: '2-digit',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    videoText.textContent = message+' '+currentDate+' @HandCheckr';
-  }
 
   socketEvent(msgClass, msg, gridId){
     this.socket.emit('sessionMessage', {
@@ -100,26 +65,7 @@ sound(sound){
         sidePage.innerHTML = htmlContent;
       })
       .catch(error => console.error('Error fetching or processing launchPage.md:', error));
-  }
-  renderDotBar(num) {
-      const dotBar = document.querySelector('.dotBar');
-      dotBar.style.animation = 'flashing infinite'; // Corrected animation name    
-      for (let i = 0; i < num; i++) { // Use 'let' for loop variable, fix loop condition
-        const dot = document.getElementById(`dot${i}`); // Use template literals to get the correct ID
-        dot.style.animation = 'none'; // Remove animation from individual dot
-      }
-    }
-  
-  renderPromptText(num){
-    const prompt = document.querySelector('#prompt')
-    const promptList = {
-      0:`say 'Hey Computer' to start`,
-      1: `awaiting hand gesture...`,
-      2: `point the target with two fingers...`,
-      3: `say 'check' to make snapshot...`,
-      4: `uploading now...`,
-      5: `showing result...`,
-    }
+    this.sound('ding')
   }
 
 }

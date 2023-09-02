@@ -1,9 +1,9 @@
 self.addEventListener('message', async event => {
-  const { imageBlob, card } = event.data;
-  const { keyContain: containerName, endConnect: connectionString, color, probability } = card;
+  const { imageBlob, dataset } = event.data;
+  const { keyContain: containerName, endConnect: connectionString, color, probability } = dataset;
 
   const now = new Date().toISOString().slice(0, 10).replace(/-/g, '').slice(0, 14);
-  const fileName = `${card.id}${now}.png`;
+  const fileName = `${dataset.id}${now}.png`;
   
   const formData = new FormData();
   formData.append('imageFile', imageBlob, fileName);
@@ -23,7 +23,7 @@ self.addEventListener('message', async event => {
       const checkResponse = {
         initTime: new Date().getTime(),
         imageBlob: imageBlob,
-        tag: card.id,
+        tag: dataset.id,
         pendingCount: 1,
         color: color,
         probability: probability,

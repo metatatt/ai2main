@@ -1,6 +1,6 @@
 self.addEventListener('message', async event => {
-  const { imageBlob, card } = event.data;
-  const { keyContain, endConnect, color, probability } = card;
+  const { imageBlob, dataset } = event.data;
+  const { keyContain, endConnect, probability } = dataset;
   console.log('check worker')
 
   const formData = new FormData();
@@ -24,10 +24,8 @@ self.addEventListener('message', async event => {
     
     if (mostLikelyPrediction) {
       const responsePayload = {
-        initTime: new Date().getTime(),
-        imageBlob: imageBlob,
+        time: new Date().getTime(),
         tag: mostLikelyPrediction.tagName,
-        color: color,
         probability: Math.floor(mostLikelyPrediction.probability * 100),
         boundingBox: mostLikelyPrediction.boundingBox,
       };
