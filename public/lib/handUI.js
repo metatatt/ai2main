@@ -56,17 +56,36 @@ sound(sound){
   }
 
 
-  renderSidePage(file) {
-    const launchPage = fetch(file)
-      .then(response => response.text())
-      .then(markdownContent => {
-        const htmlContent = marked(markdownContent);
-        const sidePage = document.querySelector('.sidePage');
-        sidePage.innerHTML = htmlContent;
-      })
-      .catch(error => console.error('Error fetching or processing launchPage.md:', error));
-    this.sound('ding')
+  renderSidePage(content, type) {
+    let htmlContent = '';
+    const isFile = (type !== 'textString')
+  
+    if (isFile) {
+      fetch(content)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch the file content');
+          }
+          return response.text();
+        })
+        .then(markdownContent => {
+          htmlContent = marked(markdownContent);
+          const sidePage = document.querySelector('.sidePage');
+          sidePage.innerHTML = htmlContent;
+          this.sound('ding');
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Handle the error as needed, e.g., display an error message to the user.
+        });
+    } else {
+      htmlContent = marked(content);
+      const sidePage = document.querySelector('.sidePage');
+      sidePage.innerHTML = htmlContent;
+      this.sound('ding');
+    }
   }
+  
 
 }
 

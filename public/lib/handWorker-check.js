@@ -1,7 +1,6 @@
 self.addEventListener('message', async event => {
   const { imageBlob, dataset } = event.data;
   const { keyContain, endConnect, probability } = dataset;
-  console.log('check worker')
 
   const formData = new FormData();
   formData.append('image', imageBlob, 'image.png');
@@ -15,6 +14,7 @@ self.addEventListener('message', async event => {
   });
 
   const predictionResult = await predictionResponse.json();
+
   if (predictionResult.predictions && Array.isArray(predictionResult.predictions)) {
     const sortedPredictions = predictionResult.predictions
       .filter(prediction => prediction.probability > probability)

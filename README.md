@@ -33,4 +33,9 @@
 |Agora  | `AgoraRTC 4.7.3` |
 |Markdown Extension | `marked` and `stackedit.io` |
 
+## bugs and taks
+>jsQR failed often
+>snapShot image to be shown on sidePage
+>error handlings
+>
 > Sept 02, 2023

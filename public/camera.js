@@ -25,20 +25,20 @@ var HandCheckrApp = new Vue({
         0:`say 'Hey Computer' to start`,
         1: `awaiting hand gesture...`,
         2: `point the target with two fingers...`,
-        3: `say 'check' to make snapshot...`,
+        3: `say 'check' to snapshot...`,
         4: `checking now...`,
-        5: `showing result...`,
+        5: `showing the result...`,
       },
     },
     snapShot:{
       imageBlob: null,
+      boxLoc: null,
       type: 
           {
             info: 'target',  // Indicates whether the item is a [target] or [code] ("QR code").
             id: ''           // For QR codes, it typically starts with '@pr-'.
                             // To extract useful information from the content, use .slice(4, 9).
            },
-      inspectionResult:'',
       result: 
           {
             time:'',
@@ -101,7 +101,7 @@ var HandCheckrApp = new Vue({
     });    
     this.uploadWorker = new Worker('./lib/handWorker-upload.js'); // Web Worker not importable, therefor put here
     this.uploadWorker.addEventListener('message', event => {
-      this.targetData(event.data)
+     // this.targetData(event.data)
     });
     this.handCheck = new handCheck(this.canvasElement,this.videoElement);
     this.handUI = new handUI(this);
@@ -150,51 +150,49 @@ var HandCheckrApp = new Vue({
       this.main()
   },
 
-  updateResult(eventData){
-    const newResult = eventData;
-    const oldResult = this.snapShot.result
-    let inspectionCountSum = this.snapShot.inspectionCount || 2;
-    let defaultResult = newResult;
-    if (newResult.tag === oldResult.tag && oldResult.probability > newResult.probability) {
-      defaultResult = oldResult
-    }
-    Object.assign(this.target, defaultResult, { inspectionCount: inspectionCountSum+1 });
-    if (this.snapShot.inspectionCount=== 0 ){
-        this.updateSeqRoute(5)
-    }
-  },
-
-
-async main(){
+  async main(){
     const seqRoute = this.seqRoute.textContent
     this.ctx.save();
     this.ctx.clearRect(0, 0, this.canvasElement.width,this.canvasElement.height);
-    if (seqRoute>0 && seqRoute < 3 ){
+    let seq = seqRoute
+    if (seqRoute>0 && seqRoute < 4 ){
       let startTimeMs = performance.now();
       const results = await this.handLandmarker.detectForVideo(this.videoElement, startTimeMs);
       if (results.landmarks) {
-        this.updateSeqRoute(2)
         for (const landmarks of results.landmarks) {
+          seq = 2
           this.drawHand(seqRoute,landmarks, HAND_CONNECTIONS)
           const twoFingerDetected = this.handCheck.detectGesture(landmarks) 
           if (twoFingerDetected) {
+            seq = 3
+            this.snapShot.boxLoc = await this.handCheck.snapShotLoc(this.canvasElement.width, this.canvasElement.height)
+            this.drawSnapShotBox(this.snapShot.boxLoc)
             this.handUI.sound('beep')
-            this.updateSeqRoute(3)
           }            
         } 
+      }
+      if(seq != seqRoute) {
+        this.updateSeqRoute(seq)
       }
     }  
 
     this.ctx.restore();
     window.requestAnimationFrame(this.main.bind(this));
 },
+  
+
+  updateResult(eventData){
+    const newResult = eventData;
+    console.log('result payload** ', newResult)
+    Object.assign(this.snapShot.result, newResult);
+    this.updateSeqRoute(5)
+  },
+
 
 updateSeqRoute(num){
- //if (num > this.seqRoute.textContent){
     this.seqRoute.textContent=num
     const inputEvent = new Event('input', {bubbles:true, cancelable:true})
     this.seqRoute.dispatchEvent(inputEvent)
- // }
 },
 
 async jumpToRoute(routeNum) {
@@ -205,30 +203,31 @@ async jumpToRoute(routeNum) {
 
   switch (routeNum) {
       case 0:
-        console.log('seqRoute*** ', routeNum)
-        mdFile = './lib/sidePageLaunch.md';
+        mdFile = './lib/sidePageIdle.md';
         this.handUI.renderSidePage(mdFile);
         animation = 'flashing 2s infinite'
         break;
       case 1:
-        mdFile = './lib/sidePageCheck.md';
+        mdFile = './lib/sidePageAwaitGesture.md';
         this.handUI.renderSidePage(mdFile);
         break;
       case 2:
           break;
-      case 3: // Get snapShot and identify as Code or Target (default)
+      case 3:
+          break;
+      case 4: // Get snapShot and identify as Code or Target (default)
+        mdFile = './lib/sidePageProcessingNow.md';
+        this.handUI.renderSidePage(mdFile);
         animation = 'flashing 2s infinite'
           const width = this.canvasElement.width;
           const height = this.canvasElement.height;
-          this.snapShot.imageBlob = await this.handCheck.makeSnapShot(width, height);
-          console.log('imgBlob ', this.snapShot.imageBlob)
+          this.snapShot.imageBlob = await this.handCheck.makeSnapShot(this.snapShot.boxLoc);
+          console.log('imgBlob-', this.snapShot.imageBlob)
           this.snapShot.type = await this.handCheck.checkType(this.snapShot.imageBlob);
-          break;
-      case 4:
           if (this.snapShot.type === "code") { // Use triple equals for comparison
-              Object.assign(this.snapShot, {
-                  inspectionResult: 'QR code',
-                  tag: 'QR',
+              Object.assign(this.snapShot.result, {
+                  tag: 'QR code',
+                  probability: 'N/A',
               });
               this.updateSeqRoute(5);
           } else {
@@ -243,8 +242,8 @@ async jumpToRoute(routeNum) {
           }
           break;
       case 5:
-          mdFile = './lib/sidePageCheck.md';
-          this.handUI.renderSidePage(mdFile);
+          const mdContent=this.renderResultMDContent()
+          this.handUI.renderSidePage(mdContent, 'textString')
           break;
       default:
           break;
@@ -258,6 +257,24 @@ async jumpToRoute(routeNum) {
 
 },
 
+renderResultMDContent(){
+const result = this.snapShot.result
+const {tag, probability} = result;
+const mdContent = `## result
+
+inspection results:
+
+> tag: ${tag},
+> probability:${probability},
+> dataset: ${this.dataset.id},
+> target snapshot:
+> ![enter image description here](https://practiz2023public.blob.core.windows.net/lcam/handCaptureZone.svg)@handCheckr
+`;
+return mdContent; 
+
+},
+
+
 drawHand(seqRoute,landmarks, HAND_CONNECTIONS){
   drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {
     color: seqRoute > 1 ? "#FFFFFF" : "#808080", // ternary white, or gray (unresolved)
@@ -270,6 +287,19 @@ drawHand(seqRoute,landmarks, HAND_CONNECTIONS){
     });
 },
 
+drawSnapShotBox(boxLoc) {  
+    // Draw the snapshot box using the provided corner locations
+    this.ctx.strokeStyle = 'red'; // Set the stroke color to red (you can change it to any color you prefer)
+    this.ctx.lineWidth = 2; // Set the line width as desired
+  
+    this.ctx.beginPath();
+    this.ctx.moveTo(boxLoc.locTL.x, boxLoc.locTL.y); // Move to the top-left corner
+    this.ctx.lineTo(boxLoc.locTR.x, boxLoc.locTR.y); // Draw to the top-right corner
+    this.ctx.lineTo(boxLoc.locBR.x, boxLoc.locBR.y); // Draw to the bottom-right corner
+    this.ctx.lineTo(boxLoc.locBL.x, boxLoc.locBL.y); // Draw to the bottom-left corner
+    this.ctx.closePath(); // Close the path to connect the last and first points
+    this.ctx.stroke(); // Stroke the path to draw the box
+},
 
 async joinAgoraRoom() {
     await joinAgoraRoom.call(this);
