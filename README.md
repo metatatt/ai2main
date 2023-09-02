@@ -1,29 +1,17 @@
-# handCheckr 0824
-## uploadCard, renderPip and resloved
+![image](https://github.com/metatatt/baton/assets/100538673/37936471-5b7e-41ec-97e0-485e5b7e7f02)
 
-hey computer + check on QR or Target
-https://github.com/metatatt/baton/assets/100538673/c67cd8b3-5af8-4cd0-8922-2a8708763b8d
 
-known issues:
-- 60-sec slience Restart, 
-- fail to launch when late or too early "hey computer" 
+# *process flow* HandCheckr
 
-switching workstations:
+## events table
+|sevents|state |prompt|data/constructor|error
+|--|--|--|--|--|
+|start | null|say 'Hey Computer'|init(), iniAgora()
+|voice | 1|await motion...|
+|motion detected |2|await gesture|
+|gesture detected |3|say 'check'|.boxLoc(), typeOf()|'gesture first', rout to 2
+|break[]|--|--|--|--|
+|check or upload |4|checking now|.imageBlob()|
+|md ready |5|showing result|save to Azure storage(?)
 
-git pull
-work on code...
-git add .
-git commint -m "xxxx"
-git push 
-
-On branch branch-master
-Your branch is up to date with 'origin/branch-master'.
-
--------------------------------
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M branch-master
-git remote add origin https://github.com/metatatt/baton.git
-git push -u origin branch-master
-
+> Sept 02, 2023
