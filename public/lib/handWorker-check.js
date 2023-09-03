@@ -28,6 +28,7 @@ self.addEventListener('message', async event => {
         tag: mostLikelyPrediction.tagName,
         probability: Math.floor(mostLikelyPrediction.probability * 100),
         boundingBox: mostLikelyPrediction.boundingBox,
+        datasetId: dataset.id,
       };
 
       self.postMessage(responsePayload);

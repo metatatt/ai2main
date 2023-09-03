@@ -149,12 +149,12 @@ app.post('/updatecard', async (req, res) => {
       sessionTable[key].cardId = cardId;
     }
   }
-  const cardData =  PredictionConfig[`c${cardId}`]
+  const newlySaved =  PredictionConfig[`c${cardId}`]
 
   await uploadSessionTable()
 
   res.json({
-    cardData
+    newlySaved
   });
 });
 

@@ -46,7 +46,7 @@ export async function joinAgoraRoom() {
       this.markerList=[];
     }
 
-    async initiateCamera(){
+    async initCamera(){
       const constraints = {
         video: {
           facingMode: "environment",
@@ -200,47 +200,41 @@ makeSnapShot(boxLoc) {
     return imageBlobPromise;
     }
 
-
-  async checkType(imageBlob) {
-        // Create an image element and load the imageBlob
-        const resultImage = new Image();
-        resultImage.src = URL.createObjectURL(imageBlob);
- 
-        // Wait for the image to load
-        await new Promise(resolve => {
-          resultImage.onload = resolve;
-        });
-        const width = resultImage.width;
-        const height = resultImage.height;
+async checkType(imageBlob) {
+      // Create an image element and load the imageBlob
+      const resultImage = new Image();
+      resultImage.src = URL.createObjectURL(imageBlob);
     
-        // Create a canvas and draw the loaded image
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(resultImage, 0, 0, width, height);
+      // Wait for the image to load
+      await new Promise(resolve => {
+        resultImage.onload = resolve;
+      });
     
-        // Get the image data from the canvas
-        const imageData = ctx.getImageData(0, 0, width, height);
-        
-        // Decode QR code using jsQR
-        const qrCode = jsQR(imageData.data, width, height, {
-          inversionAttempts: 'dontInvert',
-        });
-        var resultPayload = {
-          type: 'target',
-          id: '',
-        }
-        if (qrCode && qrCode.data.startsWith('@pr-')) {
-          const cardData = qrCode.data
-          resultPayload = {
-            type: 'code',
-            id: cardData.slice(4, 9)
-          }
-          console.log("resultPayload **",resultPayload)
-          return resultPayload
-        } 
+      const width = resultImage.width;
+      const height = resultImage.height;
+    
+      // Create a canvas and draw the loaded image
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(resultImage, 0, 0, width, height);
+    
+      // Get the image data from the canvas
+      const imageData = ctx.getImageData(0, 0, width, height);
+    
+      // Decode QR code using jsQR
+      const qrCode = jsQR(imageData.data, width, height, {
+        inversionAttempts: 'dontInvert',
+      });
+    
+      let cardData = '';
+    
+      if (qrCode && qrCode.data.startsWith('@pr-')) {
+        cardData = qrCode.data;
+        console.log('cardData*** ', cardData)
+        return cardData.slice(4, 9);
+      }
     }
     
-
 }

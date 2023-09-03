@@ -45,14 +45,9 @@ var HandCheckrApp = new Vue({
             tag:'',
             probability: '',
             boundingBox: null,
+            datasetId:'',
             },
       inspectionCount: 0
-    },
-
-    flowFlag:{
-      resloved: true,
-      ckeck: true,
-      upload: false,
     },
     canvasElement: null,
     webRtc: null,
@@ -83,7 +78,7 @@ var HandCheckrApp = new Vue({
     
     this.webRtc = AgoraRTC.createClient({ mode: 'rtc', codec: 'h264' });
 
-    this.joinAgoraRoom();
+    this.startAgora();
     
     this.socket.on('sessionMessage', function(sessionMessage) {
       if (sessionMessage.role === "console") {
@@ -116,38 +111,33 @@ var HandCheckrApp = new Vue({
             console.error('Invalid route number:', event.target.textContent);
         }
     })
-    this.initiate();
+    this.start();
   },
   
   methods: {
 
-  async initiate(){
-      const runningMode = "VIDEO"
-      const vision = await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
-      );
-      this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
-          delegate: "GPU"
-        },
-        runningMode: runningMode,
-        numHands: 2
-      });
-
-      this.handCheck.initiateCamera();
-
-      const last = await fetch('/card', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId: this.userId })
-      });
-      const userLastAccess = await last.json();
-      this.dataset = userLastAccess.lastSaved
-      this.updateSeqRoute(0)
+  async start(){
+      this.initHandLandMarker()
+      this.handCheck.initCamera();
+      this.recallSaved()
+      this.updateSequence(0)
       this.main()
+  },
+
+async initHandLandMarker(){
+    const runningMode = "VIDEO"
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+    );
+    this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+        delegate: "GPU"
+      },
+      runningMode: runningMode,
+      numHands: 2
+    });
+
   },
 
   async main(){
@@ -172,7 +162,7 @@ var HandCheckrApp = new Vue({
         } 
       }
       if(seq != seqRoute) {
-        this.updateSeqRoute(seq)
+        this.updateSequence(seq)
       }
     }  
 
@@ -181,18 +171,48 @@ var HandCheckrApp = new Vue({
 },
   
 
-  updateResult(eventData){
+updateResult(eventData){
     const newResult = eventData;
     console.log('result payload** ', newResult)
     Object.assign(this.snapShot.result, newResult);
-    this.updateSeqRoute(5)
+    this.updateSequence(5)
   },
 
 
-updateSeqRoute(num){
+updateSequence(num){
     this.seqRoute.textContent=num
     const inputEvent = new Event('input', {bubbles:true, cancelable:true})
     this.seqRoute.dispatchEvent(inputEvent)
+},
+
+async recallSaved(){
+  const last = await fetch('/card', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId: this.userId })
+  });
+  const userLastAccess = await last.json();
+  this.dataset = userLastAccess.lastSaved
+},
+
+async updateDataset(id){
+ 
+    const res = await fetch('/updatecard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ userId: this.userId, cardId: id })
+      });
+      const newData = await res.json();
+      console.log('newly saved**', newData)
+      this.dataset = newData.newlySaved
+      console.log('this **', this.dataset)
+    const state = document.querySelector('#state')
+    state.textContent = 'Dataset:** '+id
+    this.updateSequence(5);
 },
 
 async jumpToRoute(routeNum) {
@@ -223,13 +243,17 @@ async jumpToRoute(routeNum) {
           const height = this.canvasElement.height;
           this.snapShot.imageBlob = await this.handCheck.makeSnapShot(this.snapShot.boxLoc);
           console.log('imgBlob-', this.snapShot.imageBlob)
-          this.snapShot.type = await this.handCheck.checkType(this.snapShot.imageBlob);
-          if (this.snapShot.type === "code") { // Use triple equals for comparison
+          const codeText = await this.handCheck.checkType(this.snapShot.imageBlob);
+          if (codeText) { // Use triple equals for comparison
               Object.assign(this.snapShot.result, {
                   tag: 'QR code',
                   probability: 'N/A',
+                  datasetId: codeText,
               });
-              this.updateSeqRoute(5);
+              if (codeText!==this.dataset.id){
+                this.updateDataset(codeText)
+              }
+              this.updateSequence(5);
           } else {
               const id = this.dataset.id.slice(3, 5);
               console.log('** check or upload ', id);
@@ -243,7 +267,7 @@ async jumpToRoute(routeNum) {
           break;
       case 5:
           const mdContent=this.renderResultMDContent()
-          this.handUI.renderSidePage(mdContent, 'textString')
+          this.handUI.renderSidePage(mdContent, this.snapShot.imageBlob)
           break;
       default:
           break;
@@ -259,16 +283,14 @@ async jumpToRoute(routeNum) {
 
 renderResultMDContent(){
 const result = this.snapShot.result
-const {tag, probability} = result;
+const {datasetId, tag, probability} = result;
 const mdContent = `## result
 
-inspection results:
 
-> tag: ${tag},
-> probability:${probability},
-> dataset: ${this.dataset.id},
-> target snapshot:
-> ![enter image description here](https://practiz2023public.blob.core.windows.net/lcam/handCaptureZone.svg)@handCheckr
+>tag: ${tag},
+>probability:${probability},
+>
+>dataset: ${datasetId},
 `;
 return mdContent; 
 
@@ -301,7 +323,7 @@ drawSnapShotBox(boxLoc) {
     this.ctx.stroke(); // Stroke the path to draw the box
 },
 
-async joinAgoraRoom() {
+async startAgora() {
     await joinAgoraRoom.call(this);
 },
 

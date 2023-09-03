@@ -55,12 +55,12 @@ sound(sound){
     return greetings[greetingIndex];
   }
 
-
-  renderSidePage(content, type) {
+renderSidePage(content, imageBlob) {
     let htmlContent = '';
-    const isFile = (type !== 'textString')
+    const isFile = !imageBlob;
   
     if (isFile) {
+      // Fetch and render content when it's a file
       fetch(content)
         .then(response => {
           if (!response.ok) {
@@ -79,14 +79,26 @@ sound(sound){
           // Handle the error as needed, e.g., display an error message to the user.
         });
     } else {
+      // Render content when it's not a file
       htmlContent = marked(content);
       const sidePage = document.querySelector('.sidePage');
       sidePage.innerHTML = htmlContent;
+      const snapImage = imageBlob;
+      const blobUrl = URL.createObjectURL(snapImage);
+      
+      // Clear the existing content of sideImage
+      const sideImage = document.querySelector('.sideImage');
+      sideImage.innerHTML = '';
+  
+      const image = new Image();
+      image.src = blobUrl;
+      
+      sideImage.appendChild(image);
+  
       this.sound('ding');
     }
-  }
+  }  
   
-
 }
 
 export function listener(){
