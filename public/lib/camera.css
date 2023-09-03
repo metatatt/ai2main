@@ -17,7 +17,6 @@ body {
     grid-column: 1 / span 1;
     margin-left: 20%;
     font-size: 150%; 
-    /* Add your sidebar styles here */
   }
 
   .media {
@@ -50,7 +49,12 @@ body {
       #prompt{
         text-align: center;
       }
-  
+
+      #sequenceIcon{
+        text-align: right;
+        margin-right: 20px;
+      }
+
       @keyframes flashing {
         0%, 50% {
           opacity: 1; /* Fully visible */
@@ -59,24 +63,6 @@ body {
           opacity: 0; /* Completely hidden */
         }
       }
-
-  .dotBar {
-        z-index: 2;
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: flex-end; /* Align dots to the bottom */
-        margin-top: auto; /* Push the dots to the bottom */
-        gap: 25px; /* Increase the vertical space between the dots */
-    }
-    .dot {
-        height: 35px;
-        width:35px;
-        display: inline-block;
-        background-color: #FAE089;
-        border-radius: 50%;
-        /* Add your overlay styles here */
-    }
 
   #video, #canvas {
     position: absolute;

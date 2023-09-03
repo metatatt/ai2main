@@ -7,13 +7,13 @@ export class handUI {
     this.flowFlag = vueComponent.flowFlag;
     this.soundNow='';
     this.soundbeep = new Audio('./lib/beep.mp3');
+    this.soundlowding = new Audio('./lib/lowding.mp3');
     this.sounddingding = new Audio('./lib/ding2.mp3');
     this.soundding = new Audio('./lib/ding.mp3');
     this.sounderror = new Audio('./lib/error.mp3');
     this.soundbeep.preload = 'auto';
     this.sounddingding.preload = 'auto';
     this.soundding.preload = 'auto';
-    this.counter=0;
   }
 
   layout(mode) {
@@ -55,7 +55,7 @@ sound(sound){
     return greetings[greetingIndex];
   }
 
-renderSidePage(content, imageBlob) {
+renderSidePage(content, imageBlob, boundingBox) {
     let htmlContent = '';
     const isFile = !imageBlob;
   
@@ -72,7 +72,6 @@ renderSidePage(content, imageBlob) {
           htmlContent = marked(markdownContent);
           const sidePage = document.querySelector('.sidePage');
           sidePage.innerHTML = htmlContent;
-          this.sound('ding');
         })
         .catch(error => {
           console.error('Error:', error);
@@ -83,18 +82,34 @@ renderSidePage(content, imageBlob) {
       htmlContent = marked(content);
       const sidePage = document.querySelector('.sidePage');
       sidePage.innerHTML = htmlContent;
-      const snapImage = imageBlob;
-      const blobUrl = URL.createObjectURL(snapImage);
-      
-      // Clear the existing content of sideImage
+
       const sideImage = document.querySelector('.sideImage');
       sideImage.innerHTML = '';
-  
-      const image = new Image();
-      image.src = blobUrl;
+      const resultImage = new Image();
+      resultImage.src = URL.createObjectURL(imageBlob);
       
-      sideImage.appendChild(image);
-  
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      resultImage.onload = () => {
+        canvas.width = resultImage.width; // Set canvas width twice the resultImage width
+        canvas.height = resultImage.height; // Set canvas height twice the resultImage height
+        ctx.drawImage(resultImage, 0, 0, resultImage.width, resultImage.height);
+
+         //boundingBox metrics
+              const boxLeft = boundingBox.left * resultImage.width || 0; // Convert to percentage
+              const boxTop = boundingBox.top * resultImage.height || 0; // Convert to percentage
+              const boxWidth = boundingBox.width * resultImage.width || resultImage.width; // Convert to percentage
+              const boxHeight = boundingBox.height * resultImage.height || resultImage.height; // Convert to percentage
+         //Draw the bounding box on the canvas
+              ctx.strokeStyle = 'red';
+              ctx.lineWidth = 2; // Set the border width
+              ctx.beginPath();
+              ctx.rect(boxLeft, boxTop, boxWidth, boxHeight);
+              ctx.stroke();
+        }
+
+      sideImage.appendChild(canvas);
       this.sound('ding');
     }
   }  

@@ -157,7 +157,7 @@ async initHandLandMarker(){
             seq = 3
             this.snapShot.boxLoc = await this.handCheck.snapShotLoc(this.canvasElement.width, this.canvasElement.height)
             this.drawSnapShotBox(this.snapShot.boxLoc)
-            this.handUI.sound('beep')
+            this.handUI.sound('lowding')
           }            
         } 
       }
@@ -228,10 +228,10 @@ async jumpToRoute(routeNum) {
         animation = 'flashing 2s infinite'
         break;
       case 1:
-        mdFile = './lib/sidePageAwaitGesture.md';
-        this.handUI.renderSidePage(mdFile);
         break;
       case 2:
+        mdFile = './lib/sidePageAwaitGesture.md';
+        this.handUI.renderSidePage(mdFile);
           break;
       case 3:
           break;
@@ -267,7 +267,12 @@ async jumpToRoute(routeNum) {
           break;
       case 5:
           const mdContent=this.renderResultMDContent()
-          this.handUI.renderSidePage(mdContent, this.snapShot.imageBlob)
+          const image = this.snapShot.imageBlob
+          const boundingBox = this.snapShot.result.boundingBox
+          this.handUI.renderSidePage(mdContent, image, boundingBox )
+          setTimeout(() => {
+            this.updateSequence(1);
+          }, 5000); // 000 milliseconds = 5 seconds
           break;
       default:
           break;
@@ -287,10 +292,10 @@ const {datasetId, tag, probability} = result;
 const mdContent = `## result
 
 
->tag: ${tag},
->probability:${probability},
+>tag: ${tag}
+>probability:${probability}
+>dataset: ${datasetId}
 >
->dataset: ${datasetId},
 `;
 return mdContent; 
 
