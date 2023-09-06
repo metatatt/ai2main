@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbox</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        /* Reset some default styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%; /* Ensure the body and HTML elements cover the full viewport height */
+        }
+
+        /* Chat container styles */
+        .chat-container {
+            width: 300px;
+            height: 80vh; /* Set the height to 80% of the viewport height */
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Chat header styles */
+        .chat-header {
+            background-color: #007BFF;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Chat messages styles */
+        .chat-messages {
+            padding: 10px;
+            height: 75vh; /* Set the height to 75% of the viewport height */
+            overflow-y: scroll;
+        }
+
+        /* Chat input styles */
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background-color: #f4f4f4;
+        }
+
+        .chat-input input {
+            flex-grow: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .chat-input button {
+            padding: 8px 15px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Mermaid diagram styles */
+        .mermaid-diagram {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Chatbot</h2>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Chat messages will be appended here -->
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const userMessageInput = document.getElementById("user-input");
+        const chatMessages = document.getElementById("chat-messages");
+
+        // Function to add a message to the chat and add a blank line
+        function addMessage(sender, message) {
+            const messageElement = document.createElement("div");
+            messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatMessages.appendChild(messageElement);
+            
+            // Add a blank line
+            chatMessages.appendChild(document.createElement("br"));
+            
+            // Scroll to the bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Function to add a Mermaid diagram
+        function addMermaid(mermaidSyntax) {
+            const mermaidElement = document.createElement("div");
+            mermaidElement.classList.add("mermaid-diagram");
+            mermaidElement.innerHTML = mermaidSyntax;
+            chatMessages.appendChild(mermaidElement);
+            
+            // Add a blank line
+            chatMessages.appendChild(document.createElement("br"));
+            
+            // Scroll to the bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Render the Mermaid diagram
+            mermaid.init(undefined, mermaidElement);
+        }
+
+        // Function to handle user input
+        function handleUserInput() {
+            const userMessage = userMessageInput.value.trim();
+            if (userMessage !== "") {
+                addMermaid(userMessage);
+
+                // Simulate bot reply
+                if (userMessage.toLowerCase() === "hey computer") {
+                    setTimeout(() => {
+                        addMessage("Chatbot", "Good morning!");
+                    }, 1000); // Simulate a delay before the bot's response
+                }
+
+                // Example Mermaid syntax
+                if (userMessage.toLowerCase() === "show diagram") {
+                    const mermaidSyntax = `
+                        graph TD;
+                        A-->B;
+                        A-->C;
+                        B-->D;
+                        C-->D;
+                    `;
+                    addMermaid(mermaidSyntax);
+                }
+
+                // Clear the user input field
+                userMessageInput.value = "";
+            }
+        }
+
+        // Attach an event listener to the send button
+        document.getElementById("send-button").addEventListener("click", handleUserInput);
+
+        // Listen for Enter key press in the input field
+        userMessageInput.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                handleUserInput();
+            }
+        });
+    </script>
+</body>
+</html>

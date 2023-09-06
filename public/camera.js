@@ -30,6 +30,7 @@ var HandCheckrApp = new Vue({
         5: `showing the result...`,
       },
     },
+    codeBlock: '',
     snapShot:{
       imageBlob: null,
       boxLoc: null,
@@ -114,15 +115,21 @@ var HandCheckrApp = new Vue({
     this.start();
   },
   
-  methods: {
+methods: {
 
   async start(){
+      this.generateCodeBlocks()
       this.initHandLandMarker()
       this.handCheck.initCamera();
       this.recallSaved()
       this.updateSequence(0)
       this.main()
   },
+
+async generateCodeBlocks(){
+  const assignment = await this.handUI.readFile('./lib/sidePage5.md')
+  this.codeBlock= await this.handUI.chat('Now plrease provide code for this diagram. Do not include non code content in your response. '+assignment)
+},
 
 async initHandLandMarker(){
     const runningMode = "VIDEO"
@@ -141,6 +148,7 @@ async initHandLandMarker(){
   },
 
   async main(){
+    console.log("dataset ",this.dataset.id)
     const seqRoute = this.seqRoute.textContent
     this.ctx.save();
     this.ctx.clearRect(0, 0, this.canvasElement.width,this.canvasElement.height);
@@ -195,6 +203,7 @@ async recallSaved(){
   });
   const userLastAccess = await last.json();
   this.dataset = userLastAccess.lastSaved
+  console.log('*this dataset ', this.dataset)
 },
 
 async updateDataset(id){
@@ -216,91 +225,77 @@ async updateDataset(id){
 },
 
 async jumpToRoute(routeNum) {
-  console.log('seqRoute** ', routeNum)
-  let stateTag = `Dataset #: ${this.dataset.id}`
   let mdFile = '';
   let animation = '';
-
-  switch (routeNum) {
-      case 0:
-        mdFile = './lib/sidePageIdle.md';
-        this.handUI.renderSidePage(mdFile);
-        animation = 'flashing 2s infinite'
-        break;
-      case 1:
-        break;
-      case 2:
-        mdFile = './lib/sidePageAwaitGesture.md';
-        this.handUI.renderSidePage(mdFile);
-          break;
-      case 3:
-          break;
-      case 4: // Get snapShot and identify as Code or Target (default)
-        mdFile = './lib/sidePageProcessingNow.md';
-        this.handUI.renderSidePage(mdFile);
-        animation = 'flashing 2s infinite'
-          const width = this.canvasElement.width;
-          const height = this.canvasElement.height;
-          this.snapShot.imageBlob = await this.handCheck.makeSnapShot(this.snapShot.boxLoc);
-          console.log('imgBlob-', this.snapShot.imageBlob)
-          const codeText = await this.handCheck.checkType(this.snapShot.imageBlob);
-          if (codeText) { // Use triple equals for comparison
-              Object.assign(this.snapShot.result, {
-                  tag: 'QR code',
-                  probability: 'N/A',
-                  datasetId: codeText,
-              });
-              if (codeText!==this.dataset.id){
-                this.updateDataset(codeText)
-              }
-              this.updateSequence(5);
-          } else {
-              const id = this.dataset.id.slice(3, 5);
-              console.log('** check or upload ', id);
-              const worker = id === 'ML' ? 'upload' : 'check';
-              const par = {
-                  imageBlob: this.snapShot.imageBlob,
-                  dataset: this.dataset,
-              };
-              this[`${worker}Worker`].postMessage(par);
-          }
-          break;
-      case 5:
-          const mdContent=this.renderResultMDContent()
-          const image = this.snapShot.imageBlob
-          const boundingBox = this.snapShot.result.boundingBox
-          this.handUI.renderSidePage(mdContent, image, boundingBox )
-          setTimeout(() => {
-            this.updateSequence(1);
-          }, 5000); // 000 milliseconds = 5 seconds
-          break;
-      default:
-          break;
-  }
+  eval(this.codeBlock)
 
   const prompt = document.querySelector('#prompt');
   const state = document.querySelector('#state')
   prompt.textContent = this.varList.prompt[routeNum];
   prompt.style.animation = animation; 
-  state.textContent = stateTag
-
+  state.innerHTML = `<i class="fa fa-database" style="font-size:32px"></i> #: ${this.dataset.id}`;
 },
 
 renderResultMDContent(){
 const result = this.snapShot.result
 const {datasetId, tag, probability} = result;
-const mdContent = `## result
+const mdContent = `## Report
 
-
->tag: ${tag}
->probability:${probability}
->dataset: ${datasetId}
->
+| |  ||
+|--|--|--|
+|tag | ${tag} |-|
+|confidence |  ${probability} |(%)|
+|dataset |  ${datasetId} |-|
 `;
 return mdContent; 
 
 },
 
+async inspectSnapShot(){
+const width = this.canvasElement.width;
+const height = this.canvasElement.height;
+this.snapShot.imageBlob = await this.handCheck.makeSnapShot(this.snapShot.boxLoc);
+console.log('imgBlob-', this.snapShot.imageBlob)
+const codeText = await this.handCheck.checkType(this.snapShot.imageBlob);
+const id = this.dataset.id.slice(3, 5);
+const isDataset = trim(codeText) !==''
+const isNewDataset = (isDataset && codeText!==id)
+const processMode = id === 'ML' ? 'upload' : 'check';
+if (codeText) { // Use triple equals for comparison
+    Object.assign(this.snapShot.result, {
+        tag: 'QR code',
+        probability: 'N/A',
+        datasetId: codeText,
+    });
+    if (codeText!==this.dataset.id){
+      this.updateDataset(codeText)
+    }
+    console.log('qr**'+codeText)
+    this.updateSequence(5);
+} else {
+    const par = {
+        imageBlob: this.snapShot.imageBlob,
+        dataset: this.dataset,
+    };
+  this[`${worker}Worker`].postMessage(par);
+}
+},
+
+showReport(isEnabled){
+  const centerPage = document.querySelector('#centerPage')
+  if (isEnabled){
+  const mdContent=this.renderResultMDContent()
+  const image = this.snapShot.imageBlob
+  const boundingBox = this.snapShot.result.boundingBox
+  centerPage.style.display = 'block'
+  this.handUI.renderCenterPage(mdContent, image, boundingBox )
+  setTimeout(() => {
+    this.updateSequence(1);
+  }, 5000); // 000 milliseconds = 5 seconds
+  } else {
+    centerPage.style.display = 'none'
+  }
+},
 
 drawHand(seqRoute,landmarks, HAND_CONNECTIONS){
   drawConnectors(this.ctx, landmarks, HAND_CONNECTIONS, {

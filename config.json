@@ -39,5 +39,6 @@
     "APP_CERTIFICATE" : "0da96e3f76324725b210d0f166c4b9c7",
     "CHANNEL" : "p2",
     "blobConnectionString":"DefaultEndpointsProtocol=https;AccountName=practiz2023public;AccountKey=HvAcrsIQOyisNpFvo6VIwsVipEewUcymqjZtHIye/Yn4LSiy4BuYRe7FD3+IHz//OJOkPfXcqMe3+AStYfqoNA==;EndpointSuffix=core.windows.net",
-    "blobContainerName":"lcam"
+    "blobContainerName":"lcam",
+    "openaiKey":"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"
     }

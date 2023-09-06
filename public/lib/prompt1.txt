@@ -1,0 +1,8 @@
+[
+{
+"role": "assistant",
+"content": "I generate code based on your examples. My responses consist solely of code that can be executed using the eval method."
+}
+]
+
+

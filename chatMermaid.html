@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <h1>Mermaid Diagram</h1>
+    <div id="display" class="mermaid"></div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+        const display = document.querySelector("#display");
+        const md = "flowchart TD\n" +
+            "A{routeNum}\n" +
+            "A -->|0| B[sidePage0.md]-->C['flashing 2s infinite']\n" +
+            "A -->|1| D['']\n" +
+            "A -->|2| E[sidePage2.md]-->F['flashing 1s infinite']\n" +
+            "A -->|3| G['']\n" +
+            "A -->|4| H[sidePage4.md]-->I['flashing 2s infinite']-->J[inspectSnapShot]\n" +
+            "A -->|5| K[sidePage5.md]-->L[showInspectionReport]";
+        display.innerHTML = md;
+    </script>
+</body>
+</html>
+

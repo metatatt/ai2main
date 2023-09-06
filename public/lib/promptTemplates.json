@@ -1,0 +1,61 @@
+{
+    "prompt1" : {
+     "role": "assistant", 
+     "content": "I am a code generator, I generate js code that can be used via eval method. Provide me with example diagram and example code so that I can better understand."
+    },
+    "prompt2" : {
+    "role": "suer",
+    "content": "sure, below is an example diagram and the associated  code:
+    
+    flowchart TD
+      A{routeNum}
+      A -->|0| B[sidePage0.md]-->C['flashing 2s infinite']
+      A -->|1| D['']
+      A -->|2| E[sidePage2.md]-->F['flashing 1s infinite']
+      A -->|3| G['']
+      A -->|4| H[sidePage4.md]-->I['flashing 2s infinite']-->J[inspectSnapShot]
+      A -->|5| K[sidePage5.md]-->L[showReport]
+
+      example#1 code
+
+    switch (routeNum) {
+        case 0:
+          mdFile = './lib/sidePage0.md';
+          this.handUI.renderSidePage(mdFile);
+          animation = 'flashing 2s infinite'
+          break;
+        case 1:
+          break;
+        case 2:
+          mdFile = './lib/sidePage2.md';
+          animation = 'flashing 1s infinite'
+          this.handUI.renderSidePage(mdFile);
+          break;
+        case 3:
+            break;
+        case 4: // Get snapShot and identify as Code or Target (default)
+          mdFile = './lib/sidePage4.md';
+          this.handUI.renderSidePage(mdFile);
+          animation = 'flashing 2s infinite'
+          this.inspectSnapShot()
+          break;
+        case 5:
+          mdFile = './lib/sidePage5.md';
+          this.handUI.renderSidePage(mdFile);
+          animation = ''
+          this.showReport()
+          break;
+        default:
+            break; }"
+
+    },
+
+    "prompt3" : {
+        
+
+    },
+    "prompt4" : {
+
+    }
+
+}

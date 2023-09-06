@@ -1,0 +1,92 @@
+I want to write a js snippet and want to use your response text as code for the snippet. Now please follow the instructions.
+
+Step 1: follow the example 
+
+example#1 chart
+flowchart TD
+    A{routeNum}
+    A -->|0| B[sidePage0.md]-->C['flashing 2s infinite']
+    A -->|1| D['']
+    A -->|2| E[sidePage2.md]-->F['flashing 1s infinite']
+    A -->|3| G['']
+    A -->|4| H[sidePage4.md]-->I['flashing 2s infinite']-->J[inspectSnapShot]
+    A -->|5| K[sidePage5.md]-->L[showReport]
+
+example#1 code
+
+  switch (routeNum) {
+      case 0:
+        mdFile = './lib/sidePage0.md';
+        this.handUI.renderSidePage(mdFile);
+        animation = 'flashing 2s infinite'
+        break;
+      case 1:
+        break;
+      case 2:
+        mdFile = './lib/sidePage2.md';
+        animation = 'flashing 1s infinite'
+        this.handUI.renderSidePage(mdFile);
+        break;
+      case 3:
+          break;
+      case 4: // Get snapShot and identify as Code or Target (default)
+        mdFile = './lib/sidePage4.md';
+        this.handUI.renderSidePage(mdFile);
+        animation = 'flashing 2s infinite'
+        this.inspectSnapShot()
+        break;
+      case 5:
+        mdFile = './lib/sidePage5.md';
+        this.handUI.renderSidePage(mdFile);
+        animation = ''
+        this.showReport()
+        break;
+      default:
+          break;
+  }
+
+
+example#2: chart
+flowchart TD
+    A{isDataset}
+    A -->|true|B{isNewDataset}
+    B -->|true| C[updateDataset]
+    A -->|false|D{processMode}
+    D -->|upload|E[this.uploadWorker]
+    D -->|check|F[this.checkWorker]
+
+example#2 code
+if (codeText) { // Use triple equals for comparison
+    Object.assign(this.snapShot.result, {
+        tag: 'QR code',
+        probability: 'N/A',
+        datasetId: codeText,
+    });
+    if (codeText!==this.dataset.id){
+      this.updateDataset(codeText)
+    }
+    console.log('qr**'+codeText)
+    this.updateSequence(5);
+} else {
+    const par = {
+        imageBlob: this.snapShot.imageBlob,
+        dataset: this.dataset,
+    };
+  this[`${worker}Worker`].postMessage(par);
+}
+
+
+Step 2: I want to provide code for below new chart. For this assignment, bear in mind that I use your response body as the code line, please respond with code and code comments only. Donot include other in the response.
+
+new chart
+
+flowchart TD
+    A{routeNum}
+    A -->|0| B[sidePage0.md]-->C['flashing 2s infinite']
+    A -->|1| D['']
+    A -->|2| E[sidePage2.md]-->F['flashing 1s infinite']
+    A -->|3| G['']
+    A -->|4| H[sidePage4.md]-->I['flashing 2s infinite']-->J[inspectSnapShot]
+    A -->|5| K[sidePage5.md]-->L[showReport]
+
+------------------

@@ -38,6 +38,7 @@ if (!fs.existsSync(imgDir)) {
 let iterationName = "";
 let cameraStatus = null;
 let sessionTable = {};
+let isFirstGPTSession = true;
 
 const {
   c001CK,
@@ -52,7 +53,8 @@ const {
   predictionEndpoint,
   predictionKey,
   blobConnectionString,
-  blobContainerName
+  blobContainerName,
+  openaiKey,
 } = PredictionConfig;
 
 // Import Azure Blob dependencies & create access to container
@@ -62,6 +64,13 @@ const containerName = blobContainerName;
 const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
 const containerClient = blobServiceClient.getContainerClient(containerName);
 const sessionTableFile = "sessionTable.json";
+
+//OpenAI 
+const OpenAI = require('openai');
+const openai = new OpenAI({
+  apiKey: openaiKey,
+});
+
 
 async function downloadSessionTable() {
   try {
@@ -121,7 +130,8 @@ app.post('/env', async (req, res) => {
     CHANNEL,
     predictionEndpoint,
     predictionKey,
-    GRIDID: gridId
+    GRIDID: gridId,
+    openaiKey,
   });
 });
 
@@ -134,7 +144,7 @@ app.post('/card', async (req, res) => {
       cardId = sessionTable[key].cardId;
     }
   }
-  const lastSaved =  PredictionConfig[`c${cardId}`]
+  const lastSaved = (cardId)? PredictionConfig[`c${cardId}`] : PredictionConfig['c001CK']
   res.json({
     lastSaved
   });
@@ -156,6 +166,45 @@ app.post('/updatecard', async (req, res) => {
   res.json({
     newlySaved
   });
+});
+
+app.post('/openai', async (req, res) => {
+    const codeExamples = fs.readFileSync('codeExamples.txt', 'utf-8');
+    let messageContent = [];
+
+    if(isFirstGPTSession){
+      messageContent = [
+        {
+          role: 'assistant',
+          content: 'I am a code generator. Provide examples and guidlines, and I will follow them to generate JavaScript code. I am a coder, but not an instructor. I will repond with code, but not the explanation.'
+        },
+        { role: 'user', content: codeExamples },
+        { role: 'user', content: req.body.message },
+      ];
+      isFirstGPTSession = false
+    } else{
+      messageContent = [
+        { role: 'user', content: req.body.message },
+      ];
+    }
+
+  try {
+    // Call the OpenAI API for chat completions
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: messageContent,
+      temperature: 0.9,
+      max_tokens: 256,
+    });
+    
+    console.log('Generated Code:-', response.choices[0].message.content);
+    
+    // Send the response back to the client
+    res.json({ message: response.choices[0].message.content });
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: 'An error occurred' });
+  }
 });
 
 app.post('/saveblob', upload.single('imageFile'), async (req, res) => {

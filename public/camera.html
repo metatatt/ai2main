@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="./img/favicon.png">
   <link rel="stylesheet" href="./lib/camera.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
   <script type="text/javascript" src="./lib/AgoraRTC_N-4.7.3.js"></script>
   <script type="text/javascript" src="./lib/FileSaver.js"></script>
@@ -19,6 +20,18 @@
 <body>
   <div class="container">
     <div class ="side">
+        <div class="chatContainer">
+          <div class="chatHeader">
+              <h2>Bot</h2>
+          </div>
+          <div class="chatMessages" id="chatMessages">
+              <!-- Chat messages will be appended here -->
+          </div>
+          <div class="chatInput">
+              <input type="text" id="userInput" placeholder="Type your message...">
+              <button id="sendButton">Local</button>
+          </div>
+      </div>
         <div class="sidePage">
         </div>
         <div class="sideImage">
@@ -33,6 +46,7 @@
         </div>
         <video id="video" autoplay="autoplay" playsinline="true"></video>
         <canvas id="canvas" width="1024" height="768"></canvas>
+        <div id="centerPage" style="display: none;"></div> 
     </div>
   </div>
   <script src="./lib/jsQR.js"></script>

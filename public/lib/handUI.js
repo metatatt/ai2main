@@ -14,6 +14,7 @@ export class handUI {
     this.soundbeep.preload = 'auto';
     this.sounddingding.preload = 'auto';
     this.soundding.preload = 'auto';
+    this.chatMessages = document.querySelector("#chatMessages")
   }
 
   layout(mode) {
@@ -55,65 +56,99 @@ sound(sound){
     return greetings[greetingIndex];
   }
 
-renderSidePage(content, imageBlob, boundingBox) {
+  
+renderCenterPage(content, imageBlob, boundingBox) {
     let htmlContent = '';
-    const isFile = !imageBlob;
-  
-    if (isFile) {
-      // Fetch and render content when it's a file
-      fetch(content)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Failed to fetch the file content');
-          }
-          return response.text();
-        })
-        .then(markdownContent => {
-          htmlContent = marked(markdownContent);
-          const sidePage = document.querySelector('.sidePage');
-          sidePage.innerHTML = htmlContent;
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          // Handle the error as needed, e.g., display an error message to the user.
-        });
-    } else {
-      // Render content when it's not a file
-      htmlContent = marked(content);
-      const sidePage = document.querySelector('.sidePage');
-      sidePage.innerHTML = htmlContent;
+    // Render content when it's not a file
+    htmlContent = marked(content);
+    const centerPage = document.querySelector('#centerPage');
+    centerPage.innerHTML = htmlContent;
 
-      const sideImage = document.querySelector('.sideImage');
-      sideImage.innerHTML = '';
-      const resultImage = new Image();
-      resultImage.src = URL.createObjectURL(imageBlob);
-      
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+    //const sideImage = document.querySelector('.sideImage');
+    const resultImage = new Image();
+    resultImage.src = URL.createObjectURL(imageBlob);
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
 
-      resultImage.onload = () => {
-        canvas.width = resultImage.width; // Set canvas width twice the resultImage width
-        canvas.height = resultImage.height; // Set canvas height twice the resultImage height
-        ctx.drawImage(resultImage, 0, 0, resultImage.width, resultImage.height);
+    resultImage.onload = () => {
+      canvas.width = resultImage.width; // Set canvas width twice the resultImage width
+      canvas.height = resultImage.height; // Set canvas height twice the resultImage height
+      ctx.drawImage(resultImage, 0, 0, resultImage.width, resultImage.height);
 
-         //boundingBox metrics
-              const boxLeft = boundingBox.left * resultImage.width || 0; // Convert to percentage
-              const boxTop = boundingBox.top * resultImage.height || 0; // Convert to percentage
-              const boxWidth = boundingBox.width * resultImage.width || resultImage.width; // Convert to percentage
-              const boxHeight = boundingBox.height * resultImage.height || resultImage.height; // Convert to percentage
-         //Draw the bounding box on the canvas
-              ctx.strokeStyle = 'red';
-              ctx.lineWidth = 2; // Set the border width
-              ctx.beginPath();
-              ctx.rect(boxLeft, boxTop, boxWidth, boxHeight);
-              ctx.stroke();
-        }
+       //boundingBox metrics
+            const boxLeft = boundingBox.left * resultImage.width || 0; // Convert to percentage
+            const boxTop = boundingBox.top * resultImage.height || 0; // Convert to percentage
+            const boxWidth = boundingBox.width * resultImage.width || resultImage.width; // Convert to percentage
+            const boxHeight = boundingBox.height * resultImage.height || resultImage.height; // Convert to percentage
+       //Draw the bounding box on the canvas
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2; // Set the border width
+            ctx.beginPath();
+            ctx.rect(boxLeft, boxTop, boxWidth, boxHeight);
+            ctx.stroke();
+      }
 
-      sideImage.appendChild(canvas);
-      this.sound('ding');
+    centerPage.appendChild(canvas);
+    this.sound('ding');
+  }
+
+async readFile(content){
+  try {
+    const response = await fetch(content);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch the file content');
     }
-  }  
-  
+
+    const fileContent = await response.text();
+    return fileContent
+  } catch (error) {
+    console.error('Error:', error);
+    // Handle the error as needed, e.g., display an error message to the user.
+  }
+}
+
+renderSidePage(content) {
+    let htmlContent = '';
+    const markdownContent = this.readFile(content)
+    htmlContent = marked(markdownContent);
+    const sidePage = document.querySelector('.sidePage');
+    sidePage.innerHTML = htmlContent;
+    this.sound('ding'); 
+}
+
+addChatMessage(sender, message) {
+  const messageElement = document.createElement("div");
+  messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+  this.chatMessages.appendChild(messageElement);
+  this.chatMessages.appendChild(document.createElement("br"));
+  this.chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async chat(prompt){
+  this.addChatMessage('Instruction', prompt)
+  try {
+    const response = await fetch('/openai', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: prompt }),
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        this.addChatMessage('Bot ', data.message)
+        return data.message
+    } else {
+        console.error('Failed to fetch data from the server.');
+    }
+    } catch (error) {
+        console.error('An error occurred:', error.message);
+    }
+  }
+
 }
 
 export function listener(){
